@@ -3,7 +3,6 @@ import { StyleSheet } from "react-native";
 import * as Yup from "yup";
 
 import Screen from "../../components/Screen";
-import usersApi from "../../api/users";
 import authApi from "../../api/auth";
 import useAuth from "../../auth/useAuth";
 import {
@@ -23,7 +22,7 @@ const validationSchema = Yup.object().shape({
 });
 
 function RegisterScreen() {
-  const registerApi = useApi(usersApi.register);
+  const registerApi = useApi(authApi.register);
 
   const loginApi = useApi(authApi.login);
   const [user, setUser] = useState();

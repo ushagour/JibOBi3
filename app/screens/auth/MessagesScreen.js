@@ -9,6 +9,7 @@ import {
 } from "../../components/lists";
 import colors from "../../config/colors";
 import messagesApi from "../../api/messages";
+import userApi from "../../api/users";
 
 
 function MessagesScreen(props) {
@@ -19,6 +20,8 @@ function MessagesScreen(props) {
 
   useEffect(() => {
     loadMessages();
+
+
   }, []);
 
   const loadMessages = async () => {
@@ -93,7 +96,8 @@ function MessagesScreen(props) {
         
 
               subTitle={item.content} // Display message content
-              image={require("../../assets/user.png")}
+              // image={require("../../assets/user.png")}
+              image={{uri: item.fromUser.avatar}}
             onPress={() => console.log("Message selected", item)}
             renderRightActions={() => (
               <ListItemDeleteAction onPress={() => handleDelete(item)} />

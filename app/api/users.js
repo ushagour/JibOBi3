@@ -1,7 +1,8 @@
 import client from "./client";
 
-const register = (userInfo) => client.post("/users", userInfo);
 
 const Edit = (id,userInfo) => client.put(`/users/${id}`, userInfo);
 
-export default { register,Edit };
+
+const getUserInfo = (id) => client.get(`/users/${id}`);
+export default { Edit,getUserInfo };
