@@ -19,7 +19,7 @@ const menuItems = [
 
   },
   {
-    title: "My Messages",
+    title: "Notifications",
     icon: {
       name: "email",
       backgroundColor: colors.secondary,

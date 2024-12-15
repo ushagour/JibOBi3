@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet,Image } from "react-native";
 import * as Yup from "yup";
 
 import Screen from "../../components/Screen";
@@ -88,6 +88,8 @@ const handleSubmit = async (userInfo) => {
     <>
       <ActivityIndicator visible={registerApi.loading || loginApi.loading} />
       <Screen style={styles.container}>
+      <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
+
         <Form
           initialValues={{ name: "", email: "", password: "" }}
           onSubmit={handleSubmit}
@@ -128,6 +130,14 @@ const handleSubmit = async (userInfo) => {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    alignSelf: "center",
+    marginTop: 50,
+    marginBottom: 20,
+    borderRadius:25
   },
 });
 

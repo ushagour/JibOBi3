@@ -70,13 +70,14 @@ function LoginScreen(props) {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
-  },
+    },
   logo: {
     width: 80,
     height: 80,
     alignSelf: "center",
     marginTop: 50,
     marginBottom: 20,
+    borderRadius:25
   },
 });
 
