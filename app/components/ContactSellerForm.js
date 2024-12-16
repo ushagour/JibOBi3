@@ -4,32 +4,16 @@ import * as Notifications from 'expo-notifications';
 import * as Yup from "yup";
 
 import { Form, FormField, SubmitButton } from "./forms";
-import messagesApi from "../api/messages";
+import messagesApi from "../api/my_Notifications";
 
 function ContactSellerForm({ listing }) {
   const handleSubmit = async ({ message }, { resetForm }) => {
 
 
-
-  
-   
-
-
     Keyboard.dismiss();
 
     const result = await messagesApi.send(message, listing.id)
-    // .then(response => {
-      
-    //   if (!response.ok) {
-    //     alert(`Error: ${response.data.error}`); // Access and display the error message
-    //   } else {
-
-    //     alert("message sent successfully");
-    //   }
-    // }).catch(error => {
-    //   alert("Network error, please try again.");
-    // });
-
+    
 
 
     
@@ -38,6 +22,10 @@ function ContactSellerForm({ listing }) {
       
      Alert.alert("Error", "Could not send the message to the seller.");
      return;
+    }else{
+
+      Alert.alert("success", "Message has been sent successfully to the seller.");
+
     }
 
     resetForm();
@@ -48,7 +36,6 @@ function ContactSellerForm({ listing }) {
       },
       trigger: null, // null triggers it immediately as a local notification
     });
-    console.log("message sent successfully");
     
   };
 

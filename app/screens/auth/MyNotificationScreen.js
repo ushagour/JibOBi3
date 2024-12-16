@@ -8,11 +8,12 @@ import {
   ListItemSeparator,
 } from "../../components/lists";
 import colors from "../../config/colors";
-import messagesApi from "../../api/messages";
+import MyNotificationApi from "../../api/my_Notifications";
 import userApi from "../../api/users";
+import routes from "../../navigation/routes";
 
 
-function MessagesScreen(props) {
+function MyNotificationScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,49 +21,50 @@ function MessagesScreen(props) {
 
   useEffect(() => {
     loadMessages();
+ 
 
-
-  }, []);
+  }, [messages]);
 
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const response = await messagesApi.getMymessages();
+      const response = await MyNotificationApi.get_my_Notifications();
       
       if (response.ok) {
         setMessages(response.data);
-        console.log("Messages:", response.data);
+        // console.log("Messages:", response.data);
         
         setError(false);
       } else {
         setError(true);
-        console.error("Failed to fetch messages:", response.problem);
+        // console.error("Failed to fetch messages:", response.problem);
       }
     } catch (error) {
       setError(true);
-      console.error("Error during request:", error);
+      // console.error("Error during request:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const handleDelete = (message) => {
     Alert.alert(
       "Delete Confirmation",
-      "Are you sure you want to delete this message?",
+      "Are you sure you want to delete this Notification?",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           onPress: async () => {
-            const response = await messagesApi.getMymessages(message);
-            // console.log("response", response);
+            const response = await MyNotificationApi.delete_notification(message);
+            console.log("response", response);
             
             if (response.ok) {
               setMessages(messages.filter((item) => item.id !== message.id));
-              Alert.alert("Success", "messages deleted successfully.");
+              Alert.alert("Success", "notification deleted successfully.");
             } else {
-              Alert.alert("Error", "Failed to delete messages.");
+              Alert.alert("Error", "Failed to delete notification.");
               // console.error("Failed to delete listing:", response.problem);
             }
           },
@@ -96,9 +98,9 @@ function MessagesScreen(props) {
         
 
               subTitle={item.content} // Display message content
-              // image={require("../../assets/user.png")}
               image={{uri: item.fromUser.avatar}}
-            onPress={() => console.log("Message selected", item)}
+              //  onPress={() => navigation.navigate(routes.LISTING_DETAILS })}//todo : navigate to message details
+
             renderRightActions={() => (
               <ListItemDeleteAction onPress={() => handleDelete(item)} />
             )}
@@ -106,14 +108,9 @@ function MessagesScreen(props) {
         )}
         ItemSeparatorComponent={ListItemSeparator}
         refreshing={refreshing}
-        onRefresh={() => {
-          setMessages([
-            {
-              id: 2,
-              title: "T2",
-              description: "D2",
-            },
-          ]);
+        onRefresh={() => {//todo refreshing messages list
+          loadMessages();
+    
         }}
       />
     </Screen>
@@ -122,4 +119,4 @@ function MessagesScreen(props) {
 
 const styles = StyleSheet.create({});
 
-export default MessagesScreen;
+export default MyNotificationScreen;

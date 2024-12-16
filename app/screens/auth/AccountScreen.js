@@ -24,7 +24,7 @@ const menuItems = [
       name: "email",
       backgroundColor: colors.secondary,
     },
-    targetScreen: routes.MESSAGES,
+    targetScreen: routes.MY_NOTIFICATIONS,
   },
 ];
 

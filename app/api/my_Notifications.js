@@ -1,10 +1,10 @@
 import client from "./client";
 import storage from "../auth/storage";
 
-const endpoint = "/messages";
+const endpoint = "/my_Notifications";
 
 
-const getMymessages = () => client.get(endpoint);
+const get_my_Notifications = () => client.get(endpoint);
 const send = async (message, listingId) => {
   try {
     const token = await storage.getToken(); // Retrieve token from AsyncStorage
@@ -41,7 +41,7 @@ const send = async (message, listingId) => {
     console.error("Error sending message:", error);
   }
 };
-export const deleteMessages = (message) => {
+export const delete_notification = (message) => {
   const itemId = message.id;
   // console.log(itemId);
 
@@ -50,6 +50,6 @@ export const deleteMessages = (message) => {
 
 export default {
   send,
-  getMymessages,
-  deleteMessages,
+  get_my_Notifications,
+  delete_notification,
 };

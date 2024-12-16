@@ -6,7 +6,7 @@ const getListings = () => client.get(endpoint);
 
 
 
-const getMyListings = () => client.get("/my"); // Adjust the endpoint if necessary
+const getMyListings = () => client.get("/my_Listings"); // Adjust the endpoint if necessary
 
 /**
  * Sends a POST request to the server to add a new listing.
@@ -80,7 +80,7 @@ if (listing.location) {
     const itemId = listing.id;
     console.log(itemId);
 
-    return  client.delete(`/my/${itemId}`);
+    return  client.delete(`/my_Listings/${itemId}`);
   };
   
   export const updateListing = (id, listing, onUploadProgress) => {
