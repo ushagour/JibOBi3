@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FlatList, StyleSheet } from "react-native";
+import { FlatList, StyleSheet,RefreshControl } from "react-native";
 
 import Card from "../../components/Card";
 import colors from "../../config/colors";
@@ -15,17 +15,28 @@ function ListingsScreen({ navigation }) {
       /* we distructure the data from the useApi hook and 
       we call the listingsApi.getListings function */
   const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
+  const [refreshing, setRefreshing] = useState(false);
+
+
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await   fetchListings();  // Assuming `refetch` is your API call function
+    setRefreshing(false);
+  };
 
 
 useEffect(() => {
 
   fetchListings();
+  
 }, []); 
 
 
   return (
 <>
     <ActivityIndicator visible={loading} />
+
     <Screen style={styles.screen}>
 
 
@@ -54,6 +65,13 @@ useEffect(() => {
           />
           
         )}
+
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        }
       />
     </Screen>
     </>
