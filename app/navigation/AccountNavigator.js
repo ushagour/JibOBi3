@@ -9,6 +9,7 @@ import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
 import UserScreen from "../screens/auth/UserScreen";
 import ListingEditScreen from "../screens/Listings/ListingEditScreen";
+import ViewImageScreen from "../screens/outhers/ViewImageScreen";
 
 const Stack = createStackNavigator();
 
@@ -35,6 +36,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="MyListings" component={MyListingsScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
+    <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
     <Stack.Screen name="My_Notifications" component={MyNotificationScreen} />
   </Stack.Navigator>
 );

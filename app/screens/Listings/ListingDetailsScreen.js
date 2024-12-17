@@ -7,20 +7,22 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  TouchableOpacity,
 } from "react-native";
+import { ListItem } from "../../components/lists";
 
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
 import Text from "../../components/Text";
 import { Image } from "expo-image";
+import routes from "../../navigation/routes";
 /*
 tips 
 ScrollView: Enables scrolling when the content is taller than the screen.
 KeyboardAvoidingView: Prevents the keyboard from overlapping the form.
 TouchableWithoutFeedback: Dismisses the keyboard when tapping outside the input fields.
-
 */
-function ListingDetailsScreen({ route }) {
+function ListingDetailsScreen({ route, navigation }) {
   const listing = route.params;
 
   return (
@@ -30,15 +32,21 @@ function ListingDetailsScreen({ route }) {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
-          <Image
-            style={styles.image}
-            preview={{ uri: listing.images[0].thumbnailUrl }}
-            tint="light"
-            source={listing.images[0].url}
-          />
+          <TouchableOpacity
+            onPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.images[0].url })}
+          >
+            <Image
+              style={styles.image}
+              preview={{ uri: listing.images[0].thumbnailUrl }}
+              tint="light"
+              source={listing.images[0].url}
+            />
+          </TouchableOpacity>
+
           <View style={styles.detailsContainer}>
             <Text style={styles.title}>{listing.title}</Text>
             <Text style={styles.price}>${listing.price}</Text>
+            <Text style={styles.description}>{listing.description}</Text>
 
             <ContactSellerForm listing={listing} />
           </View>
@@ -68,6 +76,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "500",
+  },
+  description: {
+    fontSize: 16,
+    color: colors.medium,
+    marginVertical: 10,
   },
 });
 

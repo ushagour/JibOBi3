@@ -4,6 +4,7 @@ import ListingsScreen from "../screens/Listings/ListingsScreen";
 import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
 import { TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
 
 
 const Stack = createStackNavigator();
@@ -26,6 +27,7 @@ const FeedNavigator = () => (
         </TouchableOpacity>
       ),
     })} />
+    <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>
 );
 
