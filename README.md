@@ -15,6 +15,27 @@
     npx expo start
    ```
 
+
+
+3. unstall package 
+
+   ```bash
+            npm uninstall package 
+
+   ```
+
+
+4. cheack updates of installed packages 
+
+   ```bash
+             npx expo install --check 
+             //then it asks you to  do the nesusary  update or not 
+
+   ```
+
+
+
+
 ## presentation of the app 
 ![all screens should look like this ](./assets/screens.png)
 
@@ -23,5 +44,3 @@
 
 go to file/preferences/configure snippet chose the languege and crete your own snippet
 
-
-## expo pushTokenString ExponentPushToken[8xQ1B4CjWBoSwU_d69eDvB]
