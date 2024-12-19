@@ -83,7 +83,7 @@ function MyNotificationScreen({ navigation }) {
           <Text style={{ color: colors.primary }}> Something went wrong, please try again.</Text>
         </View>
       )}
-            {messages.length === 0 && !loading && (
+            {messages.length === 0 &&  (
         <View style={{ alignItems: "center", padding: 10 }}>
           <Text style={{ color: "red" }}>There is no messages for you for the moment.</Text>
         </View>
@@ -108,7 +108,7 @@ function MyNotificationScreen({ navigation }) {
         )}
         ItemSeparatorComponent={ListItemSeparator}
         refreshing={refreshing}
-        onRefresh={() => {//todo refreshing messages list
+        onRefresh={() => {
           loadMessages();
     
         }}

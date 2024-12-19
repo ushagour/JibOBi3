@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Alert } from "react-native";
+import { StyleSheet,
+   Alert,
+   TouchableWithoutFeedback,
+   KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard
+ } from "react-native";
 import * as Yup from "yup";
 import Button from "../../components/Button";
 
@@ -9,6 +16,7 @@ import {
   FormField,
   FormPicker as Picker,
   SubmitButton,
+
 } from "../../components/forms";
 import Screen from "../../components/Screen";
 import FormImagePicker from "../../components/forms/FormImagePicker";
@@ -18,6 +26,7 @@ import UploadScreen from "../outhers/UploadScreen";
 import useLocation from "../../hooks/useLocation";
 import categoriesAPI from "../../api/categories";
 import listingsAPI from "../../api/listings";
+import useAuth from "../../auth/useAuth";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
@@ -32,21 +41,26 @@ function ListingAddScreen({ navigation }) {
   const [categories, setCategories] = useState([]);
   const [uploadVisible, setUploadVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { user } = useAuth();
 
   useEffect(() => {
+
+
     categoriesAPI
       .getCategories()
       .then((response) => setCategories(response.data))
       .catch(() => Alert.alert("Error", "Unable to fetch categories"));
+
+
   }, []);
 
   const handleSubmit = async (listing, { resetForm }) => {
     setProgress(0);
     setUploadVisible(true);
-
+ 
     try {
       const response = await listingsAPI.addListing(
-        { ...listing, location },
+        { ...listing, location, userID: user.userId },
         (progress) => setProgress(progress)
       );
 
@@ -66,7 +80,14 @@ function ListingAddScreen({ navigation }) {
   };
 
   return (
-    <Screen style={styles.container}>
+       <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView  contentContainerStyle={styles.container}>
+
+      
       <UploadScreen
         visible={uploadVisible}
         progress={progress}
@@ -110,13 +131,20 @@ function ListingAddScreen({ navigation }) {
         <SubmitButton title="SAVE" />
         <Button title="Back" onPress={()=>{navigation.goBack()}} color="secondary"/>
       </Form>
-    </Screen>
+  </ScrollView>  
+    </TouchableWithoutFeedback>
+
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 10,
+    contentContainer: {
+      flexGrow: 1,
+    },
+    container: {
+      paddingTop: 50,
+    padding: 20,
   },
 });
 

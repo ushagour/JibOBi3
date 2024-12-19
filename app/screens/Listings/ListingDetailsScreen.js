@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
+  Dimensions 
 } from "react-native";
 import { ListItem } from "../../components/lists";
 
@@ -16,6 +17,9 @@ import ContactSellerForm from "../../components/ContactSellerForm";
 import Text from "../../components/Text";
 import { Image } from "expo-image";
 import routes from "../../navigation/routes";
+import Swiper from 'react-native-swiper';
+import ImageSlider from "../../components/lists/ImageSlider";
+
 /*
 tips 
 ScrollView: Enables scrolling when the content is taller than the screen.
@@ -25,22 +29,30 @@ TouchableWithoutFeedback: Dismisses the keyboard when tapping outside the input 
 function ListingDetailsScreen({ route, navigation }) {
   const listing = route.params;
 
+
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView contentContainerStyle={styles.contentContainer}>
+        <ScrollView  contentContainerStyle={styles.contentContainer}>
           <TouchableOpacity
-            onPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.images[0].url })}
+   delayLongPress={500}
+           onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.images[0].url })}
           >
-            <Image
-              style={styles.image}
-              preview={{ uri: listing.images[0].thumbnailUrl }}
-              tint="light"
-              source={listing.images[0].url}
-            />
+            {listing.images.length > 1 ? (
+              <ImageSlider images={listing.images}  style={styles.image}/>
+            ) : (
+              <Image
+                style={styles.image}
+                preview={{ uri: listing.images[0].thumbnailUrl }}
+                tint="light"
+                source={listing.images[0].url}
+              />
+            )}
+     
           </TouchableOpacity>
 
           <View style={styles.detailsContainer}>
@@ -81,6 +93,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.medium,
     marginVertical: 10,
+  },
+  arrow: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: 'bold',
   },
 });
 

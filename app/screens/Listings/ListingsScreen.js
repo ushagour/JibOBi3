@@ -61,7 +61,7 @@ useEffect(() => {
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
             thumbnailUrl={item.images[0].thumbnailUrl}
             ownerName={item.userId}
-            createdAt="Dec 3, 2024"
+            createdAt={item.createdAt}
           />
           
         )}
