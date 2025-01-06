@@ -17,18 +17,18 @@ function ListingsScreen({ navigation }) {
   const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
   const [refreshing, setRefreshing] = useState(false);
 
-
-
+  
+  
   const handleRefresh = async () => {
     setRefreshing(true);
     await   fetchListings();  // Assuming `refetch` is your API call function
     setRefreshing(false);
   };
 
-
-useEffect(() => {
-
-  fetchListings();
+  
+  useEffect(() => {
+    
+    fetchListings();
   
 }, []); 
 
@@ -57,9 +57,9 @@ useEffect(() => {
           <Card
             title={item.title}
             subTitle={"$" + item.price}
-            imageUrl={item.images[0].url}
+            imageUrl={item.images.url}
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
-            thumbnailUrl={item.images[0].thumbnailUrl}
+            thumbnailUrl={item.images.thumbnailUrl}
             ownerName={item.userId}
             createdAt={item.createdAt}
           />

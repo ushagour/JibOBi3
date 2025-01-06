@@ -83,7 +83,7 @@ function MyListingsScreen({ navigation }) {
         renderItem={({ item }) => (
           <ListItem
             title={item.title}
-            image={{ uri: item.images[0].url }}
+            image={{ uri: item.images.url }}
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
             renderRightActions={() => (
               <View style={styles.actionsContainer}>

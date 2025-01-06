@@ -40,16 +40,16 @@ function ListingDetailsScreen({ route, navigation }) {
         <ScrollView  contentContainerStyle={styles.contentContainer}>
           <TouchableOpacity
    delayLongPress={500}
-           onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.images[0].url })}
+           onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.images.url })}
           >
             {listing.images.length > 1 ? (
               <ImageSlider images={listing.images}  style={styles.image}/>
             ) : (
               <Image
                 style={styles.image}
-                preview={{ uri: listing.images[0].thumbnailUrl }}
+                preview={{ uri: listing.images.thumbnailUrl }}
                 tint="light"
-                source={listing.images[0].url}
+                source={listing.images.url}
               />
             )}
      

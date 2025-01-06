@@ -8,8 +8,8 @@
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#C37D4E"
+      "resizeMode": "contain"  
+    
     },
     "ios": {
       "supportsTablet": true
@@ -22,6 +22,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "newArchEnabled": true
     }
   }
 }

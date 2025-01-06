@@ -18,6 +18,9 @@ function WelcomeScreen({navigation}) {
         <Button title="Login"  onPress={()=>{navigation.navigate("Login")}} />
         <Button title="Register" color="secondary"  onPress={()=>{navigation.navigate("Register")}} />
       </View>
+      <View style={styles.splashContainer}>
+        <Text style={styles.copyrightText}>Copyright © 2024 Jib w’Bie3</Text>
+      </View>
     </ImageBackground>
   );
 }
@@ -29,7 +32,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonsContainer: {
-    padding: 20,
+    padding: 40,
     width: "100%",
   },
   logo: {
@@ -48,6 +51,16 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: "600",
     paddingVertical: 20,
+  },
+  splashContainer: {
+    position: 'absolute',
+    bottom: 20, // Adjust based on the layout
+    alignItems: 'center',
+  },
+  copyrightText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#6c757d',
   },
 });
 
