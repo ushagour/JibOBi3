@@ -37,7 +37,7 @@
 
 
 ## presentation of the app 
-![all screens should look like this ](./assets/screens.png)
+![all screens should look like this ]()
 
 
 ## vs code snippet
