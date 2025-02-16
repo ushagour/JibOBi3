@@ -11,7 +11,9 @@ import {
   SubmitButton,
 } from "../../components/forms";
 import ActivityIndicator from "../../components/ActivityIndicator";
-import usersApi from "../../api/users";
+
+import useAuth from "../../auth/useAuth";//context to get user object
+import usersApi from "../../api/users"; // to use user api functions
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required().label("Name"),

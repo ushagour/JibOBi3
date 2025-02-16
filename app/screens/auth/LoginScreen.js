@@ -37,7 +37,7 @@ function LoginScreen(props) {
       <Form
         initialValues={{ email: "", password: "" }}
         onSubmit={handleSubmit}
-        validationSchema={validationSchema}
+        // validationSchema={validationSchema}
       >
         <ErrorMessage
           error="Invalid email and/or password."

@@ -25,10 +25,22 @@ export default useAuth = () => {
     }
   };
 
+
+  const signUp = (authToken,user) => {
+    try {
+      console.log("Logging in with token:", authToken);
+      
+      authStorage.storeToken(authToken);
+      setUser(user); // Assuming setUser is a state function that stores user info
+  
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+    }
+  }
   const logOut = () => {
     setUser(null);
     authStorage.removeToken();
   };
 
-  return { user, logIn,  logOut };
+  return { user, logIn,signUp,  logOut };
 };

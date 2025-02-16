@@ -10,8 +10,10 @@ function AppFormField({ name, width, ...otherProps }) {
   return (
     <>
       <TextInput
+        onFocus={() => setFieldTouched(name)}  // Trigger touched when clicked
         onBlur={() => setFieldTouched(name)}
         onChangeText={(text) => setFieldValue(name, text)}
+
         value={values[name]}
         width={width}
         {...otherProps}

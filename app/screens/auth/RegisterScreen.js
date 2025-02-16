@@ -28,59 +28,44 @@ function RegisterScreen() {
   const [user, setUser] = useState();
   const auth = useAuth();
   const [error, setError] = useState();
-const handleSubmit = async (userInfo) => {
-  setError(null); // Reset any previous error
-  // console.log("Registering user:", userInfo);
-
-  try {
-    // Send the request to the registration API
-    const response = await registerApi.request(userInfo);
-
-    // Check if the response is undefined
-    if (!response) {
-      setError("No response from the server. Please try again later.");
-      // console.log("Error: No response from the server.");
-      return;
+  const handleSubmit = async (userInfo) => {
+    setError(null); // Reset any previous error
+  
+    try {
+      // Send the request to the registration API
+      const response = await registerApi.request(userInfo);
+  
+      // Check if the response is undefined
+      if (!response) {
+        setError("No response from the server. Please try again later.");
+        return;
+      }
+  
+      // Log the entire response for debugging purposes
+  
+      // Check if the response is successful
+      if (!response.ok) {
+        const errorMessage = response.data?.error || "An unexpected error occurred.";
+        setError(errorMessage);
+        return;
+      }
+  
+      // Destructure the expected data fields
+      
+      const { token, user } = response.data;
+    
+      if (token && user) {
+        auth.signUp(token, user);//we pass the token to the auth context via the logIn function(object->methde)
+        console.log("User registered and signed in successfully.");
+      } else {
+        setError("Invalid user data received.");
+        console.log("Error: Missing token or user data.");
+      }
+    } catch (error) {
+      setError("An error occurred during registration.");
+      console.error("Registration Error:", error);
     }
-
-    // Log the entire response for debugging purposes
-    // console.log("API Response:", response);
-
-    // Check if the response is successful
-    if (!response.ok) {
-      const errorMessage = response.data?.error || "An unexpected error occurred.";
-      setError(errorMessage);
-      // console.log("Error:", errorMessage);
-      return;
-    }
-
-    // Destructure the expected data fields
-    const { token, user } = response.data;
-
-    // Confirm token and user data are present
-    if (token && user) {
-      authStorage.storeToken(token);
-      setUser(user);
-      console.log("User registered and signed in successfully.");
-
-
-        const { data: authToken } = await loginApi.request(
-              user.email,
-              user.password
-            );
-            auth.logIn(authToken);
-
-
-
-    } else {
-      setError("Invalid user data received.");
-      console.log("Error: Missing token or user data.");
-    }
-  } catch (error) {
-    setError("An error occurred during registration.");
-    console.error("Registration Error:", error);
-  }
-};
+  };
 
   
 
