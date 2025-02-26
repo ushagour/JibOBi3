@@ -64,7 +64,9 @@ function ListingsScreen({ navigation }) {
             status={item.status}
             coordinates={{ latitude: item.latitude, longitude: item.longitude }}
             createdAt={dayjs(item.createdAt).format('MMMM D, YYYY h:s')} // Format the createdAt date
-                />
+            images={item.images} // Pass all images to the Card component
+ 
+            />
           
         )}
 

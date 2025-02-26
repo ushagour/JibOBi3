@@ -39,10 +39,11 @@ function ListingDetailsScreen({ route, navigation }) {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView  contentContainerStyle={styles.contentContainer}>
           <TouchableOpacity
-   delayLongPress={500}
-           onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.images.url })}
+           delayLongPress={500}
+           onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.imageUrl })}
           >
-            {listing.images.length > 1 ? (
+            {
+            listing.images.length > 1 ? (
               <ImageSlider images={listing.images}  style={styles.image}/>
             ) : (
               <Image
@@ -51,7 +52,8 @@ function ListingDetailsScreen({ route, navigation }) {
                 tint="light"
                 source={listing.images.url}
               />
-            )}
+            )
+            }
      
           </TouchableOpacity>
 
