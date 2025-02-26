@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet,RefreshControl } from "react-native";
-
+import dayjs from "dayjs";
 import Card from "../../components/Card";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
@@ -56,13 +56,15 @@ function ListingsScreen({ navigation }) {
         renderItem={({ item }) => (
           <Card
             title={item.title}
-            subTitle={"$" + item.price}
-            imageUrl={item.images.url}
+            subTitle={ item.price}
+            imageUrl={item.imageUrl}
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
-            thumbnailUrl={item.images.thumbnailUrl}
-            ownerName={item.userId}
-            createdAt={item.createdAt}
-          />
+            thumbnailUrl={item.thumbnailUrl}
+            ownerName={item.ownerName}
+            status={item.status}
+            coordinates={{ latitude: item.latitude, longitude: item.longitude }}
+            createdAt={dayjs(item.createdAt).format('MMMM D, YYYY h:s')} // Format the createdAt date
+                />
           
         )}
 
