@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, TouchableWithoutFeedback } from "react-native";
 import { Image } from "expo-image";
 import Text from "./Text";
 import colors from "../config/colors";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
+import { getLocationName } from "../utility/geocode"; // Import the geocoding function
 
 function Card({
   title,
@@ -16,6 +17,23 @@ function Card({
   status,
   coordinates,
 }) {
+
+
+  const [locationName, setLocationName] = useState("Loading...");
+
+  useEffect(() => {
+    if (coordinates) {
+      // Fetch the location name when coordinates are provided
+      getLocationName(coordinates.latitude, coordinates.longitude).then((name) => {
+        if (name) {
+          setLocationName(name);
+        } else {
+          setLocationName("Unknown Location");
+        }
+      });
+    }
+  }, [coordinates]);
+
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.card}>
@@ -37,12 +55,12 @@ function Card({
         {/* Details Container */}
         <View style={styles.detailsContainer}>
 
-              {/* Location */}
-              {coordinates && (
+          {/* Location */}
+          {coordinates && (
               <View style={styles.infoRow}>
                 <Ionicons name="location" size={16} color="#333" />
-                <Text style={styles.location} numberOfLines={1}>
-                  {coordinates.latitude}, {coordinates.longitude}
+                <Text style={styles.location} numberOfLines={2}>
+                  {locationName}
                 </Text>
               </View>
             )}
