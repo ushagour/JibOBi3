@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,7 +8,9 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
-  Dimensions 
+  Dimensions,
+  Button
+
 } from "react-native";
 import { ListItem } from "../../components/lists";
 
@@ -19,6 +21,8 @@ import { Image } from "expo-image";
 import routes from "../../navigation/routes";
 import Swiper from 'react-native-swiper';
 import ImageSlider from "../../components/lists/ImageSlider";
+import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
+import { Linking } from "react-native"; // Import the Linking API
 
 /*
 tips 
@@ -31,6 +35,14 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
 
+
+  const openGpsNavigation = (latitude, longitude) => {
+    const url = Platform.select({
+      ios: `maps:0,0?q=${latitude},${longitude}`,
+      android: `geo:0,0?q=${latitude},${longitude}`
+    });
+    Linking.openURL(url).catch(err => console.error("Error opening GPS navigation app:", err));
+  };
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -62,6 +74,10 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.price}>${listing.price}</Text>
             <Text style={styles.description}>{listing.description}</Text>
 
+            <Button
+              title="Navigate to Location"
+              onPress={() => openGpsNavigation(listing.latitude,listing.longitude)}
+            />
             <ContactSellerForm listing={listing} />
           </View>
         </ScrollView>
@@ -100,6 +116,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 30,
     fontWeight: 'bold',
+  },  location: {
+    fontSize: 16,
+    color: colors.medium,
+    marginVertical: 10,
   },
 });
 

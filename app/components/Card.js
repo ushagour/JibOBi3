@@ -23,10 +23,11 @@ function Card({
 
   useEffect(() => {
     if (coordinates) {
-      // Fetch the location name when coordinates are provided
-      getLocationName(coordinates.latitude, coordinates.longitude).then((name) => {
-        if (name) {
-          setLocationName(name);
+      // Fetch the location object(data) 
+      // containes the address details{in the card componnets we need just resiedential} from the coordinates 
+      getLocationName(coordinates.latitude, coordinates.longitude).then((data) => {
+        if (data.residential) {
+          setLocationName(data.residential);
         } else {
           setLocationName("Unknown Location");
         }

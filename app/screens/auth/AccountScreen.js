@@ -29,7 +29,7 @@ const menuItems = [
 ];
 
 function AccountScreen({ navigation }) {
-  const { user, logOut } = useAuth();
+  const { user, logOut } = useAuth();  
 
   return (
     <Screen style={styles.screen}>
@@ -38,7 +38,6 @@ function AccountScreen({ navigation }) {
           title={user.name}
           subTitle={user.email}
           image={{uri:user.avatar}}
-          // image={require("../../assets/user.png")}
           onPress={() => navigation.navigate(routes.USER_EDIT)}
         />
       </View>

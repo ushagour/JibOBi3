@@ -50,7 +50,7 @@ function RegisterScreen() {
         return;
       }
   
-      // Destructure the expected data fields
+      // Destructure the expected data fields //todo refactor this to use the auth context
       
       const { token, user } = response.data;
     
@@ -59,7 +59,7 @@ function RegisterScreen() {
         console.log("User registered and signed in successfully.");
       } else {
         setError("Invalid user data received.");
-        console.log("Error: Missing token or user data.");
+        console.error("token Error:", error);
       }
     } catch (error) {
       setError("An error occurred during registration.");

@@ -8,11 +8,16 @@ export const getLocationName = async (latitude, longitude) => {
     try {
       const response = await fetch(url, { headers });
       const data = await response.json();
-      console.log(data.display_name);
-            
+      console.log(data.address.residential);
+     
       if (data.display_name) {
-        return data.display_name; // Full address (e.g., "San Francisco, CA, USA")
-      } else {
+        return {
+          displayName: data.address.display_name,
+          city: data.address.city,
+          residential:   data.address.residential,
+          country: data.address.country,
+        }; // Return an object with multiple data fields
+      }else {
         console.error("Geocoding failed:", data.error);
         return null;
       }
