@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
@@ -9,10 +9,9 @@ import {
   Keyboard,
   TouchableOpacity,
   Dimensions,
-  Button
+  
 
 } from "react-native";
-import { ListItem } from "../../components/lists";
 
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
@@ -21,8 +20,8 @@ import { Image } from "expo-image";
 import routes from "../../navigation/routes";
 import Swiper from 'react-native-swiper';
 import ImageSlider from "../../components/lists/ImageSlider";
-import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
 import { Linking } from "react-native"; // Import the Linking API
+import  AppButton  from "../../components/Button";
 
 /*
 tips 
@@ -71,14 +70,16 @@ function ListingDetailsScreen({ route, navigation }) {
 
           <View style={styles.detailsContainer}>
             <Text style={styles.title}>{listing.title}</Text>
-            <Text style={styles.price}>${listing.price}</Text>
+            <Text style={styles.price}>{listing.price}</Text>
             <Text style={styles.description}>{listing.description}</Text>
 
-            <Button
+           
+            <ContactSellerForm listing={listing} />
+            <AppButton
               title="Navigate to Location"
               onPress={() => openGpsNavigation(listing.latitude,listing.longitude)}
+              color="secondary"
             />
-            <ContactSellerForm listing={listing} />
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>

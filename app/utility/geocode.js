@@ -1,6 +1,8 @@
 export const getLocationName = async (latitude, longitude) => {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
   
+    console.log("Fetching location name from:", url);
+    
     const headers = {
       "User-Agent": "jibobi3/1.0 (ali.ouchagour01@gmail.com)", // Add a user agent
     };
@@ -8,7 +10,7 @@ export const getLocationName = async (latitude, longitude) => {
     try {
       const response = await fetch(url, { headers });
       const data = await response.json();
-      console.log(data.address.residential);
+      // console.log(data.address.residential);
      
       if (data.display_name) {
         return {

@@ -26,8 +26,8 @@ function Card({
       // Fetch the location object(data) 
       // containes the address details{in the card componnets we need just resiedential} from the coordinates 
       getLocationName(coordinates.latitude, coordinates.longitude).then((data) => {
-        if (data.residential) {
-          setLocationName(data.residential);
+        if (data.city) {
+          setLocationName(data.city);
         } else {
           setLocationName("Unknown Location");
         }
