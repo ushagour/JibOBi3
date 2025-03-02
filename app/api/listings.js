@@ -6,7 +6,7 @@ const getListings = () => client.get(endpoint);
 
 
 
-const getMyListings = () => client.get("/my_Listings"); // Adjust the endpoint if necessary
+const getMyListings = (userId) => client.get(`/my_listings?userId=${userId}`);
 
 /**
  * Sends a POST request to the server to add a new listing.

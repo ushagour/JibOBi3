@@ -5,8 +5,10 @@ import Screen from "../../components/Screen";
 import { ListItem, ListItemDeleteAction, ListItemSeparator,ListItemEditAction } from "../../components/lists";
 import listingsApi from "../../api/listings";
 import routes from "../../navigation/routes";
+import useAuth from "../../auth/useAuth"; // Import the useAuth hook
 
 function MyListingsScreen({ navigation }) {
+  const { user } = useAuth(); // Get the user from the auth context
   const [listings, setListings] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ function MyListingsScreen({ navigation }) {
   const loadListings = async () => {
     try {
       setLoading(true);
-      const response = await listingsApi.getMyListings();
+      const response = await listingsApi.getMyListings(user.userId); // Pass the user ID
       
       if (response.ok) {
         setListings(response.data);
@@ -83,7 +85,7 @@ function MyListingsScreen({ navigation }) {
         renderItem={({ item }) => (
           <ListItem
             title={item.title}
-            image={{ uri: item.images.url }}
+            image={{ uri: item.imageUrl }}
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
             renderRightActions={() => (
               <View style={styles.actionsContainer}>

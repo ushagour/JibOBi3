@@ -3,18 +3,20 @@ import { View, StyleSheet, TouchableOpacity } from "react-native";
 
 import Icon from "./Icon";
 import Text from "./Text";
-
+import getRandomColor from "../utility/RandomColor";// defrence between import and export
 function CategoryPickerItem({ item, onPress }) {
+const Rcolor = getRandomColor();
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onPress}>
         <Icon
-          backgroundColor={item.backgroundColor}
+          backgroundColor={Rcolor}
           name={item.icon}
           size={80}
         />
       </TouchableOpacity>
-      <Text style={styles.label}>{item.label}</Text>
+      <Text style={styles.label}>{item.name}</Text>
     </View>
   );
 }
@@ -27,6 +29,7 @@ const styles = StyleSheet.create({
     width: "33%",
   },
   label: {
+    fontSize: 13,
     marginTop: 5,
     textAlign: "center",
   },
