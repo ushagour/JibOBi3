@@ -37,25 +37,27 @@ function MyListingsScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const handleDelete = (listing) => {
     Alert.alert(
       "Delete Confirmation",
-      "Are you sure you want to delete this listing?",
+      `Are you sure you want to delete this ${listing.title}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           onPress: async () => {
-            const response = await listingsApi.deleteListing(listing);
-            // console.log("response", response);
-            
-            if (response.ok) {
+            try {
+              console.log(`Attempting to delete listing with ID: ${listing.id}`);
+              const response = await listingsApi.deleteListing(listing.id);
+              if (!response.ok) {
+                console.error("Failed to delete listing:", response);
+                return Alert.alert("Error", "Failed to delete listing.");
+              }
               setListings(listings.filter((item) => item.id !== listing.id));
               Alert.alert("Success", "Listing deleted successfully.");
-            } else {
+            } catch (error) {
               Alert.alert("Error", "Failed to delete listing.");
-              // console.error("Failed to delete listing:", response.problem);
+              console.error("Failed to delete listing:", error);
             }
           },
           style: "destructive",
@@ -86,7 +88,7 @@ function MyListingsScreen({ navigation }) {
           <ListItem
             title={item.title}
             image={{ uri: item.imageUrl }}
-            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
+            onPress={() => navigation.navigate(routes.LISTING_DETAILS, {id:item.listing})}
             renderRightActions={() => (
               <View style={styles.actionsContainer}>
               <ListItemDeleteAction onPress={() => handleDelete(item)} />

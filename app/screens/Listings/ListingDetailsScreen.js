@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,10 +9,7 @@ import {
   Keyboard,
   TouchableOpacity,
   Dimensions,
-  
-
 } from "react-native";
-
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
 import Text from "../../components/Text";
@@ -21,19 +18,42 @@ import routes from "../../navigation/routes";
 import Swiper from 'react-native-swiper';
 import ImageSlider from "../../components/lists/ImageSlider";
 import { Linking } from "react-native"; // Import the Linking API
-import  AppButton  from "../../components/Button";
+import AppButton from "../../components/Button";
+import listingsApi from "../../api/listings"; // Import the API client
 
-/*
-tips 
-ScrollView: Enables scrolling when the content is taller than the screen.
-KeyboardAvoidingView: Prevents the keyboard from overlapping the form.
-TouchableWithoutFeedback: Dismisses the keyboard when tapping outside the input fields.
-*/
 function ListingDetailsScreen({ route, navigation }) {
-  const listing = route.params;
+  const id = route.params;
+  const [listing, setListing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
+  useEffect(() => {
+    const fetchListing = async () => {
+      try {
+        const response = await listingsApi.getDetailListing(id);
+        
+        if (response.ok) {
+          setListing(response.data);
+          setError(false);
 
+        } 
+      } catch (error) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchListing();
+  }, [id]);
+
+  if (loading) {
+    return <Text>Loading...</Text>;
+  }
+
+  if (error) {
+    return <Text>Error loading listing.{error}</Text>;
+  }
 
   const openGpsNavigation = (latitude, longitude) => {
     const url = Platform.select({
@@ -42,30 +62,30 @@ function ListingDetailsScreen({ route, navigation }) {
     });
     Linking.openURL(url).catch(err => console.error("Error opening GPS navigation app:", err));
   };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView  contentContainerStyle={styles.contentContainer}>
+        <ScrollView contentContainerStyle={styles.contentContainer}>
           <TouchableOpacity
-           delayLongPress={500}
-           onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.imageUrl })}
+            delayLongPress={500}
+            onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.imageUrl })}
           >
             {
-            listing.images.length > 1 ? (
-              <ImageSlider images={listing.images}  style={styles.image}/>
-            ) : (
-              <Image
-                style={styles.image}
-                preview={{ uri: listing.images.thumbnailUrl }}
-                tint="light"
-                source={listing.images.url}
-              />
-            )
+              listing.images.length > 1 ? (
+                <ImageSlider images={listing.images} style={styles.image} />
+              ) : (
+                <Image
+                  style={styles.image}
+                  preview={{ uri: listing.images.thumbnailUrl }}
+                  tint="light"
+                  source={listing.images.url}
+                />
+              )
             }
-     
           </TouchableOpacity>
 
           <View style={styles.detailsContainer}>
@@ -73,11 +93,10 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.price}>{listing.price}</Text>
             <Text style={styles.description}>{listing.description}</Text>
 
-           
             <ContactSellerForm listing={listing} />
             <AppButton
               title="Navigate to Location"
-              onPress={() => openGpsNavigation(listing.latitude,listing.longitude)}
+              onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}
               color="secondary"
             />
           </View>
@@ -117,7 +136,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 30,
     fontWeight: 'bold',
-  },  location: {
+  },
+  location: {
     fontSize: 16,
     color: colors.medium,
     marginVertical: 10,

@@ -2,11 +2,11 @@ import client from "./client";
 const endpoint = "/listings";
 
 const getListings = () => client.get(endpoint);
+const getDetailListing = (id) => client.get(`${endpoint}/detail/${id}`);
+
+const getMyListings = (userId) => client.get(`${endpoint}/my_listings?userId=${userId}`);
 
 
-
-
-const getMyListings = (userId) => client.get(`/my_listings?userId=${userId}`);
 
 /**
  * Sends a POST request to the server to add a new listing.
@@ -76,11 +76,10 @@ if (listing.location) {
   }
   
 
-  export const deleteListing = (listing) => {
-    const itemId = listing.id;
-    console.log(itemId);
+  export const deleteListing = (id) => {
+    console.log(`Sending DELETE request to ${endpoint}/${id}`);
 
-    return  client.delete(`/my_Listings/${itemId}`);
+    return client.delete(`${endpoint}/${id}`);
   };
   
   export const updateListing = (id, listing, onUploadProgress) => {
@@ -120,6 +119,7 @@ if (listing.location) {
   };
 export default {
   addListing,
+  getDetailListing,
   getListings,
   getMyListings,
   deleteListing,
