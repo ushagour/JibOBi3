@@ -23,25 +23,25 @@ function MyNotificationScreen({ navigation }) {
     loadMessages();
  
 
-  }, [messages]);
+  }, []);
 
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const response = await MyNotificationApi.get_my_Notifications();
+      const response = await MyNotificationApi.getAll();
+      
       
       if (response.ok) {
         setMessages(response.data);
-        // console.log("Messages:", response.data);
         
         setError(false);
       } else {
         setError(true);
-        // console.error("Failed to fetch messages:", response.problem);
+        console.error("Failed to fetch messages:", response.problem);
       }
     } catch (error) {
       setError(true);
-      // console.error("Error during request:", error);
+      console.error("Error during request:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -58,7 +58,6 @@ function MyNotificationScreen({ navigation }) {
           text: "Delete",
           onPress: async () => {
             const response = await MyNotificationApi.delete_notification(message);
-            console.log("response", response);
             
             if (response.ok) {
               setMessages(messages.filter((item) => item.id !== message.id));
@@ -83,24 +82,23 @@ function MyNotificationScreen({ navigation }) {
           <Text style={{ color: colors.primary }}> Something went wrong, please try again.</Text>
         </View>
       )}
-            {messages.length === 0 &&  (
-        <View style={{ alignItems: "center", padding: 10 }}>
-          <Text style={{ color: "red" }}>There is no messages for you for the moment.</Text>
-        </View>
-      )}
-
+        
+           {messages.length === 0 && !loading && (
+             <View style={{ alignItems: "center", padding: 10 }}>
+               <Text style={{ color: "red" }}>You have no notifications at the moment</Text>
+             </View>
+           )}
       <FlatList
         data={messages}
         keyExtractor={(message) => message.id.toString()}
         renderItem={({ item }) => (
           <ListItem
-              title={`From: ${item.fromUser.name}`} // Display sender ID
+              title={`From: ${item.fromUser}`} // Display sender ID
         
 
               subTitle={item.content} // Display message content
-              image={{uri: item.fromUser.avatar}}
-              //  onPress={() => navigation.navigate(routes.LISTING_DETAILS })}//todo : navigate to message details
-
+              image={{uri: item.avatar}}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.listing_id)}
             renderRightActions={() => (
               <ListItemDeleteAction onPress={() => handleDelete(item)} />
             )}

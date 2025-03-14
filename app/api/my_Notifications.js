@@ -4,7 +4,29 @@ import storage from "../auth/storage";
 const endpoint = "/my_Notifications";
 
 
-const get_my_Notifications = () => client.get(endpoint);
+
+
+const getAll = async () => {
+  const token = await storage.getToken();
+  
+  if (!token) return [];
+
+  const response = await client.get(endpoint,
+    {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-auth-token': token
+    }
+  });
+
+  
+  return response;
+};
+
+
+
+
+
 const send = async (message, listingId) => {
   try {
     const token = await storage.getToken(); // Retrieve token from AsyncStorage
@@ -50,6 +72,6 @@ export const delete_notification = (message) => {
 
 export default {
   send,
-  get_my_Notifications,
+  getAll,
   delete_notification,
 };
