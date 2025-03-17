@@ -60,7 +60,7 @@ function ListingAddScreen({ navigation }) {
  
     try {
       const response = await listingsAPI.addListing(
-        { ...listing, location, userID: user.userId },
+        { ...listing, location, user_id: user.userId },
         (progress) => setProgress(progress)
       );
 

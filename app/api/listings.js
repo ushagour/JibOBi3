@@ -34,13 +34,12 @@ export const addListing = (listing,onUploadProgress) => {
 // */
   
 
-console.log("listing", listing);
 
   const data = new FormData();
   data.append("title", listing.title);
-  data.append("userId", listing.userID);
+  data.append("user_id", listing.user_id);
   data.append("price", listing.price);
-  data.append("categoryId", listing.category.id);
+  data.append("category_id", listing.category.id);
   data.append("description", listing.description);
 
   listing.images.forEach((image, index) => {
@@ -86,9 +85,9 @@ if (listing.location) {
   
     const data = new FormData();
     data.append("title", listing.title);
-    data.append("userId", listing.userID);
+    data.append("user_id", listing.userID);
     data.append("price", listing.price);
-    data.append("categoryId", listing.category.id);
+    data.append("category_id", listing.category.id);
     data.append("description", listing.description);
   
     listing.images.forEach((image, index) => {

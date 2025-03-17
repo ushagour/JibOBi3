@@ -30,6 +30,7 @@ function ListingDetailsScreen({ route, navigation }) {
   useEffect(() => {
     const fetchListing = async () => {
       try {
+        // console.log("Fetching listing with ID:", id);      
         const response = await listingsApi.getDetailListing(id);
         
         if (response.ok) {

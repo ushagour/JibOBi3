@@ -88,7 +88,7 @@ function MyListingsScreen({ navigation }) {
           <ListItem
             title={item.title}
             image={{ uri: item.imageUrl }}
-            onPress={() => navigation.navigate(routes.LISTING_DETAILS, {id:item.listing})}
+            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
             renderRightActions={() => (
               <View style={styles.actionsContainer}>
               <ListItemDeleteAction onPress={() => handleDelete(item)} />
