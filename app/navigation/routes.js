@@ -5,7 +5,7 @@ export default Object.freeze({
   LISTING_ADD: "ListingAdd",
   USER_EDIT: "UserEdit",
   LOGIN: "Login",
-  MY_NOTIFICATIONS: "My_Notifications",
+  MESSAGES: "Messages",
   REGISTER: "Register",
   MyListings: "MyListings",
   ACCOUNT: "Account",

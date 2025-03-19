@@ -19,12 +19,12 @@ const menuItems = [
 
   },
   {
-    title: "Notifications",
+    title: "My Messages",
     icon: {
       name: "email",
       backgroundColor: colors.secondary,
     },
-    targetScreen: routes.MY_NOTIFICATIONS,
+    targetScreen: routes.MESSAGES,
   },
 ];
 

@@ -20,14 +20,18 @@ import ImageSlider from "../../components/lists/ImageSlider";
 import { Linking } from "react-native"; // Import the Linking API
 import AppButton from "../../components/Button";
 import listingsApi from "../../api/listings"; // Import the API client
-
+import useAuth from "../../auth/useAuth";
 function ListingDetailsScreen({ route, navigation }) {
   const id = route.params;
+    const { user } = useAuth();
+  
+
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+      
     const fetchListing = async () => {
       try {
         // console.log("Fetching listing with ID:", id);      
@@ -94,7 +98,9 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.price}>{listing.price}</Text>
             <Text style={styles.description}>{listing.description}</Text>
 
-            <ContactSellerForm listing={listing} />
+
+            {user.userId !== listing.user_id ? (<ContactSellerForm listing={listing} />) : null}
+
             <AppButton
               title="Navigate to Location"
               onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}

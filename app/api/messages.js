@@ -1,7 +1,7 @@
 import client from "./client";
 import storage from "../auth/storage";
 
-const endpoint = "/my_Notifications";
+const endpoint = "/messages";
 
 
 
@@ -27,8 +27,10 @@ const getAll = async () => {
 
 
 
-const send = async (message, listingId) => {
+const send = async (content, listing_id) => {
   try {
+
+    
     const token = await storage.getToken(); // Retrieve token from AsyncStorage
 
     
@@ -41,8 +43,8 @@ const send = async (message, listingId) => {
     const response = await client.post(
       endpoint,
       {
-        message,
-        listingId,
+        content:content,
+        id: listing_id,
       },
       {
         headers: {

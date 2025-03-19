@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { TouchableOpacity } from "react-native";
 
 import AccountScreen from "../screens/auth/AccountScreen";
-import MyNotificationScreen from "../screens/auth/MyNotificationScreen";
+import MessagesScreen from "../screens/auth/MessagesScreen";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
 import UserScreen from "../screens/auth/UserScreen";
@@ -37,7 +37,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
-    <Stack.Screen name="My_Notifications" component={MyNotificationScreen} />
+    <Stack.Screen name="Messages" component={MessagesScreen} />
   </Stack.Navigator>
 );
 

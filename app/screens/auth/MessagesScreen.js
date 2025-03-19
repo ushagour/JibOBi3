@@ -8,12 +8,12 @@ import {
   ListItemSeparator,
 } from "../../components/lists";
 import colors from "../../config/colors";
-import MyNotificationApi from "../../api/my_Notifications";
+import MyNotificationApi from "../../api/messages";
 import userApi from "../../api/users";
 import routes from "../../navigation/routes";
 
 
-function MyNotificationScreen({ navigation }) {
+function MessagesScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -117,4 +117,4 @@ function MyNotificationScreen({ navigation }) {
 
 const styles = StyleSheet.create({});
 
-export default MyNotificationScreen;
+export default MessagesScreen;

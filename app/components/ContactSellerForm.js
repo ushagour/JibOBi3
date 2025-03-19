@@ -4,15 +4,15 @@ import * as Notifications from 'expo-notifications';
 import * as Yup from "yup";
 
 import { Form, FormField, SubmitButton } from "./forms";
-import messagesApi from "../api/my_Notifications";
+import messagesApi from "../api/messages";
 
 function ContactSellerForm({ listing }) {
-  const handleSubmit = async ({ message }, { resetForm }) => {
+  const handleSubmit = async ({ content }, { resetForm }) => {
 
 
     Keyboard.dismiss();
 
-    const result = await messagesApi.send(message, listing.id)
+    const result = await messagesApi.send(content, listing.id)
     
 
 
@@ -41,14 +41,14 @@ function ContactSellerForm({ listing }) {
 
   return (
     <Form
-      initialValues={{ message: "" }}
+      initialValues={{ content: "" }}
       onSubmit={handleSubmit}
       validationSchema={validationSchema}
     >
       <FormField
         maxLength={255}
         multiline
-        name="message"
+        name="content"
         numberOfLines={3}
         placeholder="Message..."
       />
@@ -58,7 +58,7 @@ function ContactSellerForm({ listing }) {
 }
 
 const validationSchema = Yup.object().shape({
-  message: Yup.string().required().min(1).label("Message"),
+  content: Yup.string().required().min(1).label("content"),
 });
 
 export default ContactSellerForm;
