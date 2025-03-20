@@ -21,6 +21,9 @@ import { Linking } from "react-native"; // Import the Linking API
 import AppButton from "../../components/Button";
 import listingsApi from "../../api/listings"; // Import the API client
 import useAuth from "../../auth/useAuth";
+import ActivityIndicator from "../../components/ActivityIndicator";
+import MessageBox from "../../components/MessageBox";
+
 function ListingDetailsScreen({ route, navigation }) {
   const id = route.params;
     const { user } = useAuth();
@@ -53,11 +56,11 @@ function ListingDetailsScreen({ route, navigation }) {
   }, [id]);
 
   if (loading) {
-    return <Text>Loading...</Text>;
+    return <ActivityIndicator visible={loading} />;
   }
 
   if (error) {
-    return <Text>Error loading listing.{error}</Text>;
+    return <MessageBox message={`Couldn't retrieve the listings ${error}`}  type="success" onPress={() => navigation.goBack()}/>
   }
 
   const openGpsNavigation = (latitude, longitude) => {
