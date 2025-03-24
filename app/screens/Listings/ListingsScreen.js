@@ -60,7 +60,7 @@ function ListingsScreen({ navigation }) {
             imageUrl={item.imageUrl}
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
             thumbnailUrl={item.thumbnailUrl}
-            ownerName={item.ownerName}
+            // ownerName={item.owner.name}
             status={item.status}
             coordinates={{ latitude: item.latitude, longitude: item.longitude }}
             createdAt={dayjs(item.createdAt).format('MMMM D, YYYY h:s')} // Format the createdAt date

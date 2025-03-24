@@ -13,9 +13,7 @@ import {
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
 import Text from "../../components/Text";
-import { Image } from "expo-image";
 import routes from "../../navigation/routes";
-import Swiper from 'react-native-swiper';
 import ImageSlider from "../../components/lists/ImageSlider";
 import { Linking } from "react-native"; // Import the Linking API
 import AppButton from "../../components/Button";
@@ -23,6 +21,8 @@ import listingsApi from "../../api/listings"; // Import the API client
 import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import MessageBox from "../../components/MessageBox";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
+
 
 function ListingDetailsScreen({ route, navigation }) {
   const id = route.params;
@@ -41,7 +41,9 @@ function ListingDetailsScreen({ route, navigation }) {
         const response = await listingsApi.getDetailListing(id);
         
         if (response.ok) {
+          console.log("Listing Details:", response.data);
           setListing(response.data);
+          
           setError(false);
 
         } 
@@ -91,9 +93,14 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.title}>{listing.title}</Text>
             <Text style={styles.price}>{listing.price}</Text>
             <Text style={styles.description}>{listing.description}</Text>
+          <View style={styles.ownerContainer} > 
+             <Ionicons name="person" size={16} color={colors.primary} />
+                      <Text style={styles.owner} numberOfLines={1}>
+                        {listing.owner.name} 
+                      </Text>
+                    </View>
 
-
-            {user.userId !== listing.user_id ? (<ContactSellerForm listing={listing} />) : null}
+            {user.userId !== listing.owner.id ? (<ContactSellerForm listing={listing} />) : null}
 
             <AppButton
               title="Navigate to Location"
@@ -143,6 +150,16 @@ const styles = StyleSheet.create({
     color: colors.medium,
     marginVertical: 10,
   },
+  ownerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 10,
+    },
+    owner: {
+      fontSize: 15,
+      color: colors.primary,
+      marginLeft: 5,
+    },
 });
 
 export default ListingDetailsScreen;

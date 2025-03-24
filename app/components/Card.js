@@ -75,12 +75,12 @@ function Card({
           {/* Extra Information */}
           <View style={styles.extraInfo}>
             {/* Owner */}
-            <View style={styles.infoRow}>
+            {/* <View style={styles.infoRow}>
               <Ionicons name="person" size={16} color={colors.primary} />
               <Text style={styles.owner} numberOfLines={1}>
                 {ownerName || "Unknown"}
               </Text>
-            </View>
+            </View> */}
 
           
 

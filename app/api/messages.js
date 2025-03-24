@@ -65,15 +65,16 @@ const send = async (content, listing_id) => {
     console.error("Error sending message:", error);
   }
 };
-export const delete_notification = (message) => {
-  const itemId = message.id;
-  // console.log(itemId);
+export const deleteMessage = (id) => {
 
-  return  client.delete(`/${endpoint}/${itemId}`);
+  // console.log(`Sending DELETE request to ${endpoint}/${id}`);
+  
+  
+  return  client.delete(`${endpoint}/${id}`);//remove the / from the endpoint
 };
 
 export default {
   send,
   getAll,
-  delete_notification,
+  deleteMessage,
 };

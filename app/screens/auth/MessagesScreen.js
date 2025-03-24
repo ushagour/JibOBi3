@@ -8,7 +8,7 @@ import {
   ListItemSeparator,
 } from "../../components/lists";
 import colors from "../../config/colors";
-import MyNotificationApi from "../../api/messages";
+import messagesApi from "../../api/messages";
 import userApi from "../../api/users";
 import routes from "../../navigation/routes";
 
@@ -28,7 +28,7 @@ function MessagesScreen({ navigation }) {
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const response = await MyNotificationApi.getAll();
+      const response = await messagesApi.getAll();
       
       
       if (response.ok) {
@@ -51,20 +51,21 @@ function MessagesScreen({ navigation }) {
   const handleDelete = (message) => {
     Alert.alert(
       "Delete Confirmation",
-      "Are you sure you want to delete this Notification?",
+      "Are you sure you want to delete this message :" + message.content,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           onPress: async () => {
-            const response = await MyNotificationApi.delete_notification(message);
-            
+
+            const response = await messagesApi.deleteMessage(message.id);
+          
             if (response.ok) {
               setMessages(messages.filter((item) => item.id !== message.id));
               Alert.alert("Success", "notification deleted successfully.");
             } else {
               Alert.alert("Error", "Failed to delete notification.");
-              // console.error("Failed to delete listing:", response.problem);
+              console.error("Failed to delete listing:", response.problem);
             }
           },
           style: "destructive",
@@ -94,11 +95,9 @@ function MessagesScreen({ navigation }) {
         renderItem={({ item }) => (
           <ListItem
               title={`From: ${item.fromUser}`} // Display sender ID
-        
-
               subTitle={item.content} // Display message content
               image={{uri: item.avatar}}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.listing_id)}
+              // onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.listing_id)}
             renderRightActions={() => (
               <ListItemDeleteAction onPress={() => handleDelete(item)} />
             )}
