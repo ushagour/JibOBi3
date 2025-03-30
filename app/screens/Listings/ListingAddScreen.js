@@ -27,6 +27,7 @@ import useLocation from "../../hooks/useLocation";
 import categoriesAPI from "../../api/categories";
 import listingsAPI from "../../api/listings";
 import useAuth from "../../auth/useAuth";
+import { object } from "joi";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
@@ -39,6 +40,7 @@ const validationSchema = Yup.object().shape({
 function ListingAddScreen({ navigation }) {
   const { location } = useLocation();
   const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [uploadVisible, setUploadVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const { user } = useAuth();
@@ -53,6 +55,10 @@ function ListingAddScreen({ navigation }) {
 
 
   }, []);
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category);
+  };
+
 
   const handleSubmit = async (listing, { resetForm }) => {
     setProgress(0);
@@ -98,7 +104,7 @@ function ListingAddScreen({ navigation }) {
           title: "",
           price: "",
           description: "",
-          category: null,
+          category: selectedCategory,
           images: [],
         }}
         onSubmit={handleSubmit}
@@ -113,14 +119,23 @@ function ListingAddScreen({ navigation }) {
           placeholder="Price"
           width={120}
         />
-        <Picker
+          <Picker
           items={categories}
           name="category"
           numberOfColumns={3}
           PickerItemComponent={CategoryPickerItem}
+          onSelectItem={handleSelectCategory}
           placeholder="Category"
           width="50%"
         />
+        {/* <Picker
+          items={object}
+          name="test"
+          numberOfColumns={3}
+          PickerItemComponent={CategoryPickerItem}
+          placeholder="test"
+          width="50%"
+        /> */}
         <FormField
           maxLength={255}
           multiline

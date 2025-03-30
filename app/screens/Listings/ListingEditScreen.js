@@ -16,7 +16,6 @@ import categoriesAPI from "../../api/categories";
 import listingsAPI from "../../api/listings";
 import CategoryPickerItem from "../../components/CategoryPickerItem";
 
-
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
   price: Yup.number().required().min(1).max(10000).label("Price"),
@@ -28,34 +27,38 @@ const validationSchema = Yup.object().shape({
 function ListingEditScreen({ route, navigation }) {
   const { listing } = route.params; // Pass listing data via route params
   const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null); // State for selected category
   const [progress, setProgress] = useState(0);
   const [uploadVisible, setUploadVisible] = useState(false);
 
   useEffect(() => {
     categoriesAPI
       .getCategories()
-      .then((response) => setCategories(response.data))
-      .catch(() => Alert.alert("Error", "Unable to fetch categories"));
+      .then((response) => {
+        setCategories(response.data);
 
-      
+        // Preselect the category based on the listing's category ID
+        const currentCategory = response.data.find((c) => c.id === listing.Category.id);
+        setSelectedCategory(currentCategory);
 
-
-
+        
+        
+      })
+      .catch(() => {
+        console.log("Error fetching categories");
+        Alert.alert("Error", "Unable to fetch categories");
+      });
   }, []);
 
   const handleSubmit = async (updatedListing, { resetForm }) => {
     setProgress(0);
     setUploadVisible(true);
     try {
-      console.log("Updated listing:", updatedListing);
-      console.log("Listing ID:", listing.id);
-      
-      
-      const response = await listingsAPI.updateListing(listing.id, updatedListing,  (progress) => setProgress(progress)
-    );
+      const response = await listingsAPI.updateListing(updatedListing, listing.id, (progress) =>
+        setProgress(progress)
+      );
 
       if (!response.ok) {
-        console.log("Error updating listing", response);
         Alert.alert("Error", response.data?.error || "Unable to update listing");
         return;
       }
@@ -65,17 +68,15 @@ function ListingEditScreen({ route, navigation }) {
       navigation.goBack();
     } catch (error) {
       console.log("Error updating listing:", error);
-      
       Alert.alert("Error", "An unexpected error occurred.");
-    }
-    finally {
+    } finally {
       setUploadVisible(false);
     }
   };
 
   return (
     <Screen style={styles.container}>
-         <UploadScreen
+      <UploadScreen
         visible={uploadVisible}
         progress={progress}
         onDone={() => setUploadVisible(false)}
@@ -85,7 +86,7 @@ function ListingEditScreen({ route, navigation }) {
           title: listing.title,
           price: listing.price.toString(),
           description: listing.description,
-          category: categories.find((c) => c.id === listing.categoryId) ,//It looks for the current category in categories using find(). If found, it preselects that category.
+          category: selectedCategory, // Dynamically computed selected category
           images: listing.images.map((image) => image.url), // Map image URLs
         }}
         onSubmit={handleSubmit}
@@ -102,12 +103,16 @@ function ListingEditScreen({ route, navigation }) {
         <Picker
           items={categories}
           name="category"
+          placeholder={
+            selectedCategory ? selectedCategory.name : "Category"
+          }
           numberOfColumns={3}
           PickerItemComponent={CategoryPickerItem}
           width="50%"
+        
+
         />
         <FormField
-          
           maxLength={255}
           multiline
           name="description"

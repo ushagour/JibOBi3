@@ -41,7 +41,6 @@ function ListingDetailsScreen({ route, navigation }) {
         const response = await listingsApi.getDetailListing(id);
         
         if (response.ok) {
-          console.log("Listing Details:", response.data);
           setListing(response.data);
           
           setError(false);
@@ -90,8 +89,9 @@ function ListingDetailsScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <View style={styles.detailsContainer}>
+          <Text style={styles.categories}>{listing.Category.name}</Text>
             <Text style={styles.title}>{listing.title}</Text>
-            <Text style={styles.price}>{listing.price}</Text>
+            <Text style={styles.price}>$ {listing.price}</Text>
             <Text style={styles.description}>{listing.description}</Text>
           <View style={styles.ownerContainer} > 
              <Ionicons name="person" size={16} color={colors.primary} />
@@ -99,12 +99,23 @@ function ListingDetailsScreen({ route, navigation }) {
                         {listing.owner.name} 
                       </Text>
                     </View>
+            <Text style={styles.location}>
+              <MaterialIcons name="location-on" size={16} color={colors.primary} /> {listing.location}
+            </Text>
+            <Text style={styles.state}>
+              <MaterialIcons name="check-circle" size={16} color={colors.success} /> {listing.status}
+            </Text>
 
             {user.userId !== listing.owner.id ? (<ContactSellerForm listing={listing} />) : null}
 
             <AppButton
               title="Navigate to Location"
               onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}
+              color="warning"
+            />
+            <AppButton
+              title="Edit"
+              onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
               color="secondary"
             />
           </View>
@@ -159,6 +170,11 @@ const styles = StyleSheet.create({
       fontSize: 15,
       color: colors.primary,
       marginLeft: 5,
+    },
+    categories: {
+      fontSize: 16,
+      color: colors.success,
+      marginVertical: 10,
     },
 });
 

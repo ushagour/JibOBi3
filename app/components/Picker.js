@@ -61,7 +61,7 @@ function AppPicker({
             renderItem={({ item }) => (
               <PickerItemComponent
                 item={item}
-                label={item.label}
+                label={item.name}
                 onPress={() => {
                   setModalVisible(false);
                   onSelectItem(item);

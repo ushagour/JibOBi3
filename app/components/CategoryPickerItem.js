@@ -4,13 +4,15 @@ import { View, StyleSheet, TouchableOpacity } from "react-native";
 import Icon from "./Icon";
 import Text from "./Text";
 import getRandomColor from "../utility/RandomColor";// defrence between import and export
-function CategoryPickerItem({ item, onPress }) {
+function CategoryPickerItem({ item  , onPress}) {
 const Rcolor = getRandomColor();
+
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onPress}>
-        <Icon
+      <TouchableOpacity
+       onPress={() => onPress(item)}>
+      <Icon
           backgroundColor={Rcolor}
           name={item.icon}
           size={80}

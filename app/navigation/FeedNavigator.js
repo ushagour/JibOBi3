@@ -2,6 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import ListingsScreen from "../screens/Listings/ListingsScreen";
 import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
+import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import { TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
@@ -27,6 +28,7 @@ const FeedNavigator = () => (
         </TouchableOpacity>
       ),
     })} />
+    <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>
 );

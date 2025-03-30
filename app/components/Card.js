@@ -69,7 +69,7 @@ function Card({
             {title}
           </Text>
           <Text style={styles.subTitle} numberOfLines={1}>
-            {subTitle}
+            ${subTitle}
           </Text>
 
           {/* Extra Information */}
