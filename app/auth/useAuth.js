@@ -41,6 +41,18 @@ export default useAuth = () => {
     setUser(null);
     authStorage.removeToken();
   };
+  const isLoggedIn = () => {
+    return !!user;
 
-  return { user, logIn,signUp,  logOut };
+
+  };
+
+  const isOwner = (owner) => {
+
+  
+    
+    return user?.userId === owner;
+  };
+
+  return { user, logIn,signUp,  logOut,isOwner, isLoggedIn };
 };

@@ -9,6 +9,7 @@ import {
   Keyboard,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from "react-native";
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
@@ -26,7 +27,9 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
 
 function ListingDetailsScreen({ route, navigation }) {
   const id = route.params;
-    const { user } = useAuth();
+    const { user,isOwner } = useAuth();
+
+
   
 
   const [listing, setListing] = useState(null);
@@ -42,10 +45,14 @@ function ListingDetailsScreen({ route, navigation }) {
         
         if (response.ok) {
           setListing(response.data);
+  // Check if the logged-in user is the owner of the listing
           
           setError(false);
 
         } 
+
+
+
       } catch (error) {
         setError(true);
       } finally {
@@ -64,6 +71,39 @@ function ListingDetailsScreen({ route, navigation }) {
     return <MessageBox message={`Couldn't retrieve the listings ${error}`}  type="success" onPress={() => navigation.goBack()}/>
   }
 
+
+   const handleDelete = (listing) => {
+      Alert.alert(
+        "Delete Confirmation",
+        `Are you sure you want to delete this ${listing.title}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            onPress: async () => {
+              try {
+                console.log(`Attempting to delete listing with ID: ${listing.id}`);
+                const response = await listingsApi.deleteListing(listing.id);
+                if (!response.ok) {
+                  console.error("Failed to delete listing:", response);
+                  return Alert.alert("Error", "Failed to delete listing.");
+                }
+                navigation.navigate(routes.LISTINGS);
+                Alert.alert("Success", "Listing deleted successfully.");
+              } catch (error) {
+                Alert.alert("Error", "Failed to delete listing.");
+                console.error("Failed to delete listing:", error);
+              }
+            },
+            style: "destructive",
+          },
+        ],
+        { cancelable: true }
+      );
+    };
+  
+
+    // Function to open GPS navigation app to make it as hook 
   const openGpsNavigation = (latitude, longitude) => {
     const url = Platform.select({
       ios: `maps:0,0?q=${latitude},${longitude}`,
@@ -111,13 +151,40 @@ function ListingDetailsScreen({ route, navigation }) {
             <AppButton
               title="Navigate to Location"
               onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}
-              color="warning"
+              color="black"
             />
+
+
+     
+            {isOwner(listing.owner.id) && (
+              <>
+              <AppButton
+                title="Delete"
+                onPress={() => handleDelete(listing)}
+                color="danger"
+              />
+
+                <AppButton
+                title="Edit"
+                onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
+                color="secondary"
+              />
+              </>
+            )
+              
+            }
+            {!isOwner(listing.owner.id) && (
+            
             <AppButton
-              title="Edit"
-              onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
-              color="secondary"
-            />
+            title="Report"
+            onPress={() => alert("Report", "This listing has been reported.")}
+            color="warning"
+          />
+                )
+            }
+
+
+
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>
