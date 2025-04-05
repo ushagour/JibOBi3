@@ -11,7 +11,7 @@ const Rcolor = getRandomColor();
   return (
     <View style={styles.container}>
       <TouchableOpacity
-       onPress={() => onPress(item)}>
+  onPress={() => onPress(item)}>
       <Icon
           backgroundColor={Rcolor}
           name={item.icon}

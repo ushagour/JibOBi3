@@ -39,7 +39,7 @@ function AppPicker({
             />
           )}
           {selectedItem ? (
-            <Text style={styles.text}>{selectedItem.label}</Text>
+            <Text style={styles.text}>{selectedItem}</Text>
           ) : (
             <Text style={styles.placeholder}>{placeholder}</Text>
           )}
@@ -61,9 +61,11 @@ function AppPicker({
             renderItem={({ item }) => (
               <PickerItemComponent
                 item={item}
-                label={item.name}
+                name={item.name}
                 onPress={() => {
                   setModalVisible(false);
+                  // console.log("1Selected Item:", item); // Debug log
+                  
                   onSelectItem(item);
                 }}
               />

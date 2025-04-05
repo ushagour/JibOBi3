@@ -81,17 +81,18 @@ if (listing.location) {
     return client.delete(`${endpoint}/${id}`);
   };
   
-  export const updateListing = (updatedListing,listing_id,onUploadProgress) => {
+  export const updateListing = (listing, listing_id, onUploadProgress) => {
+    // console.log("Updated Listing Object:", listing); // Log the updated listing object
   
-    
     const data = new FormData();
-    data.append("title", updatedListing.title);
-    data.append("user_id", updatedListing.user_id);
-    data.append("price", updatedListing.price);
-    data.append("category_id", updatedListing.category.id);
-    data.append("description", updatedListing.description);
+
   
-    updatedListing.images.forEach((image, index) => {
+    data.append("title", listing.title);
+    data.append("price", listing.price);
+    data.append("category_id", listing.category_id); // Add category_id
+    data.append("description", listing.description);
+  
+    listing.images.forEach((image, index) => {
       const imageObj = {
         name: `image${index}.png`,
         type: "image/png",
@@ -103,10 +104,13 @@ if (listing.location) {
       // console.log(`images ${index}:`, imageObj);
     });
   
-    if (updatedListing.location) {
-      data.append("location[latitude]", updatedListing.location.latitude);
-      data.append("location[longitude]", updatedListing.location.longitude);
+    if (listing.location) {
+      data.append("location[latitude]", listing.location.latitude);
+      data.append("location[longitude]", listing.location.longitude);
     }
+
+    console.log(data);
+    
 
   
     return client.put(`${endpoint}/${listing_id}`, data, {
