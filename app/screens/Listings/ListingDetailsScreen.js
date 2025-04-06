@@ -156,9 +156,17 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.location}>
               <MaterialIcons name="location-on" size={16} color={colors.dark} /> {locationName}
             </Text>
-            <Text style={styles.state}>
-              <MaterialIcons name="check-circle" size={16} color={colors.success} /> {listing.status}
-            </Text>
+        
+
+            {/* <Text style={styles.state}>
+            {listing.status}
+            
+            {listing.state && listing.state !== "Sold Out" ? (
+                <MaterialIcons name="check-circle" size={16} color={colors.success} />
+              ) : (
+                <MaterialIcons name="close" size={20} color={colors.danger} />
+              ) }
+            </Text> */}
 
             {user.userId !== listing.owner.id ? (<ContactSellerForm listing={listing} />) : null}
 
@@ -261,11 +269,7 @@ const styles = StyleSheet.create({
       color: colors.success,
       marginVertical: 10,
     },
-    state: {
-      fontSize: 16,
-      color: colors.success,
-      marginVertical: 10,
-    },
+
 });
 
 export default ListingDetailsScreen;

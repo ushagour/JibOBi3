@@ -31,34 +31,29 @@ import { object } from "joi";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
-  price: Yup.number().required().min(1).max(10000).label("Price"),
+  price: Yup.number().required().min(1).max(100000).label("Price"),
   description: Yup.string().label("Description"),
-  category: Yup.object().required().nullable().label("Category"),
+  category: Yup.number().required().nullable().label("Category"),
   images: Yup.array().min(1, "Please select at least one image."),
 });
 
 function ListingAddScreen({ navigation }) {
   const { location } = useLocation();
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState();
   const [uploadVisible, setUploadVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const { user } = useAuth();
 
   useEffect(() => {
-
-
     categoriesAPI
       .getCategories()
-      .then((response) => setCategories(response.data))
+      .then((response) => {
+        // console.log("Categories fetched:", response.data); // Debug log
+        setCategories(response.data);
+      })
       .catch(() => Alert.alert("Error", "Unable to fetch categories"));
-
-
   }, []);
-  const handleSelectCategory = (category) => {
-    setSelectedCategory(category);
-  };
-
 
   const handleSubmit = async (listing, { resetForm }) => {
     setProgress(0);
@@ -104,7 +99,7 @@ function ListingAddScreen({ navigation }) {
           title: "",
           price: "",
           description: "",
-          category: selectedCategory,
+          category: null,
           images: [],
         }}
         onSubmit={handleSubmit}
@@ -119,23 +114,15 @@ function ListingAddScreen({ navigation }) {
           placeholder="Price"
           width={120}
         />
-          <Picker
+      <Picker
           items={categories}
           name="category"
           numberOfColumns={3}
           PickerItemComponent={CategoryPickerItem}
-          onSelectItem={handleSelectCategory}
           placeholder="Category"
           width="50%"
+
         />
-        {/* <Picker
-          items={object}
-          name="test"
-          numberOfColumns={3}
-          PickerItemComponent={CategoryPickerItem}
-          placeholder="test"
-          width="50%"
-        /> */}
         <FormField
           maxLength={255}
           multiline
