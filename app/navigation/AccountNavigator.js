@@ -6,6 +6,7 @@ import { TouchableOpacity } from "react-native";
 import AccountScreen from "../screens/auth/AccountScreen";
 import MessagesScreen from "../screens/auth/MessagesScreen";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
+import ListingsScreen from "../screens/Listings/ListingsScreen";
 import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
 import UserScreen from "../screens/auth/UserScreen";
 import ListingEditScreen from "../screens/Listings/ListingEditScreen";
@@ -34,6 +35,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="Account" component={AccountScreen} />
     <Stack.Screen name="UserEdit" component={UserScreen} />
     <Stack.Screen name="MyListings" component={MyListingsScreen} />
+    <Stack.Screen name="Listings" component={ListingsScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />

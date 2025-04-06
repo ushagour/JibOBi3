@@ -23,6 +23,7 @@ import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import MessageBox from "../../components/MessageBox";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
+import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
 
 
 function ListingDetailsScreen({ route, navigation }) {
@@ -35,6 +36,8 @@ function ListingDetailsScreen({ route, navigation }) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+ const [locationName, setLocationName] = useState("Loading...");
+
 
   useEffect(() => {
       
@@ -45,7 +48,12 @@ function ListingDetailsScreen({ route, navigation }) {
         
         if (response.ok) {
           setListing(response.data);
-  // Check if the logged-in user is the owner of the listing
+          // const { latitude, longitude } = response.data;
+          
+          
+          const { latitude, longitude } = response.data;//first extract {coordiates } from the response 
+          const location = await getLocationName(latitude, longitude); //then send them to the await function of getLocationName and the result is stored in location
+          setLocationName(location.city); 
           
           setError(false);
 
@@ -61,7 +69,13 @@ function ListingDetailsScreen({ route, navigation }) {
     };
 
     fetchListing();
+    
+  
   }, [id]);
+
+
+
+
 
   if (loading) {
     return <ActivityIndicator visible={loading} />;
@@ -140,7 +154,7 @@ function ListingDetailsScreen({ route, navigation }) {
                       </Text>
                     </View>
             <Text style={styles.location}>
-              <MaterialIcons name="location-on" size={16} color={colors.primary} /> {listing.location}
+              <MaterialIcons name="location-on" size={16} color={colors.dark} /> {locationName}
             </Text>
             <Text style={styles.state}>
               <MaterialIcons name="check-circle" size={16} color={colors.success} /> {listing.status}
@@ -159,16 +173,18 @@ function ListingDetailsScreen({ route, navigation }) {
             {isOwner(listing.owner.id) && (
               <>
               <AppButton
+                title="Edit"
+                onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
+                color="secondary"
+              />
+
+              <AppButton
                 title="Delete"
                 onPress={() => handleDelete(listing)}
                 color="danger"
               />
 
-                <AppButton
-                title="Edit"
-                onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
-                color="secondary"
-              />
+              
               </>
             )
               
@@ -225,7 +241,9 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 16,
-    color: colors.medium,
+    color: colors.dark,
+    fontStyle: "italic",
+    fontFamily: Platform.OS === "android" ? "Roboto" : "Avenir",
     marginVertical: 10,
   },
   ownerContainer: {
@@ -239,6 +257,11 @@ const styles = StyleSheet.create({
       marginLeft: 5,
     },
     categories: {
+      fontSize: 16,
+      color: colors.success,
+      marginVertical: 10,
+    },
+    state: {
       fontSize: 16,
       color: colors.success,
       marginVertical: 10,

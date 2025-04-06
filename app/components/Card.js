@@ -4,7 +4,6 @@ import { Image } from "expo-image";
 import Text from "./Text";
 import colors from "../config/colors";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
-import { getLocationName } from "../utility/geocode"; // Import the geocoding function
 
 function Card({
   title,
@@ -19,21 +18,21 @@ function Card({
 }) {
 
 
-  const [locationName, setLocationName] = useState("Loading...");
+  // const [locationName, setLocationName] = useState("Loading...");
 
-  useEffect(() => {
-    if (coordinates) {
-      // Fetch the location object(data) 
-      // containes the address details{in the card componnets we need just resiedential} from the coordinates 
-      getLocationName(coordinates.latitude, coordinates.longitude).then((data) => {
-        if (data.city) {
-          setLocationName(data.city);
-        } else {
-          setLocationName("Unknown Location");
-        }
-      });
-    }
-  }, [coordinates]);
+  // useEffect(() => {
+  //   if (coordinates) {
+  //     // Fetch the location object(data) 
+  //     // containes the address details{in the card componnets we need just resiedential} from the coordinates 
+  //     getLocationName(coordinates.latitude, coordinates.longitude).then((data) => {
+  //       if (data.city) {
+  //         setLocationName(data.city);
+  //       } else {
+  //         setLocationName("Unknown Location");
+  //       }
+  //     });
+  //   }
+  // }, [coordinates]);
 
   return (
     <TouchableWithoutFeedback onPress={onPress}>
@@ -57,14 +56,14 @@ function Card({
         <View style={styles.detailsContainer}>
 
           {/* Location */}
-          {coordinates && (
+          {/* {coordinates && (
               <View style={styles.infoRow}>
                 <Ionicons name="location" size={16} color="#333" />
                 <Text style={styles.location} numberOfLines={2}>
                   {locationName}
                 </Text>
               </View>
-            )}
+            )} */}
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>

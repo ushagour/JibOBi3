@@ -17,7 +17,7 @@ const useLocation = () => {
       if (location) {
         const { latitude, longitude } = location.coords;
         setLocation({ latitude, longitude });
-        console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+        // console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
       } else {
         setErrorMsg("No last known location available");
       }
