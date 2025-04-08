@@ -12,7 +12,10 @@ function ContactSellerForm({ listing }) {
 
     Keyboard.dismiss();
 
-    const result = await messagesApi.send(content, listing.id)
+    console.log(listing.owner.id);
+    
+    const  target_user = listing.owner.id;
+    const result = await messagesApi.send(content,target_user, listing.id);
     
 
 

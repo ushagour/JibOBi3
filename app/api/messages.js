@@ -27,7 +27,7 @@ const getAll = async () => {
 
 
 
-const send = async (content, listing_id) => {
+const send = async (content,target_user, listing_id) => {
   try {
 
     
@@ -45,6 +45,7 @@ const send = async (content, listing_id) => {
       {
         content:content,
         id: listing_id,
+        target_user: target_user,
       },
       {
         headers: {

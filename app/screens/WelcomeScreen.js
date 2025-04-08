@@ -8,11 +8,11 @@ function WelcomeScreen({navigation}) {
     <ImageBackground
       blurRadius={10}
       style={styles.background}
-      source={require("../assets/background.jpg")}
+      source={require("../assets/chair.jpg")}
     >
       <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={require("../assets/logo-red.png")} />
         <Text style={styles.tagline}>Sell What You Don't Need !</Text>
+        <Image style={styles.logo} source={require("../assets/logo-red.png")} />
       </View>
       <View style={styles.buttonsContainer}>
         <Button title="Login"  onPress={()=>{navigation.navigate("Login")}} />
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   copyrightText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#6c757d',
+    color: 'black',
   },
 });
 

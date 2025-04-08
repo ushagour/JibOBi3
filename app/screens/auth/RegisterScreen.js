@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet,Image } from "react-native";
+import { StyleSheet, Image, View, TouchableOpacity, Text } from "react-native";
 import * as Yup from "yup";
 
 import Screen from "../../components/Screen";
@@ -13,7 +13,7 @@ import {
 } from "../../components/forms";
 import useApi from "../../hooks/useApi";
 import ActivityIndicator from "../../components/ActivityIndicator";
-import authStorage from "../../auth/storage";
+import colors from "../../config/colors";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required().label("Name"),
@@ -21,45 +21,36 @@ const validationSchema = Yup.object().shape({
   password: Yup.string().required().min(4).label("Password"),
 });
 
-function RegisterScreen() {
+function RegisterScreen({ navigation }) {
   const registerApi = useApi(authApi.register);
-
-  const loginApi = useApi(authApi.login);
-  const [user, setUser] = useState();
   const auth = useAuth();
   const [error, setError] = useState();
+
   const handleSubmit = async (userInfo) => {
     setError(null); // Reset any previous error
-  
+
     try {
-      // Send the request to the registration API
       const response = await registerApi.request(userInfo);
-  
-      // Check if the response is undefined
+
       if (!response) {
         setError("No response from the server. Please try again later.");
         return;
       }
-  
-      // Log the entire response for debugging purposes
-  
-      // Check if the response is successful
+
       if (!response.ok) {
         const errorMessage = response.data?.error || "An unexpected error occurred.";
         setError(errorMessage);
         return;
       }
-  
-      // Destructure the expected data fields //todo refactor this to use the auth context
-      
-      const { token, user } = response.data;
-    
+
+      const { message, token, user } = response.data;
+
       if (token && user) {
-        auth.signUp(token, user);//we pass the token to the auth context via the logIn function(object->methde)
-        console.log("User registered and signed in successfully.");
+        auth.signUp(token, user);
+        console.log("Registration successful:", message);
       } else {
-        setError("Invalid user data received.");
-        console.error("token Error:", error);
+        setError(message || "An unexpected error occurred.");
+        console.error("Token Error:", message);
       }
     } catch (error) {
       setError("An error occurred during registration.");
@@ -67,20 +58,22 @@ function RegisterScreen() {
     }
   };
 
-  
+  const handleSocialRegister = (platform) => {
+    console.log(`Register with ${platform}`); // Placeholder for social registration logic
+  };
 
   return (
     <>
-      <ActivityIndicator visible={registerApi.loading || loginApi.loading} />
+      <ActivityIndicator visible={registerApi.loading} />
       <Screen style={styles.container}>
-      <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
+        <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
 
         <Form
           initialValues={{ name: "", email: "", password: "" }}
           onSubmit={handleSubmit}
           validationSchema={validationSchema}
         >
-          <ErrorMessage error={error} visible={error} />
+          <ErrorMessage error={error} visible={!!error} />
           <FormField
             autoCorrect={false}
             icon="account"
@@ -107,6 +100,29 @@ function RegisterScreen() {
           />
           <SubmitButton title="Register" />
         </Form>
+
+        {/* Social Media Registration */}
+        <View style={styles.socialButtonsContainer}>
+          <TouchableOpacity
+            style={[styles.socialButton, { backgroundColor: "#DB4437" }]}
+            onPress={() => handleSocialRegister("Google")}
+          >
+            <Text style={styles.socialButtonText}>Register with Google</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.socialButton, { backgroundColor: "#4267B2" }]}
+            onPress={() => handleSocialRegister("Facebook")}
+          >
+            <Text style={styles.socialButtonText}>Register with Facebook</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Navigate to Login */}
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.loginLink}>
+            Already have an account? <Text style={styles.loginLinkBold}>Login</Text>
+          </Text>
+        </TouchableOpacity>
       </Screen>
     </>
   );
@@ -117,12 +133,38 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     alignSelf: "center",
     marginTop: 50,
     marginBottom: 20,
-    borderRadius:25
+    borderRadius: 25,
+  },
+  socialButtonsContainer: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+  socialButton: {
+    width: "90%",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  socialButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  loginLink: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+    color: colors.medium,
+  },
+  loginLinkBold: {
+    fontWeight: "bold",
+    color: colors.primary,
   },
 });
 

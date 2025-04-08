@@ -10,11 +10,11 @@ export default useAuth = () => {
 
   const logIn = (authToken) => {
     try {
-      console.log("Logging in with token:", authToken);
+      // console.log("Logging in with token:", authToken);
       
       // Decode the token to extract user info
       const user = jwtDecode(authToken); // Decode the JWT token
-      console.log("Decoded user:", user);
+      // console.log("Decoded user:", user);
   
       // Store the token for future use
       authStorage.storeToken(authToken);
