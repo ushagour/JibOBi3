@@ -35,10 +35,7 @@ function MessagesScreen({ navigation }) {
         setMessages(response.data);
         
         setError(false);
-      } else {
-        setError(true);
-        console.error("Failed to fetch messages:", response.problem);
-      }
+      } 
     } catch (error) {
       setError(true);
       console.error("Error during request:", error);
@@ -84,7 +81,7 @@ function MessagesScreen({ navigation }) {
         </View>
       )}
         
-           {messages.length === 0 && !loading && (
+           {messages.length == 0 && !loading && (
              <View style={{ alignItems: "center", padding: 10 }}>
                <Text style={{ color: "red" }}>You have no notifications at the moment</Text>
              </View>

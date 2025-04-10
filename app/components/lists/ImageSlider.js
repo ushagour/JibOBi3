@@ -4,37 +4,32 @@ import Swiper from 'react-native-swiper';
 
 const { width } = Dimensions.get('window');
 
-
-
 const ImageSlider = (props) => {
-
   const { images } = props;
-  
-  return (     
 
-    /* we added wrapper style to contain the Swiper component */
-     <Swiper
-        style={styles.wrapper}
-        showsButtons={true}
-        showsPagination={false}
-        loop={true}
-        autoplay={true}
-        autoplayTimeout={3}
-        nextButton={<Text style={styles.arrow}>▶</Text>}
-        prevButton={<Text style={styles.arrow}>◀</Text>}
-      >
-        {images.map((url, index) => (
-          <View key={index} style={styles.slide}>
-            <Image source={ url } style={styles.image} />
-          </View>
-        ))}
-      </Swiper>
+  return (
+    <Swiper
+      style={styles.wrapper}
+      showsButtons={true}
+      showsPagination={false}
+      loop={true}
+      autoplay={true}
+      autoplayTimeout={3}
+      nextButton={<Text style={styles.arrow}>▶</Text>}
+      prevButton={<Text style={styles.arrow}>◀</Text>}
+    >
+      {images.map((image, index) => (
+        <View key={index} style={styles.slide}>
+          {/* Ensure the source prop is an object with a uri key */}
+          <Image source={{ uri: image.url }} style={styles.image} />
+        </View>
+      ))}
+    </Swiper>
   );
 };
 
 const styles = StyleSheet.create({
- 
-  wrapper : {
+  wrapper: {
     height: 200,
   },
   image: {

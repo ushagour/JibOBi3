@@ -12,7 +12,6 @@ function ContactSellerForm({ listing }) {
 
     Keyboard.dismiss();
 
-    console.log(listing.owner.id);
     
     const  target_user = listing.owner.id;
     const result = await messagesApi.send(content,target_user, listing.id);
@@ -33,12 +32,20 @@ function ContactSellerForm({ listing }) {
 
     resetForm();
     Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Awesome!",
-        body: "Your message was sent to the seller.",
-      },
-      trigger: null, // null triggers it immediately as a local notification
-    });
+
+    content: {
+      title: "Awesome!",
+      body: "Your message was sent to the seller.",
+      data: { customData: 'anything you want' },
+      sound: 'default', // or custom sound
+      priority: 'high', // or 'default', 'low'
+      badge: 1, // iOS badge count
+      color: '#FF0000', // Android only - notification color
+    },
+    trigger: null, // send immediately
+  }
+  
+  );
     
   };
 

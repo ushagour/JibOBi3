@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Alert } from "react-native";
+import { StyleSheet, Alert,KeyboardAvoidingView
+
+
+, TouchableWithoutFeedback, Keyboard, Platform, ScrollView
+ } from "react-native";
 import * as Yup from "yup";
 
 import {
@@ -76,7 +80,13 @@ function ListingEditScreen({ route, navigation }) {
   };
 
   return (
-    <Screen style={styles.container}>
+          <KeyboardAvoidingView
+             behavior={Platform.OS === "ios" ? "padding" : "height"}
+             style={{ flex: 1 }}
+           >
+             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+           <ScrollView  contentContainerStyle={styles.container}>
+   
       <UploadScreen
         visible={uploadVisible}
         progress={progress}
@@ -119,13 +129,16 @@ function ListingEditScreen({ route, navigation }) {
         />
         <SubmitButton title="Save Changes" />
       </Form>
-    </Screen>
+          </ScrollView>  
+     </TouchableWithoutFeedback>
+ 
+     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    padding: 15,
   },
 });
 
