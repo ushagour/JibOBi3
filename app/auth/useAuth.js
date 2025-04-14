@@ -54,5 +54,5 @@ export default useAuth = () => {
     return user?.userId === owner;
   };
 
-  return { user, logIn,signUp,  logOut,isOwner, isLoggedIn };
+  return { user, logIn,signUp,  logOut,isOwner, isLoggedIn,updateUser: (user) => setUser(user) };
 };
