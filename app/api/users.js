@@ -7,24 +7,10 @@ const getUserInfo = (id) => client.get(`/user/${id}`);
 
 
 
-const updateUserInfo = (UserData, onUploadProgress) => {  
-
-
-    console.log("UserData:", UserData); // Debug log
-    
-    
-    const data = new FormData();
-    data.append("name", UserData.name);
-    data.append("email", UserData.email);
-    // data.append("password", UserData.password);
-    // data.append("OldPassword", UserData.OldPassword);
-    // data.append("avatar", UserData.avatar);
-    
-
-
+const updateUserInfo = (id,UserData, onUploadProgress) => {  
 
     
-    return client.put(`/user/${UserData.user_id}`,data  
+    return client.put(`/user/${id}`,UserData  
     , {
         headers: {
             "Content-Type": "multipart/form-data",
@@ -37,6 +23,8 @@ const updateUserInfo = (UserData, onUploadProgress) => {
 
 
 const deleteUser = (id) => client.delete(`/user/${id}`);
+
+
 
 
 export default { updateUserInfo,getUserInfo,deleteUser };
