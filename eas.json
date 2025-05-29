@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">=3.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true,
+      "releaseChannel": "prod",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "staging": {
+      "releaseChannel": "staging",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -1,9 +1,35 @@
-import React from "react";
+import {React, useEffect, useState} from "react";
 import { ImageBackground, StyleSheet, View, Image, Text } from "react-native";
+
+import listingsApi from "../api/listings"; // Import the API client
 
 import Button from "../components/Button";
 
 function WelcomeScreen({navigation}) {
+
+
+  const [Total, setTotal] = useState(0); // State to hold listings data
+  const [loading, setLoading] = useState(true); // State to manage loading state
+
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      setLoading(true); // Set loading to true before fetching data
+      const response = await listingsApi.getTotalListings();
+      if (!response.ok) {
+        console.log("Error fetching listings:", response.problem);
+        setLoading(false);
+      } else {
+        console.log("Fetched listings:", response.data.totalListings); // Log the fetched data
+        setTotal(response.data.totalListings); // Set the listings data in state
+        setLoading(false); // Set loading to false after fetching data
+      }
+    };
+
+    fetchListings();
+  }, []);
+
+
   return (
     <ImageBackground
       blurRadius={10}
@@ -19,7 +45,7 @@ function WelcomeScreen({navigation}) {
         <Button title="Register" color="secondary"  onPress={()=>{navigation.navigate("Register")}} />
       </View>
       <View style={styles.splashContainer}>
-        <Text style={styles.copyrightText}>Copyright © 2024 Jib w’Bie3</Text>
+        <Text style={styles.copyrightText}>Copyright © 2024 Jib w’Bie3   | total listings {Total} </Text>
       </View>
     </ImageBackground>
   );

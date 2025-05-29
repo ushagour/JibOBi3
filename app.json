@@ -1,10 +1,10 @@
 {
   "expo": {
     "name": "Jibobi3",
-    "slug": "Jib o bi3",
+    "slug": "jibobi3",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/adaptive-icon-v1.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -15,26 +15,38 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon-v1.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.ushagour.jibobi3"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "newArchEnabled": true
+      "newArchEnabled": true,
+      "eas": {
+        "projectId": "34525083-6586-4525-8d78-3e6c0cfb1864"
+      }
     },
     "plugins": [
       "expo-secure-store"
     ],
     "notification": {
-      "icon": "./assets/notification-icon.png",
+      "icon": "./assets/adaptive-icon-v1.png",
       "color": "#FF0000",
       "androidMode": "default",
       "androidCollapsedTitle": "New notification",
       "iosDisplayInForeground": true
+    },
+    "owner": "ushagour",
+    "releaseChannel": "staging",
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/34525083-6586-4525-8d78-3e6c0cfb1864"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
-    
   }
 }

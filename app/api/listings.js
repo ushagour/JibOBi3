@@ -5,6 +5,10 @@ const getListings = () => client.get(endpoint);
 const getDetailListing = (id) => client.get(`${endpoint}/detail/${id}`);
 
 const getMyListings = (userId) => client.get(`${endpoint}/my_listings?userId=${userId}`);
+ 
+
+
+const getTotalListings = () => client.get(`${endpoint}/total_listings`);
 
 
 
@@ -130,6 +134,8 @@ export default {
   getDetailListing,
   getListings,
   getMyListings,
+  getTotalListings,
   deleteListing,
   updateListing
+  
 };

@@ -1,30 +1,81 @@
-import { create } from "apisauce";
+import axios from "axios";
 import cache from "../utility/cache";
 import authStorage from "../auth/storage";
-import { getCurrentSettings } from "../config/settings";
+import { getCurrentSettings } from "../config/environment";
 
-const apiClient = create({
-  baseURL: getCurrentSettings().apiUrl, // Dynamically get the current settings
+const { apiUrl } = getCurrentSettings();
+
+const apiClient = axios.create({
+  baseURL: apiUrl,
+  timeout: 10000,
 });
 
+// Add auth token to each request if available
+apiClient.interceptors.request.use(
+  async (config) => {
+    const authToken = await authStorage.getToken();
+    if (authToken) {
+      config.headers["x-auth-token"] = authToken;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-apiClient.addAsyncRequestTransform(async (request) => {
-  const authToken = await authStorage.getToken();
-  if (!authToken) return;
-  request.headers["x-auth-token"] = authToken;
-});
-
-const get = apiClient.get;
-apiClient.get = async (url, params, axiosConfig) => {
-  const response = await get(url, params, axiosConfig);
-
-  if (response.ok) {
-    cache.store(url, response.data);
-    return response;
+// Custom GET with caching
+const originalGet = apiClient.get.bind(apiClient);
+apiClient.get = async (url, config) => {
+  try {
+    const response = await originalGet(url, config);
+    if (response.status >= 200 && response.status < 300) {
+      cache.store(url, response.data);
+      return { ok: true, data: response.data };
+    }
+    const data = await cache.get(url);
+    return data ? { ok: true, data } : { ok: false, data: null };
+  } catch (error) {
+    const data = await cache.get(url);
+    return data ? { ok: true, data } : { ok: false, error };
   }
-
-  const data = await cache.get(url);
-  return data ? { ok: true, data } : response;
+};
+// Custom POST
+const originalPost = apiClient.post.bind(apiClient);
+apiClient.post = async (url, data, config) => {
+  try {
+    const response = await originalPost(url, data, config);
+    if (response.status >= 200 && response.status < 300) {
+      return { ok: true, data: response.data };
+    }
+    return { ok: false, data: null };
+  } catch (error) {
+    return { ok: false, error };
+  }
+};
+// Custom PUT
+const originalPut = apiClient.put.bind(apiClient);  
+apiClient.put = async (url, data, config) => {
+  try {
+    const response = await originalPut(url, data, config);
+    if (response.status >= 200 && response.status < 300) {
+      return { ok: true, data: response.data };
+    }
+    return { ok: false, data: null };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+// Custom DELETE
+const originalDelete = apiClient.delete.bind(apiClient);
+apiClient.delete = async (url, config) => {
+  try {
+    const response = await originalDelete(url, config);
+    if (response.status >= 200 && response.status < 300) {
+      return { ok: true, data: response.data };
+    }
+    return { ok: false, data: null };
+  } catch (error) {
+    return { ok: false, error };
+  }
 };
 
 export default apiClient;
