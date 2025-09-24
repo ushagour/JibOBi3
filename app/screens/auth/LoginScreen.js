@@ -10,7 +10,8 @@ import {
   SubmitButton,
 } from "../../components/forms";
 import authApi from "../../api/auth";
-import useAuth from "../../auth/useAuth";
+import  useAuth  from '../../auth/useAuth';
+
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 
@@ -20,7 +21,9 @@ const validationSchema = Yup.object().shape({
 });
 
 function LoginScreen({ navigation }) {
+
   const auth = useAuth();
+
   const [loginFailed, setLoginFailed] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -84,6 +87,11 @@ function LoginScreen({ navigation }) {
           <Text style={styles.forgotPassword}>Forgot Password?</Text>
         </TouchableOpacity>
 
+       {/* Navigate to Registrer Screen */}
+       <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+          <Text style={styles.loginLink}>Don't have an account? 
+            <Text style={styles.loginLinkBold}> Register</Text></Text>
+       </TouchableOpacity>
         {/* Social Media Login */}
         <View style={styles.socialButtonsContainer}>
           <TouchableOpacity
@@ -138,6 +146,15 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  loginLink: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+  },
+  loginLinkBold: {
+    fontWeight: "bold",
+    color: colors.secondary,
   },
 });
 

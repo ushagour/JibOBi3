@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import colors from '../config/colors';
+import Constants from "expo-constants";
 
 const MessageBox = ({ message, type, onClose }) => {
   const getBackgroundColor = () => {
@@ -17,28 +18,32 @@ const MessageBox = ({ message, type, onClose }) => {
   };
 
   return (
+
+
+
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-      <Text style={styles.message}>{message}</Text>
-      <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-        <Text style={styles.closeButtonText}>X</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    <Text style={styles.text}>{message}</Text>
+
+  </View>
+
+
+    );
 };
 
 const styles = StyleSheet.create({
+
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
+    alignItems: "center",
+    height: 50,
+    justifyContent: "center",
+    position: "absolute",
+    top: Constants.statusBarHeight,
+    width: "100%",
+    zIndex: 1,
   },
-  message: {
+  text: {
     color: colors.white,
-    fontSize: 16,
-  },
+    fontSize: 16,},
   closeButton: {
     marginLeft: 10,
   },
@@ -50,4 +55,6 @@ const styles = StyleSheet.create({
 });
 
 export default MessageBox;
+
+
 

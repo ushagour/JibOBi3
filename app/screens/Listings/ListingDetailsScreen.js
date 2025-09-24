@@ -20,6 +20,7 @@ import { Linking } from "react-native"; // Import the Linking API
 import AppButton from "../../components/Button";
 import listingsApi from "../../api/listings"; // Import the API client
 import useAuth from "../../auth/useAuth";
+
 import ActivityIndicator from "../../components/ActivityIndicator";
 import MessageBox from "../../components/MessageBox";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
@@ -45,7 +46,9 @@ function ListingDetailsScreen({ route, navigation }) {
       try {
         // console.log("Fetching listing with ID:", id);      
         const response = await listingsApi.getDetailListing(id);
-        
+        if (!response.ok || !response.data) {
+          throw new Error("Failed to fetch listing details.");
+        }
         if (response.ok) {
           setListing(response.data);
           // const { latitude, longitude } = response.data;
@@ -62,7 +65,7 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
       } catch (error) {
-        setError(true);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
@@ -82,7 +85,7 @@ function ListingDetailsScreen({ route, navigation }) {
   }
 
   if (error) {
-    return <MessageBox message={`Couldn't retrieve the listings ${error}`}  type="success" onPress={() => navigation.goBack()}/>
+    return <MessageBox message={`Couldn't retrieve the listings ${error}`}  type="error" onPress={(navigation) => navigation.goBack()}/>
   }
 
 

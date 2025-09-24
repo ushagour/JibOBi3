@@ -5,7 +5,8 @@ import Screen from "../../components/Screen";
 import { ListItem, ListItemDeleteAction, ListItemSeparator,ListItemEditAction } from "../../components/lists";
 import listingsApi from "../../api/listings";
 import routes from "../../navigation/routes";
-import useAuth from "../../auth/useAuth"; // Import the useAuth hook
+import useAuth from "../../auth/useAuth";
+ // Import the useAuth hook
 
 function MyListingsScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context

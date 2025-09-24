@@ -34,3 +34,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 app/config/settings.js
+
+.env
+
+jibobi3-28d49ebc98cd.json

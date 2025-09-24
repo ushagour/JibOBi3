@@ -64,28 +64,19 @@ Feel free to customize the description to better fit your project's specifics an
 - **Image Storage**: Cloud storage like AWS S3, Firebase Storage, or Cloudinary.
 - **Notifications**: Firebase Cloud Messaging (FCM) for push notifications.
 
----
 
-### 5. **Example Queries**
-1. **Get all active listings in a category**:
-   ```sql
-   SELECT * FROM Listings
-   WHERE category_id = 1 AND status = 'active';
-   ```
 
-2. **Get all images for a listing**:
-   ```sql
-   SELECT image_url FROM Images
-   WHERE listing_id = 123;
-   ```
+### app presentation :
 
-3. **Get unread notifications for a user**:
-   ```sql
-   SELECT * FROM Notifications
-   WHERE user_id = 456 AND is_read = FALSE;
-   ```
 
----
+
+
+
+
+
+
+
+
 
 ### 6. **Next Steps**
 1. **Wireframe Your App**:
@@ -101,3 +92,37 @@ Feel free to customize the description to better fit your project's specifics an
    - Test your app with real users and gather feedback for improvements.
 
 Let me know if you need help with specific parts of the implementation!
+
+
+### 6. **OPTIMISATION BEFORE EAS **
+      -
+Before building your EAS APK (Expo Application Services APK), optimizing your React Native app can significantly improve performance, reduce app size, and enhance the user experience. Here are some key optimizations you should consider:
+
+1. Optimize Assets
+a. Compress Images
+Use tools like TinyPNG or ImageOptim to compress images before adding them to your project.
+Use appropriate image resolutions for different screen sizes (e.g., @2x, @3x).
+b. Use Vector Icons
+Replace large image icons with vector icons using libraries like react-native-vector-icons or @expo/vector-icons.
+c. Lazy Load Assets
+Use expo-asset to lazy load assets only when needed.
+2. Reduce App Size
+a. Remove Unused Dependencies
+Audit your package.json and remove any unused libraries:
+b. Minify JavaScript
+Expo automatically minifies JavaScript during the build process, but ensure you’re not including unnecessary code or libraries.
+c. Use Hermes (for Bare Workflow or EAS Build)
+Hermes is a lightweight JavaScript engine that improves app performance and reduces APK size.
+Enable Hermes in your eas.json:
+3. Optimize Performance
+a. Use FlatList Instead of ScrollView
+Replace ScrollView with FlatList for rendering large lists to improve memory usage.
+b. Avoid Inline Functions
+Move inline functions out of JSX to avoid unnecessary re-renders.
+c. Memoize Components
+Use React.memo and useMemo to prevent unnecessary re-renders of components.
+d. Optimize State Management
+Avoid deeply nested states and use libraries like Redux or Recoil for better state management.
+e. Remove Console Logs
+Remove all console.log statements to avoid performance issues in production:
+Add the plugin to your babel.config.js:

@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import Screen from "../../components/Screen";
 import authApi from "../../api/auth";
 import useAuth from "../../auth/useAuth";
+
 import {
   ErrorMessage,
   Form,
@@ -166,6 +167,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.primary,
   },
+  
 });
 
 export default RegisterScreen;

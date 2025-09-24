@@ -8,6 +8,7 @@ import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import useAuth from "../../auth/useAuth";
 
+
 const menuItems = [
   {
     title: "My Listings",
@@ -29,7 +30,8 @@ const menuItems = [
 ];
 
 function AccountScreen({ navigation }) {
-  const { user, logOut } = useAuth();  
+  const { user, logOut } = useAuth();
+  console.log("user in AccountScreen:", user) // Debugging line
 
   return (
     <Screen style={styles.screen}>

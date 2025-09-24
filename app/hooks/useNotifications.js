@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import expoPushTokensApi from "../api/expoPushTokens";
-import environment from "../../environment";
 
 const useNotifications  = (notificationListener) => {
   useEffect(() => {
@@ -25,7 +24,7 @@ const useNotifications  = (notificationListener) => {
         return;
       }
       
-      const pushTokenString = (await Notifications.getExpoPushTokenAsync( { projectId:environment.projectId })).data;
+      const pushTokenString = (await Notifications.getExpoPushTokenAsync( { projectId: Constants.expoConfig?.extra?.eas?.projectId })).data;
       //  console.log("pushTokenString", pushTokenString);
       
       expoPushTokensApi.register(pushTokenString); 
