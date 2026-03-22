@@ -8,7 +8,6 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
-  Dimensions,
   Alert,
 } from "react-native";
 import colors from "../../config/colors";
@@ -146,19 +145,52 @@ function ListingDetailsScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <View style={styles.detailsContainer}>
-          <Text style={styles.categories}>{listing.Category.name}</Text>
+            <View style={styles.metaHeaderRow}>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>
+                  {listing.Category?.name || "Uncategorized"}
+                </Text>
+              </View>
+              {!!listing.state && (
+                <View
+                  style={[
+                    styles.stateBadge,
+                    listing.state === "Sold Out"
+                      ? styles.stateBadgeSold
+                      : styles.stateBadgeAvailable,
+                  ]}
+                >
+                  <Text style={styles.stateText}>{listing.state}</Text>
+                </View>
+              )}
+            </View>
+
             <Text style={styles.title}>{listing.title}</Text>
-            <Text style={styles.price}>$ {listing.price}</Text>
-            <Text style={styles.description}>{listing.description}</Text>
-          <View style={styles.ownerContainer} > 
-             <Ionicons name="person" size={16} color={colors.primary} />
-                      <Text style={styles.owner} numberOfLines={1}>
-                        {listing.owner.name} 
-                      </Text>
-                    </View>
-            <Text style={styles.location}>
-              <MaterialIcons name="location-on" size={16} color={colors.dark} /> {locationName}
-            </Text>
+
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>$ {listing.price}</Text>
+            </View>
+
+            <View style={styles.infoPanel}>
+              <View style={styles.infoRow}>
+                <Ionicons name="person" size={16} color={colors.primary} />
+                <Text style={styles.infoText} numberOfLines={1}>
+                  {listing.owner?.name || "Unknown owner"}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <MaterialIcons name="location-on" size={16} color={colors.dark} />
+                <Text style={styles.infoText} numberOfLines={1}>
+                  {locationName}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.descriptionSection}>
+              <Text style={styles.sectionLabel}>Description</Text>
+              <Text style={styles.description}>{listing.description}</Text>
+            </View>
         
 
             {/* <Text style={styles.state}>
@@ -171,13 +203,19 @@ function ListingDetailsScreen({ route, navigation }) {
               ) }
             </Text> */}
 
-            {user.userId !== listing.owner.id ? (<ContactSellerForm listing={listing} />) : null}
+            {user.userId !== listing.owner.id ? (
+              <View style={styles.contactSection}>
+                <Text style={styles.sectionLabel}>Contact Seller</Text>
+                <ContactSellerForm listing={listing} />
+              </View>
+            ) : null}
 
-            <AppButton
-              title="Navigate to Location"
-              onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}
-              color="black"
-            />
+            <View style={styles.actionSection}>
+              <AppButton
+                title="Navigate to Location"
+                onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}
+                variant="primary"
+              />
 
 
      
@@ -186,13 +224,13 @@ function ListingDetailsScreen({ route, navigation }) {
               <AppButton
                 title="Edit"
                 onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
-                color="secondary"
+                variant="secondary"
               />
 
               <AppButton
                 title="Delete"
                 onPress={() => handleDelete(listing)}
-                color="danger"
+                variant="danger"
               />
 
               
@@ -203,12 +241,13 @@ function ListingDetailsScreen({ route, navigation }) {
             {!isOwner(listing.owner.id) && (
             
             <AppButton
-            title="Report"
-            onPress={() => alert("Report", "This listing has been reported.")}
-            color="warning"
-          />
+              title="Report"
+              onPress={() => alert("Report", "This listing has been reported.")}
+              variant="outline"
+            />
                 )
             }
+            </View>
 
 
 
@@ -225,6 +264,7 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     padding: 20,
+    paddingBottom: 30,
   },
   image: {
     width: "100%",
@@ -233,45 +273,96 @@ const styles = StyleSheet.create({
   price: {
     color: colors.secondary,
     fontWeight: "bold",
-    fontSize: 20,
-    marginVertical: 10,
+    fontSize: 26,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "500",
+    fontSize: 26,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginTop: 12,
   },
   description: {
     fontSize: 16,
-    color: colors.medium,
-    marginVertical: 10,
+    color: colors.textSecondary,
+    lineHeight: 24,
+    marginTop: 8,
   },
   arrow: {
     color: '#fff',
     fontSize: 30,
     fontWeight: 'bold',
   },
-  location: {
-    fontSize: 16,
-    color: colors.dark,
-    fontStyle: "italic",
-    fontFamily: Platform.OS === "android" ? "Roboto" : "Avenir",
-    marginVertical: 10,
+  metaHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
   },
-  ownerContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginVertical: 10,
-    },
-    owner: {
-      fontSize: 15,
-      color: colors.primary,
-      marginLeft: 5,
-    },
-    categories: {
-      fontSize: 16,
-      color: colors.success,
-      marginVertical: 10,
-    },
+  categoryBadge: {
+    backgroundColor: colors.infoLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  categoryText: {
+    color: colors.info,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  stateBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  stateBadgeAvailable: {
+    backgroundColor: colors.successLight,
+  },
+  stateBadgeSold: {
+    backgroundColor: colors.dangerLight,
+  },
+  stateText: {
+    color: colors.textPrimary,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  priceRow: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  infoPanel: {
+    backgroundColor: colors.lighterGray,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 4,
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginLeft: 8,
+    flex: 1,
+  },
+  descriptionSection: {
+    marginBottom: 8,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  contactSection: {
+    marginTop: 16,
+  },
+  actionSection: {
+    marginTop: 6,
+  },
 
 });
 

@@ -4,7 +4,6 @@ import { Image } from "expo-image";
 import AppText from "./Text";
 import theme from "../config/theme";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Spacer from "./Spacer";
 
 function Card({
   title,
@@ -15,7 +14,7 @@ function Card({
   ownerName,
   createdAt,
   status,
-  coordinates,
+  categoryName,
 }) 
 
 
@@ -46,28 +45,45 @@ function Card({
 
         {/* Details Container */}
         <View style={styles.detailsContainer}>
-          {/* Title and Price */}
-          <AppText
-            variant="h4"
-            color="textPrimary"
-            numberOfLines={1}
-            style={styles.title}
-          >
-            {title}
-          
-          </AppText>
+          <View style={styles.headlineRow}>
+            <AppText
+              variant="h4"
+              color="textPrimary"
+              numberOfLines={1}
+              style={styles.title}
+            >
+              {title}
+            </AppText>
 
-          <AppText
-            variant="bodyLarge"
-            color="secondary"
-            style={styles.price}
-          >
-            ${typeof subTitle === 'number' ? subTitle.toLocaleString() : subTitle}
-          </AppText>
+            <View style={styles.priceBadge}>
+              <AppText
+                variant="body"
+                color="secondaryDark"
+                style={styles.price}
+              >
+                ${typeof subTitle === "number" ? subTitle.toLocaleString() : subTitle}
+              </AppText>
+            </View>
+          </View>
 
-          <Spacer size="md" />
+          <View style={styles.metaRow}>
+            {!!categoryName && (
+              <View style={styles.metaChip}>
+                <AppText variant="caption" color="info" style={styles.metaChipText}>
+                  {categoryName}
+                </AppText>
+              </View>
+            )}
 
-          {/* Extra Information */}
+            {!!status && status !== "Sold Out" && (
+              <View style={[styles.metaChip, styles.availableChip]}>
+                <AppText variant="caption" color="success" style={styles.metaChipText}>
+                  {status}
+                </AppText>
+              </View>
+            )}
+          </View>
+
           <View style={styles.infoContainer}>
             {/* Date */}
             {createdAt && (
@@ -81,6 +97,7 @@ function Card({
                   variant="caption"
                   color="textTertiary"
                   style={styles.infoText}
+                  numberOfLines={1}
                 >
                   {createdAt}
                 </AppText>
@@ -139,24 +156,58 @@ const styles = StyleSheet.create({
   detailsContainer: {
     padding: theme.spacing.lg,
   },
+  headlineRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: theme.spacing.md,
+  },
   title: {
     fontWeight: "600",
+    flex: 1,
+  },
+  priceBadge: {
+    backgroundColor: theme.colors.warningLight,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    alignSelf: "flex-start",
   },
   price: {
     fontWeight: "700",
+  },
+  metaRow: {
     marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+  },
+  metaChip: {
+    backgroundColor: theme.colors.infoLight,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+  },
+  availableChip: {
+    backgroundColor: theme.colors.successLight,
+  },
+  metaChipText: {
+    fontWeight: theme.typography.fontWeight.semibold,
   },
   infoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: theme.spacing.md,
   },
   infoRow: {
     flexDirection: "row",
-    alignItems: "center",
+  
   },
   infoText: {
     marginLeft: theme.spacing.xs,
+    flexShrink: 1,
   },
 });
 
