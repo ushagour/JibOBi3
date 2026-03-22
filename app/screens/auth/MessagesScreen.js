@@ -111,7 +111,7 @@ function MessagesScreen({ navigation }) {
   };
 
   return (
-    <Screen>
+    <Screen scrollable={false}>
             {/* Select All Checkbox */}
             <View style={styles.selectAllContainer}>
   <CustomCheckbox

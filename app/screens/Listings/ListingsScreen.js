@@ -37,7 +37,7 @@ function ListingsScreen({ navigation }) {
 <>
     <ActivityIndicator visible={loading} />
 
-    <Screen style={styles.screen}>
+    <Screen style={styles.screen} scrollable={false}>
 
 
 

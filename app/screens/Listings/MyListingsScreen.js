@@ -69,7 +69,7 @@ function MyListingsScreen({ navigation }) {
   };
 
   return (
-    <Screen>
+    <Screen scrollable={false}>
       {error && !loading && (
         <View style={{ alignItems: "center", padding: 10 }}>
           <Text style={{ color: "red" }}>Couldn't retrieve listings. Please try again later.</Text>

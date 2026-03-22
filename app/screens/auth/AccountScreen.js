@@ -31,10 +31,10 @@ const menuItems = [
 
 function AccountScreen({ navigation }) {
   const { user, logOut } = useAuth();
-  console.log("user in AccountScreen:", user) // Debugging line
+
 
   return (
-    <Screen style={styles.screen}>
+    <Screen style={styles.screen} scrollable={false}>
       <View style={styles.container}>
         <ListItem
           title={user.name}
