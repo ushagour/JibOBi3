@@ -4,12 +4,17 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Screen from "../../components/Screen";
 import colors from "../../config/colors";
 import messagesApi from "../../api/messages";
@@ -21,6 +26,9 @@ function MessagesScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     loadMessages();
@@ -101,6 +109,83 @@ function MessagesScreen({ navigation }) {
     );
   };
 
+  const handleSelectReply = (message) => {
+    const isMine = isSentByCurrentUser(message);
+    const targetUserId = isMine ? message.receiverId : message.senderId;
+    const targetUserName = isMine ? message.toUser : message.fromUser;
+    const listingId = message.listing?.id || message.listingId;
+
+    if (!targetUserId || !listingId) {
+      Alert.alert(
+        "Reply unavailable",
+        "This message does not have enough details to send a reply."
+      );
+      return;
+    }
+
+    setReplyTo({
+      messageId: message.id,
+      targetUserId,
+      targetUserName,
+      listingId,
+      listingTitle: message.listing?.title,
+      preview: message.content,
+    });
+  };
+
+  const handleSendReply = async () => {
+    const content = replyText.trim();
+
+    if (!replyTo) {
+      Alert.alert("Select a message", "Tap any message bubble to reply.");
+      return;
+    }
+
+    if (!content) return;
+
+    try {
+      setSending(true);
+      const response = await messagesApi.send(
+        content,
+        replyTo.targetUserId,
+        replyTo.listingId
+      );
+
+      if (!response?.ok) {
+        Alert.alert("Error", "Failed to send reply.");
+        return;
+      }
+
+      const createdMessage = response.data || {};
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createdMessage.id || Date.now(),
+          senderId: user?.userId,
+          receiverId: replyTo.targetUserId,
+          fromUser: user?.name,
+          toUser: replyTo.targetUserName,
+          content,
+          listingId: replyTo.listingId,
+          listing: replyTo.listingTitle
+            ? { id: replyTo.listingId, title: replyTo.listingTitle }
+            : null,
+          createdAt: createdMessage.createdAt || new Date().toISOString(),
+          avatar: user?.avatar,
+        },
+      ]);
+
+      setReplyText("");
+      setReplyTo(null);
+    } catch (sendError) {
+      console.error("Error sending reply:", sendError);
+      Alert.alert("Error", "Something went wrong while sending your reply.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const renderBubble = ({ item }) => {
     const isMine = isSentByCurrentUser(item);
 
@@ -121,6 +206,7 @@ function MessagesScreen({ navigation }) {
 
         <Pressable
           style={styles.messageMetaWrapper}
+          onPress={() => handleSelectReply(item)}
           onLongPress={() => handleDelete(item.id)}
           delayLongPress={350}
         >
@@ -149,9 +235,13 @@ function MessagesScreen({ navigation }) {
 
   return (
     <Screen scrollable={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.screenWrap}
+      >
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Messages</Text>
-        <Text style={styles.headerSubtitle}>Your latest conversations</Text>
+        <Text style={styles.headerSubtitle}>Tap a message to reply</Text>
       </View>
 
       {error && !loading && (
@@ -190,11 +280,63 @@ function MessagesScreen({ navigation }) {
         }
         onEndReachedThreshold={0.2}
       />
+
+      <View style={styles.composerContainer}>
+        {replyTo && (
+          <View style={styles.replyPreviewContainer}>
+            <View style={styles.replyPreviewTextWrap}>
+              <Text style={styles.replyingToText}>
+                Replying to {replyTo.targetUserName}
+              </Text>
+              <Text style={styles.replyPreviewText} numberOfLines={1}>
+                {replyTo.preview}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setReplyTo(null)}>
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={22}
+                color={colors.textSecondary || "#6B7280"}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            value={replyText}
+            onChangeText={setReplyText}
+            placeholder={replyTo ? "Write your reply..." : "Tap a message to reply"}
+            placeholderTextColor={colors.textTertiary || "#9CA3AF"}
+            multiline
+            editable={!sending}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!replyText.trim() || sending) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSendReply}
+            disabled={!replyText.trim() || sending}
+          >
+            <MaterialCommunityIcons
+              name="send"
+              size={18}
+              color={colors.white}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrap: {
+    flex: 1,
+  },
   headerContainer: {
     paddingHorizontal: 16,
     paddingTop: 10,
@@ -216,7 +358,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 12,
     paddingTop: 12,
-    paddingBottom: 20,
+    paddingBottom: 8,
     flexGrow: 1,
   },
   messageRow: {
@@ -307,6 +449,66 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 2,
+  },
+  composerContainer: {
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray || "#E5E7EB",
+    backgroundColor: colors.surface || "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  replyPreviewContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: colors.lighterGray || "#F3F4F6",
+  },
+  replyPreviewTextWrap: {
+    flex: 1,
+    marginRight: 8,
+  },
+  replyingToText: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  replyPreviewText: {
+    fontSize: 12,
+    color: colors.textSecondary || "#6B7280",
+    marginTop: 2,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  input: {
+    flex: 1,
+    minHeight: 42,
+    maxHeight: 110,
+    borderWidth: 1,
+    borderColor: colors.lightGray || "#E5E7EB",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: colors.textPrimary || colors.dark,
+    backgroundColor: colors.white,
+  },
+  sendButton: {
+    marginLeft: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
 });
 

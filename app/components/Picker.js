@@ -7,7 +7,7 @@ import {
   Button,
   FlatList,
 } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 
 import Text from "./Text";
 import defaultStyles from "../config/styles";
@@ -31,7 +31,7 @@ function AppPicker({
       <TouchableWithoutFeedback onPress={() => setModalVisible(true)}>
         <View style={[styles.container, { width }]}>
           {icon && (
-            <MaterialCommunityIcons
+            <MaterialIcons
               name={icon}
               size={20}
               color={defaultStyles.colors.medium}
@@ -44,7 +44,7 @@ function AppPicker({
             <Text style={styles.placeholder}>{placeholder}</Text>
           )}
 
-          <MaterialCommunityIcons
+          <MaterialIcons
             name="chevron-down"
             size={20}
             color={defaultStyles.colors.medium}
