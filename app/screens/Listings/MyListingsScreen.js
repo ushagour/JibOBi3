@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { FlatList, StyleSheet, View, Alert, Text } from "react-native";
+import { FlatList, StyleSheet, View, Alert, Text, TouchableOpacity } from "react-native";
+import dayjs from "dayjs";
 
 import Screen from "../../components/Screen";
-import { ListItem, ListItemDeleteAction, ListItemSeparator,ListItemEditAction } from "../../components/lists";
+import Card from "../../components/Card";
 import listingsApi from "../../api/listings";
 import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
+import ActivityIndicator from "../../components/ActivityIndicator";
+import colors from "../../config/colors";
  // Import the useAuth hook
 
 function MyListingsScreen({ navigation }) {
@@ -70,6 +73,8 @@ function MyListingsScreen({ navigation }) {
 
   return (
     <Screen scrollable={false}>
+      <ActivityIndicator visible={loading} />
+
       {error && !loading && (
         <View style={{ alignItems: "center", padding: 10 }}>
           <Text style={{ color: "red" }}>Couldn't retrieve listings. Please try again later.</Text>
@@ -86,32 +91,83 @@ function MyListingsScreen({ navigation }) {
         data={listings}
         keyExtractor={(listing) => listing.id.toString()}
         renderItem={({ item }) => (
-          <ListItem
-            title={item.title}
-            image={{ uri: item.imageUrl }}
-            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-            renderRightActions={() => (
-              <View style={styles.actionsContainer}>
-              <ListItemDeleteAction onPress={() => handleDelete(item)} />
-              <ListItemEditAction onPress={() => navigation.navigate(routes.LISTING_EDIT, {listing: item
-            })} />
-            </View>
+          <View>
+            <Card
+              title={item.title}
+              subTitle={item.price}
+              imageUrl={item.imageUrl}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+              thumbnailUrl={item.thumbnailUrl}
+              categoryName={item.Category?.name}
+              status={item.status}
+              createdAt={dayjs(item.createdAt).format("MMM D, YYYY h:mm A")}
+            />
 
-            
-            )}
-          />
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.editButton]}
+                onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing: item })}
+              >
+                <Text style={[styles.actionText, styles.editText]}>Edit</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteButton]}
+                onPress={() => handleDelete(item)}
+              >
+                <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-        ItemSeparatorComponent={ListItemSeparator}
         refreshing={refreshing}
-        onRefresh={loadListings}
+        onRefresh={async () => {
+          setRefreshing(true);
+          await loadListings();
+          setRefreshing(false);
+        }}
+        contentContainerStyle={styles.listContent}
       />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  listContent: {
+    paddingHorizontal: 8,
+    paddingBottom: 14,
+  },
   actionsContainer: {
     flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: -20,
+    marginBottom: 20,
+    paddingHorizontal: 12,
+  },
+  actionButton: {
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+  },
+  editButton: {
+    backgroundColor: colors.infoLight,
+    borderColor: colors.info,
+  },
+  deleteButton: {
+    backgroundColor: colors.dangerLight,
+    borderColor: colors.danger,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  editText: {
+    color: colors.info,
+  },
+  deleteText: {
+    color: colors.danger,
   },
 });
 

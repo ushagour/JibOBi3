@@ -1,23 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { FlatList, StyleSheet, View, Alert, Text, Button } from "react-native";
-import Screen from "../../components/Screen";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  ListItem,
-  ListItemDeleteAction,
-  ListItemSeparator,
-} from "../../components/lists";
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Screen from "../../components/Screen";
 import colors from "../../config/colors";
 import messagesApi from "../../api/messages";
-import userApi from "../../api/users";
-import routes from "../../navigation/routes";
-import CustomCheckbox from "../../components/CustomCheckbox"; // Import CustomCheckbox
+import useAuth from "../../auth/useAuth";
 
 function MessagesScreen({ navigation }) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [selectAll, setSelectAll] = useState(false); // State for "Select All" checkbox
 
   useEffect(() => {
     loadMessages();
@@ -29,8 +32,10 @@ function MessagesScreen({ navigation }) {
       const response = await messagesApi.getAll();
 
       if (response.ok) {
-        setMessages(response.data.map((msg) => ({ ...msg, selected: false }))); // Add `selected` property
+        setMessages(response.data || []);
         setError(false);
+      } else {
+        setError(true);
       }
     } catch (error) {
       setError(true);
@@ -41,19 +46,48 @@ function MessagesScreen({ navigation }) {
     }
   };
 
-  const handleDelete = (message) => {
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, [messages]);
+
+  const currentUserName = user?.name;
+
+  const isSentByCurrentUser = (message) => {
+    if (!currentUserName) return false;
+    return (
+      (message.fromUser || "").toLowerCase() === currentUserName.toLowerCase()
+    );
+  };
+
+  const formatTime = (dateValue) => {
+    if (!dateValue) return "";
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const handleDelete = (messageId) => {
     Alert.alert(
       "Delete Confirmation",
-      "Are you sure you want to delete this message: " + message.content,
+      "Are you sure you want to delete this message?",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           onPress: async () => {
-            const response = await messagesApi.deleteMessage(message.id);
+            const response = await messagesApi.deleteMessage(messageId);
 
             if (response.ok) {
-              setMessages(messages.filter((item) => item.id !== message.id));
+              setMessages((prevMessages) =>
+                prevMessages.filter((item) => item.id !== messageId)
+              );
               Alert.alert("Success", "Message deleted successfully.");
             } else {
               Alert.alert("Error", "Failed to delete message.");
@@ -67,127 +101,212 @@ function MessagesScreen({ navigation }) {
     );
   };
 
-  const handleDeleteAll = async () => {
-    Alert.alert(
-      "Delete All Confirmation",
-      "Are you sure you want to delete all selected messages?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete All",
-          onPress: async () => {
-            const selectedMessages = messages.filter((msg) => msg.selected);
+  const renderBubble = ({ item }) => {
+    const isMine = isSentByCurrentUser(item);
 
-            try {
-              for (const message of selectedMessages) {
-                await messagesApi.deleteMessage(message.id);
-              }
+    return (
+      <View
+        style={[
+          styles.messageRow,
+          isMine ? styles.messageRowMine : styles.messageRowOther,
+        ]}
+      >
+        {!isMine && (
+          <Image
+            source={{ uri: item.avatar || undefined }}
+            style={styles.avatar}
+            defaultSource={require("../../assets/icon.png")}
+          />
+        )}
 
-              setMessages(messages.filter((msg) => !msg.selected));
-              Alert.alert("Success", "Selected messages deleted successfully.");
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete some messages.");
-              console.error("Error deleting messages:", error);
-            }
-          },
-          style: "destructive",
-        },
-      ],
-      { cancelable: true }
-    );
-  };
+        <Pressable
+          style={styles.messageMetaWrapper}
+          onLongPress={() => handleDelete(item.id)}
+          delayLongPress={350}
+        >
+          <View
+            style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}
+          >
+            {!isMine && <Text style={styles.senderName}>{item.fromUser}</Text>}
+            <Text style={[styles.messageText, isMine && styles.messageTextMine]}>
+              {item.content}
+            </Text>
+            {!!item.listing?.title && (
+              <Text style={[styles.listingText, isMine && styles.listingTextMine]}>
+                Re: {item.listing.title}
+              </Text>
+            )}
+            <Text style={[styles.timeText, isMine && styles.timeTextMine]}>
+              {formatTime(item.createdAt)}
+            </Text>
+          </View>
+        </Pressable>
 
-  const toggleSelectAll = () => {
-    setSelectAll(!selectAll);
-    setMessages(messages.map((msg) => ({ ...msg, selected: !selectAll })));
-  };
-
-  const toggleSelectMessage = (id) => {
-    setMessages(
-      messages.map((msg) =>
-        msg.id === id ? { ...msg, selected: !msg.selected } : msg
-      )
+        {isMine && <View style={styles.mineSpacer} />}
+      </View>
     );
   };
 
   return (
     <Screen scrollable={false}>
-            {/* Select All Checkbox */}
-            <View style={styles.selectAllContainer}>
-  <CustomCheckbox
-    isChecked={selectAll}
-    onPress={toggleSelectAll}
-    size={24}
-    color={colors.primary} // Customize checkbox colors
-  />
-  <Text style={styles.selectAllText}>Select All</Text>
-  <View style={styles.deleteAllButton}>
-    {selectAll && (
-    <Button
-    title="Delete All"
-    onPress={handleDeleteAll}
-    color={colors.danger}
-    disabled={!messages.some((msg) => msg.selected)} // Disable if no messages are selected
-  />    )}
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerSubtitle}>Your latest conversations</Text>
+      </View>
 
-    
-  </View>
-</View>
       {error && !loading && (
-        <View style={{ alignItems: "center", padding: 10 }}>
-          <Text style={{ color: colors.primary }}>
+        <View style={styles.stateContainer}>
+          <Text style={styles.errorText}>
             Something went wrong, please try again.
           </Text>
         </View>
       )}
 
       {messages.length === 0 && !loading && (
-        <View style={{ alignItems: "center", padding: 10 }}>
-          <Text style={{ color: "red" }}>
+        <View style={styles.stateContainer}>
+          <Text style={styles.emptyText}>
             You have no notifications at the moment
           </Text>
         </View>
       )}
 
+      {loading && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      )}
 
       <FlatList
-        data={messages}
+        data={sortedMessages}
         keyExtractor={(message) => message.id.toString()}
-        renderItem={({ item }) => (
-          <ListItem
-            title={`From: ${item.fromUser}`} // Display sender ID
-            subTitle={item.content} // Display message content
-            image={{ uri: item.avatar }}
-            renderRightActions={() => (
-              <ListItemDeleteAction onPress={() => handleDelete(item)} />
-            )}
-            onPress={() => toggleSelectMessage(item.id)} // Toggle selection on press
-            style={{
-              backgroundColor: item.selected ? colors.light : "white", // Highlight selected messages
-            }}
+        renderItem={renderBubble}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={loadMessages}
+            tintColor={colors.primary}
           />
-        )}
-        ItemSeparatorComponent={ListItemSeparator}
-        refreshing={refreshing}
-        onRefresh={loadMessages}
+        }
+        onEndReachedThreshold={0.2}
       />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  selectAllContainer: {
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray || "#ECECEC",
+    backgroundColor: colors.surface || "#FFFFFF",
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.textPrimary || colors.dark,
+  },
+  headerSubtitle: {
+    marginTop: 2,
+    fontSize: 13,
+    color: colors.textSecondary || "#6B7280",
+  },
+  listContent: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  messageRow: {
     flexDirection: "row",
+    marginBottom: 12,
+    alignItems: "flex-end",
+  },
+  messageRowMine: {
+    justifyContent: "flex-end",
+  },
+  messageRowOther: {
+    justifyContent: "flex-start",
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginRight: 8,
+    backgroundColor: colors.lightGray || "#E5E7EB",
+  },
+  mineSpacer: {
+    width: 42,
+  },
+  messageMetaWrapper: {
+    maxWidth: "78%",
+  },
+  bubble: {
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  bubbleMine: {
+    backgroundColor: colors.primary,
+    borderBottomRightRadius: 6,
+  },
+  bubbleOther: {
+    backgroundColor: colors.surface || "#FFFFFF",
+    borderBottomLeftRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.lightGray || "#E5E7EB",
+  },
+  senderName: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.primary,
+    marginBottom: 3,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.textPrimary || colors.dark,
+  },
+  messageTextMine: {
+    color: colors.white,
+  },
+  listingText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: colors.textSecondary || "#6B7280",
+  },
+  listingTextMine: {
+    color: "#D6F2F3",
+  },
+  timeText: {
+    marginTop: 6,
+    fontSize: 11,
+    color: colors.textTertiary || "#9CA3AF",
+    textAlign: "right",
+  },
+  timeTextMine: {
+    color: "#D6F2F3",
+  },
+  stateContainer: {
     alignItems: "center",
-    padding: 10,
+    paddingVertical: 20,
   },
-  selectAllText: {
-    marginLeft: 10, // Space between the checkbox and the text
-    fontSize: 16,
+  errorText: {
+    color: colors.danger,
+    fontSize: 14,
   },
-  deleteAllButton: {
-    marginLeft: "auto", // Push the button to the right
-    backgroundColor: colors.danger,
+  emptyText: {
+    color: colors.textSecondary || "#6B7280",
+    fontSize: 14,
+  },
+  loaderContainer: {
+    position: "absolute",
+    top: "50%",
+    left: 0,
+    right: 0,
+    zIndex: 2,
   },
 });
 
