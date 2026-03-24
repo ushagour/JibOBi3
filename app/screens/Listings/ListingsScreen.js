@@ -37,7 +37,7 @@ function ListingsScreen({ navigation }) {
 <>
     <ActivityIndicator visible={loading} />
 
-    <Screen style={styles.screen}>
+    <Screen style={styles.screen} scrollable={false}>
 
 
 
@@ -60,10 +60,11 @@ function ListingsScreen({ navigation }) {
             imageUrl={item.imageUrl}
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
             thumbnailUrl={item.thumbnailUrl}
-            // ownerName={item.owner.name}
+            ownerName={item.owner?.name}
+            categoryName={item.Category?.name}
             status={item.status}
             coordinates={{ latitude: item.latitude, longitude: item.longitude }}
-            createdAt={dayjs(item.createdAt).format('MMMM D, YYYY h:s')} // Format the createdAt date
+            createdAt={dayjs(item.createdAt).format('MMM D, YYYY h:mm A')}
             images={item.images} // Pass all images to the Card component
  
             />

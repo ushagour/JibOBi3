@@ -11,23 +11,27 @@ import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
 const Stack = createStackNavigator();
 
 const FeedNavigator = () => (
-<Stack.Navigator  >
+<Stack.Navigator
+  screenOptions={({ navigation }) => ({
+    headerShown: true,
+    headerTitle: "",
+    headerBackTitleVisible: false,
+    headerLeft: () => (
+      <TouchableOpacity
+        style={{ marginLeft: 10 }}
+        onPress={() => navigation.goBack()}
+      >
+        <MaterialCommunityIcons
+          name="arrow-left"
+          size={24}
+          color="black"
+        />
+      </TouchableOpacity>
+    ),
+  })}
+>
     <Stack.Screen name="Listings" component={ListingsScreen} />
-    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen}   screenOptions={({ navigation }) => ({
-      headerShown: true,
-      headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 10 }}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color="black"
-          />
-        </TouchableOpacity>
-      ),
-    })} />
+    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>

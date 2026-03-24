@@ -24,7 +24,10 @@ const updateUserInfo = (id,UserData, onUploadProgress) => {
 
 const deleteUser = (id) => client.delete(`/user/${id}`);
 
+const deleteUserAvatar = (id) => client.delete(`/user/${id}/avatar`);
 
 
 
-export default { updateUserInfo,getUserInfo,deleteUser };
+
+
+export default { updateUserInfo,getUserInfo,deleteUser,deleteUserAvatar };

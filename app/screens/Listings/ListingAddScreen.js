@@ -5,20 +5,21 @@ import { StyleSheet,
    KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Keyboard
+  Keyboard,
+  View
  } from "react-native";
 import * as Yup from "yup";
 import Button from "../../components/Button";
+import { useFormikContext } from "formik";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Text from "../../components/Text";
 
 
 import {
   Form,
   FormField,
   FormPicker as Picker,
-  SubmitButton,
-
 } from "../../components/forms";
-import Screen from "../../components/Screen";
 import FormImagePicker from "../../components/forms/FormImagePicker";
 import CategoryPickerItem from "../../components/CategoryPickerItem";
 
@@ -28,8 +29,6 @@ import categoriesAPI from "../../api/categories";
 import listingsAPI from "../../api/listings";
 import useAuth from "../../auth/useAuth";
 
-import { object } from "joi";
-
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
   price: Yup.number().required().min(1).max(100000).label("Price"),
@@ -38,10 +37,33 @@ const validationSchema = Yup.object().shape({
   images: Yup.array().min(1, "Please select at least one image."),
 });
 
+function FormActions({ navigation }) {
+  const { handleSubmit, isSubmitting } = useFormikContext();
+
+  return (
+    <View style={styles.actionsRow}>
+      <Button
+        title="Post Listing"
+        onPress={handleSubmit}
+        variant="primary"
+        size="md"
+        fullWidth={false}
+        loading={isSubmitting}
+      />
+      <Button
+        title="Cancel"
+        onPress={() => navigation.goBack()}
+        variant="outline"
+        size="md"
+        fullWidth={false}
+      />
+    </View>
+  );
+}
+
 function ListingAddScreen({ navigation }) {
   const { location } = useLocation();
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState();
   const [uploadVisible, setUploadVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const { user } = useAuth();
@@ -71,9 +93,19 @@ function ListingAddScreen({ navigation }) {
         return;
       }
 
-      Alert.alert("Success", "Listing added successfully.");
+      const createdListingId = response.data?.id;
+
+      if (!createdListingId) {
+        Alert.alert("Success", "Listing added successfully.");
+        navigation.goBack();
+        return;
+      }
+
       resetForm();
-      navigation.goBack();
+      navigation.navigate("Feed", {
+        screen: routes.LISTING_DETAILS,
+        params: createdListingId,
+      });
     } catch (error) {
       Alert.alert("Error", "An unexpected error occurred.");
     } finally {
@@ -95,6 +127,26 @@ function ListingAddScreen({ navigation }) {
         progress={progress}
         onDone={() => setUploadVisible(false)}
       />
+
+      <View style={styles.heroCard}>
+        <Text variant="h4" style={styles.heroTitle}>Create New Listing</Text>
+        <Text variant="bodySmall" color="textSecondary" style={styles.heroSubtitle}>
+          Add clear photos, accurate pricing, and a short description to get better responses.
+        </Text>
+        <View style={styles.metaRow}>
+          <View style={styles.metaPill}>
+            <MaterialCommunityIcons name="account" size={14} color="#0B5563" />
+            <Text variant="caption" style={styles.metaPillText}>{user?.name || "Seller"}</Text>
+          </View>
+          <View style={styles.metaPill}>
+            <MaterialCommunityIcons name="map-marker" size={14} color="#0B5563" />
+            <Text variant="caption" style={styles.metaPillText}>
+              {location ? "Location ready" : "No location"}
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <Form
         initialValues={{
           title: "",
@@ -106,24 +158,44 @@ function ListingAddScreen({ navigation }) {
         onSubmit={handleSubmit}
         validationSchema={validationSchema}
       >
+        <View style={styles.sectionCard}>
+          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Images</Text>
+          <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
+            Add at least one image. The first image will be your cover.
+          </Text>
         <FormImagePicker name="images" />
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Basic Details</Text>
         <FormField maxLength={255} name="title" placeholder="Title" />
-        <FormField
-          keyboardType="numeric"
-          maxLength={8}
-          name="price"
-          placeholder="Price"
-          width={120}
-        />
+          <View style={styles.splitRow}>
+            <View style={styles.priceInputWrap}>
+              <FormField
+                keyboardType="numeric"
+                maxLength={8}
+                name="price"
+                placeholder="Price"
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Category</Text>
       <Picker
           items={categories}
           name="category"
           numberOfColumns={3}
           PickerItemComponent={CategoryPickerItem}
           placeholder="Category"
-          width="50%"
+          width="100%"
 
         />
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Description</Text>
         <FormField
           maxLength={255}
           multiline
@@ -131,8 +203,9 @@ function ListingAddScreen({ navigation }) {
           numberOfLines={3}
           placeholder="Description"
         />
-        <SubmitButton title="SAVE" />
-        <Button title="Back" onPress={()=>{navigation.goBack()}} color="secondary"/>
+        </View>
+
+        <FormActions navigation={navigation} />
       </Form>
   </ScrollView>  
     </TouchableWithoutFeedback>
@@ -142,12 +215,76 @@ function ListingAddScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    contentContainer: {
-      flexGrow: 1,
-    },
     container: {
-      paddingTop: 50,
+    flexGrow: 1,
+    backgroundColor: "#F7F4F0",
+    paddingTop: 28,
     padding: 20,
+  },
+  heroCard: {
+    backgroundColor: "#EAF5F5",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#D3EAEB",
+  },
+  heroTitle: {
+    color: "#0B5563",
+  },
+  heroSubtitle: {
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  metaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D8ECEE",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  metaPillText: {
+    marginLeft: 5,
+    color: "#0B5563",
+    fontWeight: "700",
+  },
+  sectionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ECE7DE",
+  },
+  sectionLabel: {
+    marginBottom: 2,
+  },
+  sectionHint: {
+    marginBottom: 4,
+  },
+  splitRow: {
+    flexDirection: "row",
+  },
+  priceInputWrap: {
+    width: 140,
+  },
+  actionsRow: {
+    marginTop: 8,
+    marginBottom: 24,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
   },
 });
 

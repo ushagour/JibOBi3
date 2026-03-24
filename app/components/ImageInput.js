@@ -3,7 +3,7 @@ import { TouchableOpacity, Image, View, StyleSheet, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-function ImageInput({ imageUri, onChangeImage }) {
+function ImageInput({ imageUri, onChangeImage, onDeleteImage }) {
   const handlePress = async () => {
     if (!imageUri) {
       const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -16,7 +16,22 @@ function ImageInput({ imageUri, onChangeImage }) {
       pickImage();
     } else {
       Alert.alert("Delete", "Are you sure you want to delete this image?", [
-        { text: "Yes", onPress: () => onChangeImage(null) },
+        { 
+          text: "Yes", 
+          onPress: async () => {
+            try {
+              // Call the delete image function if provided
+              if (onDeleteImage) {
+                await onDeleteImage();
+              }
+              // Clear the local imagex
+              onChangeImage(null);
+            } catch (error) {
+              console.error("Error deleting avatar:", error);
+              Alert.alert("Error", "Failed to delete avatar");
+            }
+          }
+        },
         { text: "No" },
       ]);
     }
@@ -28,29 +43,16 @@ function ImageInput({ imageUri, onChangeImage }) {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 1,
-            });
+      });
 
+      if (!result.canceled) {
+        const { uri, type } = result.assets[0];
 
-
-
-
-
-
-
-
-
-
-            if (!result.canceled) {
-              const { uri, type } = result.assets[0];
-
-              if (type === 'image') {
-                onChangeImage(result.assets[0].uri);  // Pass the URI to the parent component
-
-              } else {
-                console.error('Unsupported file type');
-              }
-              
-        onChangeImage(result.assets[0].uri);  // Pass the URI to the parent component
+        if (type === 'image') {
+          onChangeImage(result.assets[0].uri);  // Pass the URI to the parent component
+        } else {
+          console.error('Unsupported file type');
+        }
       }
     } catch (error) {
       console.log("Error picking an image", error);

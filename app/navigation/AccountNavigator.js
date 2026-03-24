@@ -18,6 +18,8 @@ const AccountNavigator = () => (
   <Stack.Navigator
     screenOptions={({ navigation }) => ({
       headerShown: true,
+      headerTitle: "",
+      headerBackTitleVisible: false,
       headerLeft: () => (
         <TouchableOpacity
           style={{ marginLeft: 10 }}

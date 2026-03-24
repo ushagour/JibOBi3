@@ -8,6 +8,7 @@ import AuthNavigator from "./app/navigation/AuthNavigator";
 import AuthContext from "./app/auth/context";
 import authStorage from "./app/auth/storage";
 import { navigationRef } from "./app/navigation/rootNavigation";
+import GlobalAlertProvider from "./app/components/GlobalAlertProvider";
 
 export default function App() {
   const [user, setUser] = useState();
@@ -51,6 +52,7 @@ export default function App() {
       <AuthContext.Provider  value={{ user, setUser }}>
         {user ? <AppNavigator /> : <AuthNavigator />}
       </AuthContext.Provider>
+      <GlobalAlertProvider />
     </NavigationContainer>
   );
 }
