@@ -36,7 +36,6 @@ export const addListing = (listing,onUploadProgress) => {
 //    FormData allows you to easily build a set of key-value pairs to send data via HTTP 
 //    requests (especially useful for POST requests).
 // */
-  console.log("Listing Object:", listing);
   
 
 

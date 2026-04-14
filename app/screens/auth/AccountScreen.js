@@ -42,9 +42,9 @@ function AccountScreen({ navigation }) {
 
       <View style={styles.sectionCard}>
         <ListItem
-          title={user.name}
-          subTitle={user.email}
-          image={user.avatar ? { uri: user.avatar } : null}
+          title={user?.name || "My Account"}
+          subTitle={user?.email || "Signed in user"}
+          image={user?.userId && user?.avatar ? { uri: user.avatar } : null}
           onPress={() => navigation.navigate(routes.USER_EDIT)}
         />
       </View>
