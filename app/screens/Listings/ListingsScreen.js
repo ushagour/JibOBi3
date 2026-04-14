@@ -6,10 +6,9 @@ import colors from "../../config/colors";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import listingsApi from "../../api/listings";
-import AppText from "../../components/Text";
-import  AppButton  from "../../components/Button";
 import  ActivityIndicator  from "../../components/ActivityIndicator";
 import useApi  from "../../hooks/useApi";
+import ErrorStateScreen from "../../components/ErrorStateScreen";
 
 function ListingsScreen({ navigation }) {
       /* we distructure the data from the useApi hook and 
@@ -32,53 +31,46 @@ function ListingsScreen({ navigation }) {
   
 }, []); 
 
+  if (error && !loading) {
+    return (
+      <ErrorStateScreen
+        type="network"
+        title="Unable to load listings"
+        message="We could not fetch listings right now. Check your network and retry."
+        onRetry={fetchListings}
+      />
+    );
+  }
+
 
   return (
-<>
-    <ActivityIndicator visible={loading} />
+    <>
+      <ActivityIndicator visible={loading} />
 
-    <Screen style={styles.screen} scrollable={false}>
-
-
-
-    
-    
-      {error && <>
-        <AppText>Couldn't retrieve the listings</AppText>
-        <AppButton title="Retry" onPress={fetchListings} />
-      </>
-      }
-
-      
-      <FlatList
-        data={listings}
-        keyExtractor={(listing) => listing.id.toString()}
-        renderItem={({ item }) => (
-          <Card
-            title={item.title}
-            subTitle={ item.price}
-            imageUrl={item.imageUrl}
-            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-            thumbnailUrl={item.thumbnailUrl}
-            ownerName={item.owner?.name}
-            categoryName={item.Category?.name}
-            status={item.status}
-            coordinates={{ latitude: item.latitude, longitude: item.longitude }}
-            createdAt={dayjs(item.createdAt).format('MMM D, YYYY h:mm A')}
-            images={item.images} // Pass all images to the Card component
- 
+      <Screen style={styles.screen} scrollable={false}>
+        <FlatList
+          data={listings}
+          keyExtractor={(listing) => listing.id.toString()}
+          renderItem={({ item }) => (
+            <Card
+              title={item.title}
+              subTitle={item.price}
+              imageUrl={item.imageUrl}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+              thumbnailUrl={item.thumbnailUrl}
+              ownerName={item.owner?.name}
+              categoryName={item.Category?.name}
+              status={item.status}
+              coordinates={{ latitude: item.latitude, longitude: item.longitude }}
+              createdAt={dayjs(item.createdAt).format("MMM D, YYYY h:mm A")}
+              images={item.images}
             />
-          
-        )}
-
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
-        }
-      />
-    </Screen>
+          )}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        />
+      </Screen>
     </>
   );
 }

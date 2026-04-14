@@ -45,7 +45,7 @@ function AppPicker({
           )}
 
           <MaterialIcons
-            name="chevron-down"
+            name="keyboard-arrow-down"
             size={20}
             color={defaultStyles.colors.medium}
           />

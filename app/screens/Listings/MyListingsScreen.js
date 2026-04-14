@@ -9,6 +9,7 @@ import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
+import ErrorStateScreen from "../../components/ErrorStateScreen";
  // Import the useAuth hook
 
 function MyListingsScreen({ navigation }) {
@@ -71,16 +72,22 @@ function MyListingsScreen({ navigation }) {
     );
   };
 
+  if (error && !loading) {
+    return (
+      <ErrorStateScreen
+        type="server"
+        title="Could not load your listings"
+        message="Please retry in a moment."
+        onRetry={loadListings}
+        onGoBack={() => navigation.goBack()}
+      />
+    );
+  }
+
   return (
     <Screen scrollable={false}>
       <ActivityIndicator visible={loading} />
 
-      {error && !loading && (
-        <View style={{ alignItems: "center", padding: 10 }}>
-          <Text style={{ color: "red" }}>Couldn't retrieve listings. Please try again later.</Text>
-        </View>
-      )
-      }
       {listings.length === 0 && !loading && (
         <View style={{ alignItems: "center", padding: 10 }}>
           <Text style={{ color: "red" }}>You have no listings.</Text>

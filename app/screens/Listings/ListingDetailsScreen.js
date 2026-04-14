@@ -9,6 +9,8 @@ import {
   Keyboard,
   TouchableOpacity,
   Alert,
+  Modal,
+  FlatList,
 } from "react-native";
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
@@ -18,13 +20,13 @@ import ImageSlider from "../../components/lists/ImageSlider";
 import { Linking } from "react-native"; // Import the Linking API
 import AppButton from "../../components/Button";
 import listingsApi from "../../api/listings"; // Import the API client
-import {getReviewsByListing} from "../../api/reviews"; // Import the reviews API client
+import reviewsApi from "../../api/reviews"; // Import the reviews API client
 import useAuth from "../../auth/useAuth";
 
 import ActivityIndicator from "../../components/ActivityIndicator";
-import MessageBox from "../../components/MessageBox";
+import ErrorStateScreen from "../../components/ErrorStateScreen";
 import ReviewsSection from "../../components/ReviewsSection"; // Import the reviews component
-import { Ionicons, MaterialIcons } from "@expo/vector-icons"; // Import icons
+import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons"; // Import icons
 import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
 
 
@@ -42,6 +44,16 @@ function ListingDetailsScreen({ route, navigation }) {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
  const [locationName, setLocationName] = useState("Loading...");
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState("spam");
+
+  const reportReasons = [
+    { id: "spam", label: "Spam or misleading" },
+    { id: "scam", label: "Suspicious or scam listing" },
+    { id: "prohibited", label: "Prohibited item or service" },
+    { id: "duplicate", label: "Duplicate or irrelevant listing" },
+    { id: "other", label: "Other issue" },
+  ];
 
 
   useEffect(() => {
@@ -78,7 +90,10 @@ function ListingDetailsScreen({ route, navigation }) {
     const fetchReviews = async () => {
       try {
         setLoadingReviews(true);
-        const response = await getReviewsByListing(id);
+
+        const response = await reviewsApi.getReviewsByListing(id);
+        console.log(response);
+        
         if (response.ok && response.data) {
           console.log("Fetched reviews:", response.data); // Debug log
           setReviews(response.data);
@@ -86,7 +101,7 @@ function ListingDetailsScreen({ route, navigation }) {
           setReviews([]);
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error);
+        console.error("Error fetching reviews:", error.message);
         setReviews([]);
       } finally {
         setLoadingReviews(false);
@@ -108,7 +123,23 @@ function ListingDetailsScreen({ route, navigation }) {
   }
 
   if (error) {
-    return <MessageBox message={`Couldn't retrieve the listings ${error}`}  type="error" onPress={(navigation) => navigation.goBack()}/>
+    const normalizedError = String(error || "");
+    const errorType = /404|not\s*found/i.test(normalizedError)
+      ? "notFound"
+      : "server";
+
+    return (
+      <ErrorStateScreen
+        type={errorType}
+        title={errorType === "notFound" ? "Listing not found" : "Unable to load details"}
+        message="Please try again or go back to listings."
+        details={normalizedError}
+        onRetry={() => navigation.replace(routes.LISTING_DETAILS, id)}
+        onGoBack={() => navigation.goBack()}
+        backVariant="primary"
+        backSize="lg"
+      />
+    );
   }
 
 
@@ -198,6 +229,46 @@ function ListingDetailsScreen({ route, navigation }) {
     }
   };
 
+  const openWhatsApp = async () => {
+    const rawPhone = listing?.owner?.phone;
+
+    if (!rawPhone) {
+      Alert.alert("WhatsApp unavailable", "The seller has not provided a phone number.");
+      return;
+    }
+
+    const phoneNumber = String(rawPhone).replace(/\D/g, "");
+    const message = encodeURIComponent(`Hello ${listing.owner?.name || "seller"}, I am interested in your listing: ${listing.title}`);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+
+    try {
+      const supported = await Linking.canOpenURL(whatsappUrl);
+      if (supported) {
+        await Linking.openURL(whatsappUrl);
+        return;
+      }
+
+      Alert.alert("WhatsApp unavailable", "WhatsApp is not installed or the link cannot be opened.");
+    } catch (err) {
+      console.error("Error opening WhatsApp:", err);
+      Alert.alert("Error", "Unable to open WhatsApp.");
+    }
+  };
+
+  const openReportModal = () => {
+    setSelectedReportReason("spam");
+    setReportModalVisible(true);
+  };
+
+  const submitReport = () => {
+    const reason = reportReasons.find((item) => item.id === selectedReportReason);
+    setReportModalVisible(false);
+    Alert.alert(
+      "Report submitted",
+      `Thanks. We received your report for: ${reason?.label || "this listing"}.`
+    );
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -205,6 +276,12 @@ function ListingDetailsScreen({ route, navigation }) {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
+              <View style={styles.ownerInfoRow}>
+                <Ionicons name="person" size={16} color={colors.secondary} />
+                <Text style={styles.infoText} numberOfLines={1}>
+                  {listing.owner?.name || "Unknown owner"}
+                </Text>
+              </View>
           <TouchableOpacity
             delayLongPress={500}
             onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.imageUrl })}
@@ -242,12 +319,20 @@ function ListingDetailsScreen({ route, navigation }) {
             </View>
 
             <View style={styles.infoPanel}>
-              <View style={styles.infoRow}>
-                <Ionicons name="person" size={16} color={colors.primary} />
-                <Text style={styles.infoText} numberOfLines={1}>
-                  {listing.owner?.name || "Unknown owner"}
-                </Text>
+             
+
+              <View style={[styles.infoRow, styles.descriptionInfoRow]}>
+                <MaterialIcons name="notes" size={16} color={colors.darkGray} />
+                <View style={styles.descriptionInfoTextWrap}>
+                  <Text style={styles.infoLabel}>Description</Text>
+                  <Text style={styles.infoDescription} numberOfLines={4}>
+                    {listing.description || "No description provided."}
+                  </Text>
+                </View>
               </View>
+
+
+           
 
               <View style={styles.infoRow}>
                 <MaterialIcons name="location-on" size={16} color={colors.dark} />
@@ -257,56 +342,27 @@ function ListingDetailsScreen({ route, navigation }) {
               </View>
             </View>
 
-            <View style={styles.mapWrapper}>
-              <View style={styles.mapHeaderRow}>
-                <View style={styles.mapIconWrap}>
-                  <MaterialIcons name="map" size={18} color={colors.primary} />
-                </View>
-                <View style={styles.mapHeaderTextWrap}>
-                  <Text style={styles.mapTitle}>Location & Navigation</Text>
-                  <Text style={styles.mapSubtitle} numberOfLines={1}>
-                    {locationName}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.mapButtonWrap}>
-                <AppButton
-                  title="Open in Maps"
-                  onPress={() => openGpsNavigation(listing.latitude, listing.longitude)}
-                  variant="primary"
-                  size="sm"
-                  fullWidth={false}
-                />
-              </View>
-            </View>
-
-            <View style={styles.descriptionSection}>
-              <Text style={styles.sectionLabel}>Description</Text>
-              <Text style={styles.description}>{listing.description}</Text>
-            </View>
-
             <ReviewsSection 
               reviews={reviews} 
               onDeleteReview={handleDeleteReview}
               isDeletingReview={isDeletingReview}
+              listingOwnerId={listing.owner?.id}
             />
         
 
-             <Text style={styles.state}>
-            {listing.status}
-            
-            {listing.state && listing.state !== "Sold Out" ? (
-                <MaterialIcons name="check-circle" size={16} color={colors.success} />
-              ) : (
-                <MaterialIcons name="close" size={20} color={colors.danger} />
-              ) }
-            </Text> 
+       
 
             {user.userId !== listing.owner.id ? (
               <View style={styles.contactSection}>
                 <Text style={styles.sectionLabel}>Contact Seller</Text>
                 <ContactSellerForm listing={listing} />
+                <AppButton
+                  title="Contact via WhatsApp"
+                  onPress={openWhatsApp}
+                  variant="success"
+                  size="md"
+                  icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
+                />
               </View>
             ) : null}
 
@@ -332,17 +388,84 @@ function ListingDetailsScreen({ route, navigation }) {
               )}
 
               {!isOwner(listing.owner.id) && (
-                <View style={styles.actionButtonsRow}>
                   <AppButton
                     title="Report"
-                    onPress={() => alert("Report", "This listing has been reported.")}
-                    variant="outline"
-                    size="sm"
+                    onPress={openReportModal}
+                    variant="danger"
+                    size="md"
                     fullWidth={false}
                   />
-                </View>
               )}
             </View>
+
+            <Modal
+              visible={reportModalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setReportModalVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback onPress={() => setReportModalVisible(false)}>
+                  <View style={styles.modalBackdrop} />
+                </TouchableWithoutFeedback>
+
+                <View style={styles.reportModalCard}>
+                  <Text style={styles.reportModalTitle}>Report listing</Text>
+                  <Text style={styles.reportModalSubtitle}>
+                    Choose the reason that best matches the issue.
+                  </Text>
+
+                  <FlatList
+                    data={reportReasons}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.reportReasonList}
+                    renderItem={({ item }) => {
+                      const selected = item.id === selectedReportReason;
+
+                      return (
+                        <TouchableOpacity
+                          style={[
+                            styles.reportReasonItem,
+                            selected && styles.reportReasonItemSelected,
+                          ]}
+                          onPress={() => setSelectedReportReason(item.id)}
+                          activeOpacity={0.85}
+                        >
+                          <View style={styles.reportReasonTextWrap}>
+                            <Text style={styles.reportReasonLabel}>{item.label}</Text>
+                            <Text style={styles.reportReasonHint}>
+                              Mark this if it best describes the problem.
+                            </Text>
+                          </View>
+                          <MaterialIcons
+                            name={selected ? "radio-button-checked" : "radio-button-unchecked"}
+                            size={22}
+                            color={selected ? colors.danger : colors.mediumGray}
+                          />
+                        </TouchableOpacity>
+                      );
+                    }}
+                  />
+
+                  <View style={styles.reportModalActions}>
+                    <AppButton
+                      title="Cancel"
+                      onPress={() => setReportModalVisible(false)}
+                      variant="outline"
+                      size="sm"
+                      fullWidth={false}
+                    />
+                    <AppButton
+                      title="Submit report"
+                      onPress={submitReport}
+                      variant="danger"
+                      size="sm"
+                      fullWidth={false}
+                    />
+                  </View>
+                </View>
+              </View>
+            </Modal>
 
 
 
@@ -356,9 +479,10 @@ function ListingDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
+    paddingTop: 12,
   },
   detailsContainer: {
-    padding: 20,
+    padding: 30,
     paddingBottom: 30,
   },
   image: {
@@ -431,6 +555,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginBottom: 16,
   },
+  ownerInfoRow: {
+    flexDirection: "row",
+    justifyContent: "right",
+    position: "absolute",
+    top: 10,
+    paddingHorizontal: 30,
+
+  },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -442,8 +574,25 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  descriptionSection: {
-    marginBottom: 8,
+  descriptionInfoRow: {
+    alignItems: "flex-start",
+  },
+  descriptionInfoTextWrap: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  infoDescription: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 22,
+    marginTop: 2,
   },
   mapWrapper: {
     marginBottom: 14,
@@ -502,6 +651,73 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     alignItems: "center",
     gap: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  reportModalCard: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    padding: 20,
+  },
+  reportModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  reportModalSubtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  reportReasonList: {
+    marginTop: 16,
+  },
+  reportReasonItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    backgroundColor: colors.lighterGray,
+  },
+  reportReasonItemSelected: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerLight,
+  },
+  reportReasonTextWrap: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  reportReasonLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  reportReasonHint: {
+    marginTop: 3,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  reportModalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 8,
   },
 
 });

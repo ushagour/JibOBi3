@@ -31,7 +31,20 @@ const FeedNavigator = () => (
   })}
 >
     <Stack.Screen name="Listings" component={ListingsScreen} />
-    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
+    <Stack.Screen
+      name="ListingDetails"
+      component={ListingDetailsScreen}
+      options={({ navigation }) => ({
+        headerRight: () => (
+          <TouchableOpacity
+            style={{ marginRight: 12 }}
+            onPress={() => navigation.getParent()?.navigate("account")}
+          >
+            <MaterialCommunityIcons name="menu" size={26} color="black" />
+          </TouchableOpacity>
+        ),
+      })}
+    />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>
