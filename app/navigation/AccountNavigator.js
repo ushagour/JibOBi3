@@ -22,23 +22,27 @@ const AccountNavigator = () => (
       headerShown: true,
       headerTitle: "",
       headerBackTitleVisible: false,
-      headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 15 }}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color="black"
-          />
-        </TouchableOpacity>
-      ),
+      headerLeft: () => {
+        if (!navigation.canGoBack()) return null;
+
+        return (
+          <TouchableOpacity
+            style={{ marginLeft: 15 }}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color="black"
+            />
+          </TouchableOpacity>
+        );
+      },
       headerRight: () => (
         <TouchableOpacity
           style={{ marginRight: 15 }}
           onPress={() =>
-            navigation.getParent()?.navigate("account", {
+            navigation.getParent()?.navigate(Settings,{
               screen: routes.SETTINGS,
             })
           }
@@ -56,7 +60,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
     <Stack.Screen name="Messages" component={MessagesScreen} />
-    <Stack.Screen name={routes.SETTINGS} component={SettingsScreen} />
+    <Stack.Screen name='Settings' component={SettingsScreen} />
   </Stack.Navigator>
 );
 

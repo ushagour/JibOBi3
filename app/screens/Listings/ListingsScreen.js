@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet,RefreshControl } from "react-native";
 import dayjs from "dayjs";
-import Card from "../../components/Card";
+import Product from "../../components/cards/Product";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
@@ -20,7 +20,7 @@ function ListingsScreen({ navigation }) {
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    await   fetchListings();  // Assuming `refetch` is your API call function
+    await   fetchListings();   // Assuming `refetch` is your API call function
     setRefreshing(false);
   };
 
@@ -50,21 +50,21 @@ function ListingsScreen({ navigation }) {
       <Screen style={styles.screen} scrollable={false}>
         <FlatList
           data={listings}
+          numColumns={2}
           keyExtractor={(listing) => listing.id.toString()}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <Card
-              title={item.title}
-              subTitle={item.price}
-              imageUrl={item.imageUrl}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-              thumbnailUrl={item.thumbnailUrl}
-              ownerName={item.owner?.name}
-              categoryName={item.Category?.name}
-              status={item.status}
-              coordinates={{ latitude: item.latitude, longitude: item.longitude }}
-              createdAt={dayjs(item.createdAt).format("MMM D, YYYY h:mm A")}
-              images={item.images}
-            />
+             <Product
+               title={item.title}
+               imageUri={item.thumbnailUrl}
+               onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+               price={item.price}
+               seller={item.owner?.name}
+               categoryName={item.Category?.name}
+               status={item.status}
+               createdAt={dayjs(item.createdAt).format("MMM D, YYYY h:mm A")}
+             />
           )}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -79,6 +79,12 @@ const styles = StyleSheet.create({
   screen: {
     padding: 7,
     backgroundColor: colors.light,
+  },
+  listContent: {
+    paddingBottom: 12,
+  },
+  row: {
+    justifyContent: "space-between",
   },
 });
 

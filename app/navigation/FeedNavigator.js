@@ -17,18 +17,22 @@ const FeedNavigator = () => (
     headerShown: true,
     headerTitle: "",
     headerBackTitleVisible: false,
-    headerLeft: () => (
-      <TouchableOpacity
-        style={{ marginLeft: 10 }}
-        onPress={() => navigation.goBack()}
-      >
-        <MaterialCommunityIcons
-          name="arrow-left"
-          size={24}
-          color="black"
-        />
-      </TouchableOpacity>
-    ),
+    headerLeft: () => {
+      if (!navigation.canGoBack()) return null;
+
+      return (
+        <TouchableOpacity
+          style={{ marginLeft: 10 }}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color="black"
+          />
+        </TouchableOpacity>
+      );
+    },
     headerRight: () => (
       <TouchableOpacity
         style={{ marginRight: 12 }}

@@ -8,7 +8,7 @@ import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
-import { ProfileCard } from '../../components/MarketplaceCards';
+import { ProfileCard } from '../../components/cards/ProfileCard';
 
 const menuItems = [
   {
@@ -41,7 +41,7 @@ function AccountScreen({ navigation }) {
       </AppText>
 <ProfileCard 
   // name={user?.name || ""} 
-name={user.avatar}
+name={user.name}
   rating={5} 
   avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"} 
 />

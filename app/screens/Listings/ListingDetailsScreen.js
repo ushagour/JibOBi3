@@ -28,6 +28,7 @@ import ErrorStateScreen from "../../components/ErrorStateScreen";
 import ReviewsSection from "../../components/ReviewsSection"; // Import the reviews component
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons"; // Import icons
 import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
+import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-icons/FontAwesome'
 
 
 function ListingDetailsScreen({ route, navigation }) {
@@ -298,6 +299,13 @@ function ListingDetailsScreen({ route, navigation }) {
                   {listing.Category?.name || "Uncategorized"}
                 </Text>
               </View>
+              {listing.rating !== undefined && (
+                <View style={styles.ratingContainer}>
+                  {[...Array(5)].map((_, i) => (
+                    <FontAwesome key={i} name={i < listing.rating ? "star" : "star-o"} size={10} color={COLORS.gold} />
+                  ))}
+                </View>
+              )}
               {!!listing.state && (
                 <View
                   style={[
