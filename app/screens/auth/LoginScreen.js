@@ -68,6 +68,7 @@ function LoginScreen({ navigation }) {
             keyboardType="email-address"
             name="email"
             placeholder="Email"
+            showErrorOnSubmitOnly
             textContentType="emailAddress"
           />
           <FormField
@@ -76,6 +77,7 @@ function LoginScreen({ navigation }) {
             icon="lock"
             name="password"
             placeholder="Password"
+            showErrorOnSubmitOnly
             secureTextEntry
             textContentType="password"
           />
