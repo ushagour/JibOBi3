@@ -47,6 +47,12 @@ function ListingsScreen({ navigation }) {
       we call the listingsApi.getListings function */
   const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
   const {
+    data: categoryListings,
+    error: categoryError,
+    loading: categoryLoading,
+    request: fetchListingsByCategory,
+  } = useApi(listingsApi.getListingsByCategory);
+  const {
     data: categoriesData,
     request: fetchCategories,
   } = useApi(categoriesApi.getCategories);
@@ -87,28 +93,30 @@ function ListingsScreen({ navigation }) {
     ];
   }, [categoriesData, listings]);
 
+  const listingsSource = selectedCategory === "all" ? listings : categoryListings;
+
   const filteredListings = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return (listings || []).filter((item) => {
-      const itemCategoryId = String(item?.Category?.id ?? item?.Category?.name ?? "");
-      const inCategory =
-        selectedCategory === "all" || itemCategoryId === selectedCategory;
-
-      if (!inCategory) return false;
+    return (listingsSource || []).filter((item) => {
       if (!query) return true;
 
       const title = item?.title?.toLowerCase() || "";
       const description = item?.description?.toLowerCase() || "";
       return title.includes(query) || description.includes(query);
     });
-  }, [listings, searchQuery, selectedCategory]);
+  }, [listingsSource, searchQuery]);
 
   
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchListings(), fetchCategories()]);
+    await Promise.all([
+      selectedCategory === "all"
+        ? fetchListings()
+        : fetchListingsByCategory(selectedCategory),
+      fetchCategories(),
+    ]);
     setRefreshing(false);
   };
 
@@ -118,13 +126,25 @@ function ListingsScreen({ navigation }) {
     fetchCategories();
 }, []); 
 
-  if (error && !loading) {
+  useEffect(() => {
+    if (selectedCategory === "all") return;
+    fetchListingsByCategory(selectedCategory);
+  }, [selectedCategory]);
+
+  const activeError = selectedCategory === "all" ? error : categoryError;
+  const activeLoading = loading || categoryLoading;
+
+  if (activeError && !activeLoading) {
     return (
       <ErrorStateScreen
         type="network"
         title="Unable to load listings"
         message="We could not fetch listings right now. Check your network and retry."
-        onRetry={fetchListings}
+        onRetry={() =>
+          selectedCategory === "all"
+            ? fetchListings()
+            : fetchListingsByCategory(selectedCategory)
+        }
       />
     );
   }
@@ -132,7 +152,7 @@ function ListingsScreen({ navigation }) {
 
   return (
     <>
-      <ActivityIndicator visible={loading} />
+      <ActivityIndicator visible={activeLoading} />
 
       <Screen style={styles.screen} scrollable={false}>
         <View style={styles.fixedTopSection}>
