@@ -15,11 +15,13 @@ import colors from "../../config/colors";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import listingsApi from "../../api/listings";
+import favoritesApi from "../../api/favorites";
 import categoriesApi from "../../api/categories";
 import  ActivityIndicator  from "../../components/ActivityIndicator";
 import useApi  from "../../hooks/useApi";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
 import useAuth from "../../auth/useAuth";
+import { Alert } from "react-native";
 
 const CATEGORY_FALLBACK_ICONS = {
   Sneakers: "👟",
@@ -46,13 +48,38 @@ function ListingsScreen({ navigation }) {
       /* we distructure the data from the useApi hook and 
       we call the listingsApi.getListings function */
   const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
+
+  const {
+    data: categoryListings,
+    error: categoryError,
+    loading: categoryLoading,
+    request: fetchListingsByCategory,
+  } = useApi(listingsApi.getListingsByCategory);
+
+
   const {
     data: categoriesData,
     request: fetchCategories,
   } = useApi(categoriesApi.getCategories);
+
+  
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [favoriteIds, setFavoriteIds] = useState([]);
+
+  const loadFavorites = async () => {
+    try {
+      const response = await favoritesApi.getFavorites();
+      if (response.ok && Array.isArray(response.data?.data)) {
+        setFavoriteIds(response.data.data);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error("Error loading favorites:", error);
+      }
+    }
+  };
 
   const categories = useMemo(() => {
     const apiCategories = (categoriesData || []).map((category) => ({
@@ -87,28 +114,31 @@ function ListingsScreen({ navigation }) {
     ];
   }, [categoriesData, listings]);
 
+  const listingsSource = selectedCategory === "all" ? listings : categoryListings;
+
   const filteredListings = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return (listings || []).filter((item) => {
-      const itemCategoryId = String(item?.Category?.id ?? item?.Category?.name ?? "");
-      const inCategory =
-        selectedCategory === "all" || itemCategoryId === selectedCategory;
-
-      if (!inCategory) return false;
+    return (listingsSource || []).filter((item) => {
       if (!query) return true;
 
       const title = item?.title?.toLowerCase() || "";
       const description = item?.description?.toLowerCase() || "";
       return title.includes(query) || description.includes(query);
     });
-  }, [listings, searchQuery, selectedCategory]);
+  }, [listingsSource, searchQuery]);
 
   
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchListings(), fetchCategories()]);
+    await Promise.all([
+      selectedCategory === "all"
+        ? fetchListings()
+        : fetchListingsByCategory(selectedCategory),
+      fetchCategories(),
+      loadFavorites(),
+    ]);
     setRefreshing(false);
   };
 
@@ -116,15 +146,89 @@ function ListingsScreen({ navigation }) {
   useEffect(() => {
     fetchListings();
     fetchCategories();
+    loadFavorites();
 }, []); 
 
-  if (error && !loading) {
+  useEffect(() => {
+    if (selectedCategory === "all") return;
+    fetchListingsByCategory(selectedCategory);
+  }, [selectedCategory]);
+
+  const activeError = selectedCategory === "all" ? error : categoryError;
+  const activeLoading = loading || categoryLoading;
+
+  const handleFavoritePress = async (listingId) => {
+    const isAlreadyFavorite = favoriteIds.includes(listingId);
+
+    if (isAlreadyFavorite) {
+      Alert.alert(
+        "Remove from favorites?",
+        "This listing is already in your favorites. Do you want to remove it?",
+        [
+          {
+            text: "Keep it",
+            style: "cancel",
+          },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const response = await favoritesApi.removeFavorite(listingId);
+
+                if (!response.ok) {
+                  Alert.alert("Oops", "Could not remove favorite right now.");
+                  return;
+                }
+
+                setFavoriteIds((current) =>
+                  current.filter((id) => id !== listingId)
+                );
+
+                Alert.alert("Removed", "Listing removed from your favorites.");
+              } catch (error) {
+                if (__DEV__) {
+                  console.error("Error removing favorite:", error);
+                }
+                Alert.alert("Oops", "Could not remove favorite right now.");
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    try {
+      const response = await favoritesApi.addFavorite(listingId);
+
+      if (!response.ok) {
+        Alert.alert("Oops", "Could not add favorite right now.");
+        return;
+      }
+
+      setFavoriteIds((current) =>
+        current.includes(listingId) ? current : [...current, listingId]
+      );
+    } catch (error) {
+      if (__DEV__) {
+        console.error("Error adding favorite:", error);
+      }
+      Alert.alert("Oops", "Could not add favorite right now.");
+    }
+  };
+
+  if (activeError && !activeLoading) {
     return (
       <ErrorStateScreen
         type="network"
         title="Unable to load listings"
         message="We could not fetch listings right now. Check your network and retry."
-        onRetry={fetchListings}
+        onRetry={() =>
+          selectedCategory === "all"
+            ? fetchListings()
+            : fetchListingsByCategory(selectedCategory)
+        }
       />
     );
   }
@@ -132,7 +236,7 @@ function ListingsScreen({ navigation }) {
 
   return (
     <>
-      <ActivityIndicator visible={loading} />
+      <ActivityIndicator visible={activeLoading} />
 
       <Screen style={styles.screen} scrollable={false}>
         <View style={styles.fixedTopSection}>
@@ -197,6 +301,8 @@ function ListingsScreen({ navigation }) {
                   title={item.title}
                   imageUri={item.imageUri || item.imageUrl}
                   onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+                  onLikePress={() => handleFavoritePress(item.id)}
+                  isLiked={favoriteIds.includes(item.id)}
                   price={item.price}
                   seller={item.owner?.name}
                   description={item.description}

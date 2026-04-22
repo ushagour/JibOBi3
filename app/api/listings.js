@@ -2,6 +2,7 @@ import client from "./client";
 const endpoint = "/listings";
 
 const getListings = () => client.get(endpoint);
+const getListingsByCategory = (categoryId) => client.get(`${endpoint}/category/${categoryId}`);
 const getDetailListing = (id) => client.get(`${endpoint}/detail/${id}`);
 
 const getMyListings = (userId) => client.get(`${endpoint}/my_listings?userId=${userId}`);
@@ -132,6 +133,7 @@ export default {
   addListing,
   getDetailListing,
   getListings,
+  getListingsByCategory,
   getMyListings,
   getTotalListings,
   deleteListing,
