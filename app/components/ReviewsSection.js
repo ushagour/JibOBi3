@@ -5,8 +5,9 @@ import Text from "./Text";
 import { MaterialIcons, AntDesign } from "@expo/vector-icons";
 import useAuth from "../auth/useAuth";
 import AppButton from "./Button";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-function ReviewsSection({ reviews, onDeleteReview, isDeletingReview }) {
+function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwnerId }) {
   const { user } = useAuth();
 
   const formatDate = (dateString) => {
@@ -75,12 +76,12 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview }) {
           </View>
         </View>
 
-        {user.userId === review.user_id && (
+        {(user.userId === review.user_id || user.userId === listingOwnerId) && (
           <AppButton
-            title="Delete"
+            icon={<MaterialCommunityIcons name="trash-can" size={20} color={colors.white} />}
             onPress={() => handleDeleteReview(review.id)}
             variant="danger"
-            size="xs"
+            size="sm"
             fullWidth={false}
           />
         )}

@@ -6,6 +6,7 @@ import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import { TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
+import routes from "./routes";
 
 
 const Stack = createStackNavigator();
@@ -16,16 +17,32 @@ const FeedNavigator = () => (
     headerShown: true,
     headerTitle: "",
     headerBackTitleVisible: false,
-    headerLeft: () => (
+    headerLeft: () => {
+      if (!navigation.canGoBack()) return null;
+
+      return (
+        <TouchableOpacity
+          style={{ marginLeft: 10 }}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color="black"
+          />
+        </TouchableOpacity>
+      );
+    },
+    headerRight: () => (
       <TouchableOpacity
-        style={{ marginLeft: 10 }}
-        onPress={() => navigation.goBack()}
+        style={{ marginRight: 12 }}
+        onPress={() =>
+          navigation.getParent()?.navigate("account", {
+            screen: routes.SETTINGS,
+          })
+        }
       >
-        <MaterialCommunityIcons
-          name="arrow-left"
-          size={24}
-          color="black"
-        />
+        <MaterialCommunityIcons name="menu" size={26} color="black" />
       </TouchableOpacity>
     ),
   })}

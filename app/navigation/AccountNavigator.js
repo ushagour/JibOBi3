@@ -9,8 +9,10 @@ import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 import ListingsScreen from "../screens/Listings/ListingsScreen";
 import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
 import UserScreen from "../screens/auth/UserScreen";
+import SettingsScreen from "../screens/auth/SettingsScreen";
 import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import ViewImageScreen from "../screens/outhers/ViewImageScreen";
+import routes from "./routes";
 
 const Stack = createStackNavigator();
 
@@ -20,16 +22,32 @@ const AccountNavigator = () => (
       headerShown: true,
       headerTitle: "",
       headerBackTitleVisible: false,
-      headerLeft: () => (
+      headerLeft: () => {
+        if (!navigation.canGoBack()) return null;
+
+        return (
+          <TouchableOpacity
+            style={{ marginLeft: 15 }}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color="black"
+            />
+          </TouchableOpacity>
+        );
+      },
+      headerRight: () => (
         <TouchableOpacity
-          style={{ marginLeft: 10 }}
-          onPress={() => navigation.goBack()}
+          style={{ marginRight: 15 }}
+          onPress={() =>
+            navigation.getParent()?.navigate(Settings,{
+              screen: routes.SETTINGS,
+            })
+          }
         >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color="black"
-          />
+          <MaterialCommunityIcons name="menu" size={26} color="black" />
         </TouchableOpacity>
       ),
     })}
@@ -42,6 +60,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
     <Stack.Screen name="Messages" component={MessagesScreen} />
+    <Stack.Screen name='Settings' component={SettingsScreen} />
   </Stack.Navigator>
 );
 

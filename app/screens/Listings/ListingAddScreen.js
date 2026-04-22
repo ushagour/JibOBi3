@@ -121,6 +121,10 @@ function ListingAddScreen({ navigation }) {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView  contentContainerStyle={styles.container}>
 
+      <Text variant="h3" style={styles.screenTitle}>Post Your Listing</Text>
+      <Text variant="bodySmall" color="textSecondary" style={styles.screenSubtitle}>
+        Fill in the details below to publish your item.
+      </Text>
       
       <UploadScreen
         visible={uploadVisible}
@@ -220,6 +224,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F4F0",
     paddingTop: 28,
     padding: 20,
+  },
+  screenTitle: {
+    color: "#0C2D31",
+    fontWeight: "800",
+  },
+  screenSubtitle: {
+    marginTop: 4,
+    marginBottom: 12,
   },
   heroCard: {
     backgroundColor: "#EAF5F5",

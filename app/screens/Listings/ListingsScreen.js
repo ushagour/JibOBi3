@@ -1,92 +1,324 @@
-import React, { useEffect, useState } from "react";
-import { FlatList, StyleSheet,RefreshControl } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import dayjs from "dayjs";
-import Card from "../../components/Card";
+import { Ionicons } from "@expo/vector-icons";
+import Product from "../../components/cards/Product";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import listingsApi from "../../api/listings";
-import AppText from "../../components/Text";
-import  AppButton  from "../../components/Button";
+import categoriesApi from "../../api/categories";
 import  ActivityIndicator  from "../../components/ActivityIndicator";
 import useApi  from "../../hooks/useApi";
+import ErrorStateScreen from "../../components/ErrorStateScreen";
+import useAuth from "../../auth/useAuth";
+
+const CATEGORY_FALLBACK_ICONS = {
+  Sneakers: "👟",
+  Watches: "⌚",
+  Electronics: "🎧",
+  Fashion: "👕",
+  Furniture: "🪑",
+  Other: "📦",
+};
+
+const isEmojiIcon = (value) => {
+  if (!value || typeof value !== "string") return false;
+  const trimmed = value.trim();
+  return !trimmed.includes("fa ") && trimmed.length <= 3;
+};
+
+const resolveCategoryIcon = (category) => {
+  if (isEmojiIcon(category?.icon)) return category.icon;
+  return CATEGORY_FALLBACK_ICONS[category?.name] || "🛍️";
+};
 
 function ListingsScreen({ navigation }) {
+  const { user } = useAuth();
       /* we distructure the data from the useApi hook and 
       we call the listingsApi.getListings function */
   const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
+  const {
+    data: categoriesData,
+    request: fetchCategories,
+  } = useApi(categoriesApi.getCategories);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const categories = useMemo(() => {
+    const apiCategories = (categoriesData || []).map((category) => ({
+      id: String(category.id),
+      name: category.name,
+      icon: resolveCategoryIcon(category),
+    }));
+
+    if (apiCategories.length > 0) {
+      return [{ id: "all", name: "All", icon: "🧭" }, ...apiCategories];
+    }
+
+    const derivedCategories = Array.from(
+      new Map(
+        (listings || [])
+          .map((item) => item?.Category)
+          .filter(Boolean)
+          .map((category) => [
+            String(category.id ?? category.name),
+            {
+              id: String(category.id ?? category.name),
+              name: category.name,
+              icon: resolveCategoryIcon(category),
+            },
+          ])
+      ).values()
+    );
+
+    return [
+      { id: "all", name: "All", icon: "🧭" },
+      ...derivedCategories,
+    ];
+  }, [categoriesData, listings]);
+
+  const filteredListings = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return (listings || []).filter((item) => {
+      const itemCategoryId = String(item?.Category?.id ?? item?.Category?.name ?? "");
+      const inCategory =
+        selectedCategory === "all" || itemCategoryId === selectedCategory;
+
+      if (!inCategory) return false;
+      if (!query) return true;
+
+      const title = item?.title?.toLowerCase() || "";
+      const description = item?.description?.toLowerCase() || "";
+      return title.includes(query) || description.includes(query);
+    });
+  }, [listings, searchQuery, selectedCategory]);
 
   
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    await   fetchListings();  // Assuming `refetch` is your API call function
+    await Promise.all([fetchListings(), fetchCategories()]);
     setRefreshing(false);
   };
 
   
   useEffect(() => {
-    
     fetchListings();
-  
+    fetchCategories();
 }, []); 
+
+  if (error && !loading) {
+    return (
+      <ErrorStateScreen
+        type="network"
+        title="Unable to load listings"
+        message="We could not fetch listings right now. Check your network and retry."
+        onRetry={fetchListings}
+      />
+    );
+  }
 
 
   return (
-<>
-    <ActivityIndicator visible={loading} />
+    <>
+      <ActivityIndicator visible={loading} />
 
-    <Screen style={styles.screen} scrollable={false}>
+      <Screen style={styles.screen} scrollable={false}>
+        <View style={styles.fixedTopSection}>
+          <View style={styles.headerBlock}>
+            <Text style={styles.greetingText}>Good Morning,</Text>
+            <Text style={styles.userNameText}>{user?.name || "User"} 👋</Text>
+          </View>
 
-
-
-    
-    
-      {error && <>
-        <AppText>Couldn't retrieve the listings</AppText>
-        <AppButton title="Retry" onPress={fetchListings} />
-      </>
-      }
-
-      
-      <FlatList
-        data={listings}
-        keyExtractor={(listing) => listing.id.toString()}
-        renderItem={({ item }) => (
-          <Card
-            title={item.title}
-            subTitle={ item.price}
-            imageUrl={item.imageUrl}
-            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-            thumbnailUrl={item.thumbnailUrl}
-            ownerName={item.owner?.name}
-            categoryName={item.Category?.name}
-            status={item.status}
-            coordinates={{ latitude: item.latitude, longitude: item.longitude }}
-            createdAt={dayjs(item.createdAt).format('MMM D, YYYY h:mm A')}
-            images={item.images} // Pass all images to the Card component
- 
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.medium} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search for products..."
+              placeholderTextColor={colors.medium}
+              style={styles.searchInput}
             />
-          
-        )}
+          </View>
 
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <FlatList
+            horizontal
+            data={categories}
+            keyExtractor={(category) => category.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+            renderItem={({ item: category }) => {
+              const isActive = selectedCategory === category.id;
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.categoryItem, isActive && styles.categoryItemActive]}
+                  onPress={() => setSelectedCategory(category.id)}
+                >
+                  <View style={styles.categoryIconWrap}>
+                    <Text style={styles.categoryIcon}>{category.icon}</Text>
+                  </View>
+                  <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}  
           />
-        }
-      />
-    </Screen>
+        </View>
+
+        <View style={styles.productsSection}>
+          <Text style={styles.sectionTitle}>Popular Products</Text>
+          {filteredListings.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No products found.</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredListings}
+              keyExtractor={(listing) => listing.id.toString()}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.productsVerticalContainer}
+              renderItem={({ item }) => (
+                <Product
+                  title={item.title}
+                  imageUri={item.imageUri || item.imageUrl}
+                  onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+                  price={item.price}
+                  seller={item.owner?.name}
+                  description={item.description}
+                  createdAt={dayjs(item.createdAt).format("MMM D")}
+                  containerStyle={styles.productListCard}
+                />
+              )}
+            />
+          )}
+        </View>
+      </Screen>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    padding: 7,
+    flex: 1,
     backgroundColor: colors.light,
+  },
+  fixedTopSection: {
+    backgroundColor: colors.light,
+    paddingBottom: 2,
+  },
+  headerBlock: {
+
+    borderBottomColor: colors.lightGray,
+  },
+  greetingText: {
+    color: colors.medium,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  userNameText: {
+    color: colors.dark,
+    fontSize: 24,
+    fontWeight: "800",
+    marginTop: 1,
+  },
+  searchBar: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    backgroundColor: colors.white,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.dark,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.dark,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  categoriesContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    gap: 8,
+  },
+  categoryItem: {
+    alignItems: "center",
+    width: 70,
+  },
+  categoryItemActive: {
+    transform: [{ scale: 1.03 }],
+  },
+  categoryIconWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 14,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryIcon: {
+    fontSize: 20,
+  },
+  categoryLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    color: colors.medium,
+    fontWeight: "600",
+  },
+  categoryLabelActive: {
+    color: colors.primary,
+  },
+  productsSection: {
+    flex: 1,
+  },
+  emptyContainer: {
+    marginHorizontal: 16,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    padding: 12,
+  },
+  emptyText: {
+    color: colors.medium,
+    fontSize: 16,
+  },
+  productsVerticalContainer: {
+    paddingLeft: 16,
+    paddingRight: 14,
+    paddingBottom: 10,
+  },
+  productListCard: {
+    width: "100%",
+    marginRight: 0,
   },
 });
 

@@ -8,7 +8,7 @@ import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
-
+import { ProfileCard } from '../../components/cards/ProfileCard';
 
 const menuItems = [
   {
@@ -39,15 +39,23 @@ function AccountScreen({ navigation }) {
       <AppText variant="h2" color="textPrimary" style={styles.screenTitle}>
         Account
       </AppText>
+<ProfileCard 
+  // name={user?.name || ""} 
+name={user.name}
+  rating={5} 
+  avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"} 
+/>
 
-      <View style={styles.sectionCard}>
+
+
+      {/* <View style={styles.sectionCard}>
         <ListItem
-          title={user.name}
-          subTitle={user.email}
-          image={user.avatar ? { uri: user.avatar } : null}
+          title={user?.name || "My Account"}
+          subTitle={user?.email || "Signed in user"}
+          image={user?.userId && user?.avatar ? { uri: user.avatar } : null}
           onPress={() => navigation.navigate(routes.USER_EDIT)}
         />
-      </View>
+      </View> */}
 
       <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
         Quick Actions

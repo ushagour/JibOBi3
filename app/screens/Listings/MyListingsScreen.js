@@ -3,13 +3,13 @@ import { FlatList, StyleSheet, View, Alert, Text, TouchableOpacity } from "react
 import dayjs from "dayjs";
 
 import Screen from "../../components/Screen";
-import Card from "../../components/Card";
 import listingsApi from "../../api/listings";
 import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
- // Import the useAuth hook
+import ErrorStateScreen from "../../components/ErrorStateScreen";
+import Product from "../../components/cards/Product";
 
 function MyListingsScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context
@@ -71,16 +71,22 @@ function MyListingsScreen({ navigation }) {
     );
   };
 
+  if (error && !loading) {
+    return (
+      <ErrorStateScreen
+        type="server"
+        title="Could not load your listings"
+        message="Please retry in a moment."
+        onRetry={loadListings}
+        onGoBack={() => navigation.goBack()}
+      />
+    );
+  }
+
   return (
     <Screen scrollable={false}>
       <ActivityIndicator visible={loading} />
 
-      {error && !loading && (
-        <View style={{ alignItems: "center", padding: 10 }}>
-          <Text style={{ color: "red" }}>Couldn't retrieve listings. Please try again later.</Text>
-        </View>
-      )
-      }
       {listings.length === 0 && !loading && (
         <View style={{ alignItems: "center", padding: 10 }}>
           <Text style={{ color: "red" }}>You have no listings.</Text>
@@ -92,15 +98,13 @@ function MyListingsScreen({ navigation }) {
         keyExtractor={(listing) => listing.id.toString()}
         renderItem={({ item }) => (
           <View>
-            <Card
+            <Product 
               title={item.title}
-              subTitle={item.price}
-              imageUrl={item.imageUrl}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-              thumbnailUrl={item.thumbnailUrl}
-              categoryName={item.Category?.name}
-              status={item.status}
-              createdAt={dayjs(item.createdAt).format("MMM D, YYYY h:mm A")}
+              price={item.price}
+              imageUri={item.imageUrl}
+              rating={item.rating}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
+              createdAt={dayjs(item.createdAt).format("MMM D, YYYY")}
             />
 
             <View style={styles.actionsContainer}>
