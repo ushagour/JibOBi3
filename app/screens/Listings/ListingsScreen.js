@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -136,11 +135,7 @@ function ListingsScreen({ navigation }) {
       <ActivityIndicator visible={loading} />
 
       <Screen style={styles.screen} scrollable={false}>
-        <ScrollView
-          contentContainerStyle={styles.contentContainer}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.fixedTopSection}>
           <View style={styles.headerBlock}>
             <Text style={styles.greetingText}>Good Morning,</Text>
             <Text style={styles.userNameText}>{user?.name || "User"} 👋</Text>
@@ -158,16 +153,16 @@ function ListingsScreen({ navigation }) {
           </View>
 
           <Text style={styles.sectionTitle}>Categories</Text>
-          <ScrollView
+          <FlatList
             horizontal
+            data={categories}
+            keyExtractor={(category) => category.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesContainer}
-          >
-            {categories.map((category) => {
+            renderItem={({ item: category }) => {
               const isActive = selectedCategory === category.id;
               return (
                 <TouchableOpacity
-                  key={category.id}
                   activeOpacity={0.8}
                   style={[styles.categoryItem, isActive && styles.categoryItemActive]}
                   onPress={() => setSelectedCategory(category.id)}
@@ -180,9 +175,11 @@ function ListingsScreen({ navigation }) {
                   </Text>
                 </TouchableOpacity>
               );
-            })}
-          </ScrollView>
+            }}  
+          />
+        </View>
 
+        <View style={styles.productsSection}>
           <Text style={styles.sectionTitle}>Popular Products</Text>
           {filteredListings.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -190,11 +187,11 @@ function ListingsScreen({ navigation }) {
             </View>
           ) : (
             <FlatList
-              horizontal
               data={filteredListings}
               keyExtractor={(listing) => listing.id.toString()}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.productsHorisontalContainer}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.productsVerticalContainer}
               renderItem={({ item }) => (
                 <Product
                   title={item.title}
@@ -204,14 +201,12 @@ function ListingsScreen({ navigation }) {
                   seller={item.owner?.name}
                   description={item.description}
                   createdAt={dayjs(item.createdAt).format("MMM D")}
-                  containerStyle={styles.popularProductCard}
+                  containerStyle={styles.productListCard}
                 />
               )}
             />
           )}
-  
-
-        </ScrollView>
+        </View>
       </Screen>
     </>
   );
@@ -222,69 +217,67 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light,
   },
-  contentContainer: {
-    paddingBottom: 16,
+  fixedTopSection: {
+    backgroundColor: colors.light,
+    paddingBottom: 2,
   },
   headerBlock: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+
     borderBottomColor: colors.lightGray,
   },
   greetingText: {
     color: colors.medium,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
   userNameText: {
     color: colors.dark,
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "800",
-    marginTop: 2,
+    marginTop: 1,
   },
   searchBar: {
     marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 14,
-    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 10,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.lightGray,
     backgroundColor: colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: colors.dark,
   },
   sectionTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "800",
     color: colors.dark,
     marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   categoriesContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 14,
-    gap: 10,
+    paddingBottom: 10,
+    gap: 8,
   },
   categoryItem: {
     alignItems: "center",
-    width: 78,
+    width: 70,
   },
   categoryItemActive: {
     transform: [{ scale: 1.03 }],
   },
   categoryIconWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 16,
+    width: 58,
+    height: 58,
+    borderRadius: 14,
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.lightGray,
@@ -292,24 +285,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   categoryIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   categoryLabel: {
-    marginTop: 8,
-    fontSize: 12,
+    marginTop: 6,
+    fontSize: 11,
     color: colors.medium,
     fontWeight: "600",
   },
   categoryLabelActive: {
     color: colors.primary,
   },
-  productsContainer: {
-    paddingLeft: 16,
-
-    paddingRight: 8,
-  },
-  productCard: {
-    width: '100%',
+  productsSection: {
+    flex: 1,
   },
   emptyContainer: {
     marginHorizontal: 16,
@@ -323,13 +311,14 @@ const styles = StyleSheet.create({
     color: colors.medium,
     fontSize: 16,
   },
-  productsHorisontalContainer: {
+  productsVerticalContainer: {
     paddingLeft: 16,
     paddingRight: 14,
+    paddingBottom: 10,
   },
-  popularProductCard: {
-    width: 248,
-    marginRight: 12,
+  productListCard: {
+    width: "100%",
+    marginRight: 0,
   },
 });
 

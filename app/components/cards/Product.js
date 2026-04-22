@@ -17,11 +17,23 @@ export const Product = ({
   description, 
   createdAt, 
   onPress,
+  onLikePress,
+  isLiked = false,
   containerStyle,
 }) => {
   return (
     <TouchableOpacity style={[styles.productCard, containerStyle]} onPress={onPress} activeOpacity={0.8}>
-      <Image source={{ uri: imageUri }} style={styles.productImage} />
+      <View style={styles.imageWrapper}>
+        <Image source={{ uri: imageUri }} style={styles.productImage} />
+        <TouchableOpacity
+          style={styles.likeButton}
+          onPress={onLikePress}
+          activeOpacity={0.85}
+          hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+        >
+          <Text style={[styles.likeIcon, isLiked && styles.likeIconActive]}>{isLiked ? '♥' : '♡'}</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.productContent}>
         <Text style={styles.productTitle} numberOfLines={1}>{title}</Text>
         {!!description && (
@@ -30,13 +42,11 @@ export const Product = ({
         
         <Text style={styles.price}>{price} MAD</Text>
         
-        {!!createdAt && (
-          <View style={styles.row}>
-            <Text style={styles.dateText}>{createdAt}</Text>
+        {(!!createdAt || !!seller) && (
+          <View style={styles.metaRow}>
+            {!!createdAt && <Text style={styles.dateText}>{createdAt}</Text>}
+            {!!seller && <Text style={styles.seller}>Seller: {seller}</Text>}
           </View>
-        )}
-        {seller && (
-          <Text style={styles.seller}>Seller: {seller}</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -58,7 +68,29 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     marginBottom: 12,
   },
+  imageWrapper: { position: 'relative' },
   productImage: { width: '100%', height: 132, backgroundColor: '#F3F5F8' },
+  likeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 1,
+    borderColor: '#E6EAF0',
+  },
+  likeIcon: {
+    fontSize: 16,
+    color: '#8391A5',
+    lineHeight: 18,
+  },
+  likeIconActive: {
+    color: '#E45066',
+  },
   productContent: { paddingHorizontal: 12, paddingVertical: 11 },
   productTitle: {
     fontWeight: '800',
@@ -83,7 +115,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
   },
-  row: {
+  metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -98,8 +130,9 @@ const styles = StyleSheet.create({
   seller: {
     fontSize: 11,
     color: '#4A5668',
-    marginTop: 6,
     fontWeight: '600',
+    marginLeft: 8,
+    flexShrink: 1,
   },
 });
 export default Product;

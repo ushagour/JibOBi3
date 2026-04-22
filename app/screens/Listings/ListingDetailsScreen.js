@@ -15,6 +15,7 @@ import {
 import colors from "../../config/colors";
 import ContactSellerForm from "../../components/ContactSellerForm";
 import Text from "../../components/Text";
+import Screen from "../../components/Screen";
 import routes from "../../navigation/routes";
 import ImageSlider from "../../components/lists/ImageSlider";
 import { Linking } from "react-native"; // Import the Linking API
@@ -271,15 +272,17 @@ function ListingDetailsScreen({ route, navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView contentContainerStyle={styles.contentContainer}>
+    <Screen scrollable={false} paddingSize="none">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={styles.contentContainer}>
               <View style={styles.ownerInfoRow}>
-                <Ionicons name="person" size={16} color={colors.secondary} />
-                <Text style={styles.infoText} numberOfLines={1}>
+                <Ionicons name="person" size={13} color={colors.secondary} />
+                <Text style={styles.ownerNameText} numberOfLines={1}>
                   {listing.owner?.name || "Unknown owner"}
                 </Text>
               </View>
@@ -478,35 +481,37 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
           </View>
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
-    paddingTop: 12,
+    paddingTop: 0,
   },
   detailsContainer: {
-    padding: 30,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   image: {
     width: "100%",
-    height: 200,
+    height: 176,
   },
   price: {
     color: colors.secondary,
     fontWeight: "bold",
-    fontSize: 26,
+    fontSize: 22,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginTop: 12,
+    marginTop: 8,
   },
   description: {
     fontSize: 16,
@@ -523,22 +528,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   categoryBadge: {
     backgroundColor: colors.infoLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
   },
   categoryText: {
     color: colors.info,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
   },
   stateBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 999,
   },
   stateBadgeAvailable: {
@@ -549,37 +554,50 @@ const styles = StyleSheet.create({
   },
   stateText: {
     color: colors.textPrimary,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
   },
   priceRow: {
-    marginTop: 8,
-    marginBottom: 12,
+    marginTop: 6,
+    marginBottom: 8,
   },
   infoPanel: {
     backgroundColor: colors.lighterGray,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 16,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
   },
   ownerInfoRow: {
     flexDirection: "row",
-    justifyContent: "right",
+    alignItems: "center",
     position: "absolute",
-    top: 10,
-    paddingHorizontal: 30,
-
+    top: 8,
+    right: 10,
+    zIndex: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  ownerNameText: {
+    fontSize: 11,
+    color: colors.textPrimary,
+    marginLeft: 4,
+    maxWidth: 160,
+    fontWeight: "600",
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 4,
+    marginVertical: 3,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textPrimary,
-    marginLeft: 8,
+    marginLeft: 6,
     flex: 1,
   },
   descriptionInfoRow: {
@@ -587,20 +605,20 @@ const styles = StyleSheet.create({
   },
   descriptionInfoTextWrap: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 6,
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     color: colors.textTertiary,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
   infoDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textPrimary,
-    lineHeight: 22,
-    marginTop: 2,
+    lineHeight: 18,
+    marginTop: 1,
   },
   mapWrapper: {
     marginBottom: 14,
@@ -642,23 +660,23 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
     color: colors.textTertiary,
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
   contactSection: {
-    marginTop: 16,
+    marginTop: 10,
   },
   actionSection: {
-    marginTop: 6,
+    marginTop: 4,
   },
   actionButtonsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
   },
   modalOverlay: {
     flex: 1,
