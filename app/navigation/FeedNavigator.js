@@ -49,7 +49,7 @@ const FeedNavigator = () => (
 >
     <Stack.Screen name="Listings" component={ListingsScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
-    <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
+    <Stack.Screen options={{ headerShown: false }} name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>
 );

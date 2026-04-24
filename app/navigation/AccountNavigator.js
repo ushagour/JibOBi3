@@ -12,6 +12,7 @@ import UserScreen from "../screens/auth/UserScreen";
 import SettingsScreen from "../screens/auth/SettingsScreen";
 import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import ViewImageScreen from "../screens/outhers/ViewImageScreen";
+import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import routes from "./routes";
 
 const Stack = createStackNavigator();
@@ -42,7 +43,7 @@ const AccountNavigator = () => (
         <TouchableOpacity
           style={{ marginRight: 15 }}
           onPress={() =>
-            navigation.getParent()?.navigate(Settings,{
+            navigation.getParent()?.navigate("Settings", {
               screen: routes.SETTINGS,
             })
           }
@@ -56,9 +57,10 @@ const AccountNavigator = () => (
     <Stack.Screen name="UserEdit" component={UserScreen} />
     <Stack.Screen name="MyListings" component={MyListingsScreen} />
     <Stack.Screen name="Listings" component={ListingsScreen} />
+    <Stack.Screen name="ListingAdd" component={ListingAddScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
-    <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
+    <Stack.Screen name="ImageDetails" component={ViewImageScreen} />
     <Stack.Screen name="Messages" component={MessagesScreen} />
     <Stack.Screen name='Settings' component={SettingsScreen} />
   </Stack.Navigator>

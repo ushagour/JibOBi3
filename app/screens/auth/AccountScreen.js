@@ -88,7 +88,7 @@ name={user.name}
           onPress={() => {
             Alert.alert("Log Out", "Are you sure you want to Log out?", [
               { text: "Yes", onPress: () => logOut() },
-              { text: "No" },
+              { text: "Cancel", style: "cancel" },
             ]);
           }}
         />
