@@ -5,13 +5,17 @@ import expoPushTokensApi from "../api/expoPushTokens";
 
 const useNotifications  = (notificationListener) => {
   useEffect(() => {
+    if (notificationListener === false) return;
+
     registerForPushNotificationsAsync();
 
 
     
 
-    if (notificationListener) Notifications.addListener(notificationListener);
-  }, []);
+    if (typeof notificationListener === "function") {
+      Notifications.addListener(notificationListener);
+    }
+  }, [notificationListener]);
 
 
 

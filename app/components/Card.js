@@ -20,6 +20,9 @@ function Card({
 
 
 {
+  const isSoldStatus = status === "Sold Out" || status === "selled";
+  const displayStatus = isSoldStatus ? "selled" : "sekked - still avalable";
+
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={[styles.card, theme.shadows.md]}>
@@ -31,13 +34,13 @@ function Card({
             preview={{ uri: thumbnailUrl }}
             source={imageUrl}
           />
-          {status === "Sold Out" && (
+          {isSoldStatus && (
             <View style={styles.statusBadge}>
               <AppText
                 variant="overline"
                 color="white"
               >
-                {status}
+                {displayStatus}
               </AppText>
             </View>
           )}
@@ -75,10 +78,10 @@ function Card({
               </View>
             )}
 
-            {!!status && status !== "Sold Out" && (
+            {!!status && !isSoldStatus && (
               <View style={[styles.metaChip, styles.availableChip]}>
                 <AppText variant="caption" color="success" style={styles.metaChipText}>
-                  {status}
+                  {displayStatus}
                 </AppText>
               </View>
             )}

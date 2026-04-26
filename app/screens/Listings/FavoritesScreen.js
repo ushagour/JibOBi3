@@ -11,12 +11,13 @@ import colors from "../../config/colors";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
 import Product from "../../components/cards/Product";
 
-function MyListingsScreen({ navigation }) {
+function FavoritesScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context
   const [listings, setListings] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isDeletingListing, setIsDeletingListing] = useState(false);
 
   useEffect(() => {
     loadListings();
@@ -32,11 +33,11 @@ function MyListingsScreen({ navigation }) {
         setError(false);
       } else {
         setError(true);
-        console.error("Failed to fetch listings:", response.problem);
+        if (__DEV__) console.error("Failed to fetch listings:", response.problem);
       }
     } catch (error) {
       setError(true);
-      console.error("Error during request:", error);
+      if (__DEV__) console.error("Error during request:", error);
     } finally {
       setLoading(false);
     }
@@ -51,17 +52,22 @@ function MyListingsScreen({ navigation }) {
           text: "Delete",
           onPress: async () => {
             try {
-              console.log(`Attempting to delete listing with ID: ${listing.id}`);
+              setIsDeletingListing(true);
+              if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
               const response = await listingsApi.deleteListing(listing.id);
               if (!response.ok) {
-                console.error("Failed to delete listing:", response);
+                if (__DEV__) console.error("Failed to delete listing:", response);
                 return Alert.alert("Error", "Failed to delete listing.");
               }
-              setListings(listings.filter((item) => item.id !== listing.id));
+              setListings((currentListings) =>
+                currentListings.filter((item) => item.id !== listing.id)
+              );
               Alert.alert("Success", "Listing deleted successfully.");
             } catch (error) {
               Alert.alert("Error", "Failed to delete listing.");
-              console.error("Failed to delete listing:", error);
+              if (__DEV__) console.error("Failed to delete listing:", error);
+            } finally {
+              setIsDeletingListing(false);
             }
           },
           style: "destructive",
@@ -85,7 +91,7 @@ function MyListingsScreen({ navigation }) {
 
   return (
     <Screen scrollable={false}>
-      <ActivityIndicator visible={loading} />
+      <ActivityIndicator visible={loading || isDeletingListing} />
 
       {listings.length === 0 && !loading && (
         <View style={{ alignItems: "center", padding: 10 }}>
@@ -176,4 +182,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default MyListingsScreen;
+export default FavoritesScreen;

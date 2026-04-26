@@ -25,17 +25,19 @@ export const Product = ({
     <TouchableOpacity style={[styles.productCard, containerStyle]} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.imageWrapper}>
         <Image source={{ uri: imageUri }} style={styles.productImage} />
-        <TouchableOpacity
-          style={styles.likeButton}
-          onPress={(event) => {
-            event?.stopPropagation?.();
-            onLikePress?.();
-          }}
-          activeOpacity={0.85}
-          hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-        >
-          <Text style={[styles.likeIcon, isLiked && styles.likeIconActive]}>{isLiked ? '♥' : '♡'}</Text>
-        </TouchableOpacity>
+        {onLikePress ? (
+          <TouchableOpacity
+            style={styles.likeButton}
+            onPress={(event) => {
+              event?.stopPropagation?.();
+              onLikePress?.();
+            }}
+            activeOpacity={0.85}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          >
+            <Text style={[styles.likeIcon, isLiked && styles.likeIconActive]}>{isLiked ? '♥' : '♡'}</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
       <View style={styles.productContent}>
         <View style={styles.titlePriceRow}>
