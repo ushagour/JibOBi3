@@ -13,9 +13,7 @@ import {
   FlatList,
 } from "react-native";
 import colors from "../../config/colors";
-import ContactSellerForm from "../../components/ContactSellerForm";
 import Text from "../../components/Text";
-import Screen from "../../components/Screen";
 import routes from "../../navigation/routes";
 import ImageSlider from "../../components/lists/ImageSlider";
 import { Linking } from "react-native"; // Import the Linking API
@@ -26,6 +24,7 @@ import useAuth from "../../auth/useAuth";
 
 import ActivityIndicator from "../../components/ActivityIndicator";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
+import AddReviewForm from "../../components/AddReviewForm";
 import ReviewsSection from "../../components/ReviewsSection"; // Import the reviews component
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons"; // Import icons
 import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
@@ -34,10 +33,8 @@ import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-ico
 
 function ListingDetailsScreen({ route, navigation }) {
   const id = route.params;
-    const { user,isOwner } = useAuth();
-
-
-  
+  const { user, isOwner } = useAuth();
+  const isAuthenticated = Boolean(user?.userId);
 
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,9 +42,12 @@ function ListingDetailsScreen({ route, navigation }) {
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
- const [locationName, setLocationName] = useState("Loading...");
+  const [isDeletingListing, setIsDeletingListing] = useState(false);
+  const [locationName, setLocationName] = useState("Loading...");
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
 
   const reportReasons = [
     { id: "spam", label: "Spam or misleading" },
@@ -57,31 +57,42 @@ function ListingDetailsScreen({ route, navigation }) {
     { id: "other", label: "Other issue" },
   ];
 
+  const isSoldStatus = (status) => status === "Sold Out" || status === "selled";
+  const displayStatus = isSoldStatus(listing?.state) ? "selled" : "sekked - still avalable";
+
+  const fetchReviews = async () => {
+    try {
+      setLoadingReviews(true);
+
+      const response = await reviewsApi.getReviewsByListing(id);
+      if (response.ok && response.data) {
+        setReviews(response.data);
+      } else {
+        setReviews([]);
+      }
+    } catch (error) {
+      if (__DEV__) console.error("Error fetching reviews:", error.message);
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
 
   useEffect(() => {
-      
     const fetchListing = async () => {
       try {
-        // console.log("Fetching listing with ID:", id);      
         const response = await listingsApi.getDetailListing(id);
         if (!response.ok || !response.data) {
           throw new Error("Failed to fetch listing details.");
         }
-        if (response.ok) {
-          setListing(response.data);
-          // const { latitude, longitude } = response.data;
-          
-          
-          const { latitude, longitude } = response.data;//first extract {coordiates } from the response 
-          const location = await getLocationName(latitude, longitude); //then send them to the await function of getLocationName and the result is stored in location
-          setLocationName(location.city); 
-          
-          setError(false);
 
-        } 
+        setListing(response.data);
 
+        const { latitude, longitude } = response.data;
+        const location = await getLocationName(latitude, longitude);
+        setLocationName(location.city);
 
-
+        setError(false);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -89,41 +100,17 @@ function ListingDetailsScreen({ route, navigation }) {
       }
     };
 
-    const fetchReviews = async () => {
-      try {
-        setLoadingReviews(true);
-
-        const response = await reviewsApi.getReviewsByListing(id);
-        console.log(response);
-        
-        if (response.ok && response.data) {
-          console.log("Fetched reviews:", response.data); // Debug log
-          setReviews(response.data);
-        } else {
-          setReviews([]);
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error.message);
-        setReviews([]);
-      } finally {
-        setLoadingReviews(false);
-      }
-    };
-
     fetchListing();
     fetchReviews();
-    
-  
   }, [id]);
 
 
 
 
 
-  if (loading) {
-    return <ActivityIndicator visible={loading} />;
+  if (loading || isDeletingListing) {
+    return <ActivityIndicator visible={loading || isDeletingListing} />;
   }
-
   if (error) {
     const normalizedError = String(error || "");
     const errorType = /404|not\s*found/i.test(normalizedError)
@@ -155,17 +142,20 @@ function ListingDetailsScreen({ route, navigation }) {
             text: "Delete",
             onPress: async () => {
               try {
-                console.log(`Attempting to delete listing with ID: ${listing.id}`);
+                setIsDeletingListing(true);
+                if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
                 const response = await listingsApi.deleteListing(listing.id);
                 if (!response.ok) {
-                  console.error("Failed to delete listing:", response);
+                  if (__DEV__) console.error("Failed to delete listing:", response);
                   return Alert.alert("Error", "Failed to delete listing.");
                 }
                 navigation.navigate(routes.LISTINGS);
                 Alert.alert("Success", "Listing deleted successfully.");
               } catch (error) {
                 Alert.alert("Error", "Failed to delete listing.");
-                console.error("Failed to delete listing:", error);
+                if (__DEV__) console.error("Failed to delete listing:", error);
+              } finally {
+                setIsDeletingListing(false);
               }
             },
             style: "destructive",
@@ -196,7 +186,7 @@ function ListingDetailsScreen({ route, navigation }) {
                 Alert.alert("Success", "Review deleted successfully.");
               } catch (error) {
                 Alert.alert("Error", "Failed to delete review.");
-                console.error("Failed to delete review:", error);
+                if (__DEV__) console.error("Failed to delete review:", error);
               } finally {
                 setIsDeletingReview(false);
               }
@@ -227,7 +217,7 @@ function ListingDetailsScreen({ route, navigation }) {
       }
       await Linking.openURL(webFallback);
     } catch (err) {
-      console.error("Error opening GPS navigation app:", err);
+      if (__DEV__) console.error("Error opening GPS navigation app:", err);
     }
   };
 
@@ -247,12 +237,13 @@ function ListingDetailsScreen({ route, navigation }) {
       const supported = await Linking.canOpenURL(whatsappUrl);
       if (supported) {
         await Linking.openURL(whatsappUrl);
+        closeContactModal();
         return;
       }
 
       Alert.alert("WhatsApp unavailable", "WhatsApp is not installed or the link cannot be opened.");
     } catch (err) {
-      console.error("Error opening WhatsApp:", err);
+      if (__DEV__) console.error("Error opening WhatsApp:", err);
       Alert.alert("Error", "Unable to open WhatsApp.");
     }
   };
@@ -260,6 +251,80 @@ function ListingDetailsScreen({ route, navigation }) {
   const openReportModal = () => {
     setSelectedReportReason("spam");
     setReportModalVisible(true);
+  };
+
+  const openContactModal = () => {
+    setContactModalVisible(true);
+  };
+
+  const closeContactModal = () => {
+    setContactModalVisible(false);
+  };
+
+  const openReviewModal = () => {
+    setReviewModalVisible(true);
+  };
+
+  const closeReviewModal = () => {
+    setReviewModalVisible(false);
+  };
+
+  const handleReviewCreated = async () => {
+    closeReviewModal();
+    await fetchReviews();
+  };
+
+  const handleCallSeller = async () => {
+    const rawPhone = listing?.owner?.phone;
+
+    if (!rawPhone) {
+      Alert.alert("Call unavailable", "The seller has not provided a phone number.");
+      return;
+    }
+
+    const phoneNumber = String(rawPhone).replace(/\s+/g, "");
+    const callUrl = `tel:${phoneNumber}`;
+
+    try {
+      const supported = await Linking.canOpenURL(callUrl);
+      if (!supported) {
+        Alert.alert("Call unavailable", "Your device cannot place phone calls.");
+        return;
+      }
+
+      await Linking.openURL(callUrl);
+      closeContactModal();
+    } catch (err) {
+      if (__DEV__) console.error("Error opening dialer:", err);
+      Alert.alert("Error", "Unable to open the dialer.");
+    }
+  };
+
+  const handleEmailSeller = async () => {
+    const sellerEmail = listing?.owner?.email;
+
+    if (!sellerEmail) {
+      Alert.alert("Email unavailable", "The seller has not provided an email address.");
+      return;
+    }
+
+    const subject = encodeURIComponent(`Inquiry about: ${listing?.title || "listing"}`);
+    const body = encodeURIComponent("Hi, I am interested in your listing.");
+    const emailUrl = `mailto:${sellerEmail}?subject=${subject}&body=${body}`;
+
+    try {
+      const supported = await Linking.canOpenURL(emailUrl);
+      if (!supported) {
+        Alert.alert("Email unavailable", "No email app is configured on this device.");
+        return;
+      }
+
+      await Linking.openURL(emailUrl);
+      closeContactModal();
+    } catch (err) {
+      if (__DEV__) console.error("Error opening email app:", err);
+      Alert.alert("Error", "Unable to open your email app.");
+    }
   };
 
   const submitReport = () => {
@@ -272,7 +337,7 @@ function ListingDetailsScreen({ route, navigation }) {
   };
 
   return (
-    <Screen scrollable={false} paddingSize="none">
+    <View style={styles.root}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -305,7 +370,7 @@ function ListingDetailsScreen({ route, navigation }) {
               {listing.rating !== undefined && (
                 <View style={styles.ratingContainer}>
                   {[...Array(5)].map((_, i) => (
-                    <FontAwesome key={i} name={i < listing.rating ? "star" : "star-o"} size={10} color={COLORS.gold} />
+                    <FontAwesome key={i} name={i < listing.rating ? "star" : "star-o"} size={10} color={colors.warning} />
                   ))}
                 </View>
               )}
@@ -313,12 +378,12 @@ function ListingDetailsScreen({ route, navigation }) {
                 <View
                   style={[
                     styles.stateBadge,
-                    listing.state === "Sold Out"
+                    isSoldStatus(listing.state)
                       ? styles.stateBadgeSold
                       : styles.stateBadgeAvailable,
                   ]}
                 >
-                  <Text style={styles.stateText}>{listing.state}</Text>
+                  <Text style={styles.stateText}>{displayStatus}</Text>
                 </View>
               )}
             </View>
@@ -359,20 +424,30 @@ function ListingDetailsScreen({ route, navigation }) {
               isDeletingReview={isDeletingReview}
               listingOwnerId={listing.owner?.id}
             />
+
+            {isAuthenticated && user.userId !== listing.owner.id ? (
+              <View style={styles.reviewSection}>
+                <Text style={styles.sectionLabel}>Leave a Review</Text>
+                <AppButton
+                  title="Add Review"
+                  onPress={openReviewModal}
+                  variant="secondary"
+                  size="md"
+                />
+              </View>
+            ) : null}
         
 
        
 
-            {user.userId !== listing.owner.id ? (
+            {isAuthenticated && user.userId !== listing.owner.id ? (
               <View style={styles.contactSection}>
                 <Text style={styles.sectionLabel}>Contact Seller</Text>
-                <ContactSellerForm listing={listing} />
                 <AppButton
-                  title="Contact via WhatsApp"
-                  onPress={openWhatsApp}
-                  variant="success"
+                  title="Contact Seller"
+                  onPress={openContactModal}
+                  variant="primary"
                   size="md"
-                  icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
                 />
               </View>
             ) : null}
@@ -398,7 +473,7 @@ function ListingDetailsScreen({ route, navigation }) {
                 </View>
               )}
 
-              {!isOwner(listing.owner.id) && (
+              {isAuthenticated && !isOwner(listing.owner.id) && (
                   <AppButton
                     title="Report"
                     onPress={openReportModal}
@@ -408,6 +483,95 @@ function ListingDetailsScreen({ route, navigation }) {
                   />
               )}
             </View>
+
+            <Modal
+              visible={contactModalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={closeContactModal}
+            >
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback onPress={closeContactModal}>
+                  <View style={styles.modalBackdrop} />
+                </TouchableWithoutFeedback>
+
+                <View style={styles.contactModalCard}>
+                  <Text style={styles.reportModalTitle}>Contact seller</Text>
+                  <Text style={styles.reportModalSubtitle}>
+                    Choose how you want to reach the seller.
+                  </Text>
+
+                  <View style={styles.contactActionList}>
+                    <AppButton
+                      title="Call Seller"
+                      onPress={handleCallSeller}
+                      variant="secondary"
+                      size="md"
+                      icon={<MaterialIcons name="call" size={18} color={colors.white} />}
+                    />
+                    <AppButton
+                      title="Send Email"
+                      onPress={handleEmailSeller}
+                      variant="primary"
+                      size="md"
+                      icon={<MaterialIcons name="email" size={18} color={colors.white} />}
+                    />
+                    {!!listing?.owner?.phone && (
+                      <AppButton
+                        title="WhatsApp (Optional)"
+                        onPress={openWhatsApp}
+                        variant="success"
+                        size="md"
+                        icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
+                      />
+                    )}
+                  </View>
+
+
+                  <View style={styles.reportModalActions}>
+                    <AppButton
+                      title="Close"
+                      onPress={closeContactModal}
+                      variant="outline"
+                      size="sm"
+                      fullWidth={false}
+                    />
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
+            <Modal
+              visible={reviewModalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={closeReviewModal}
+            >
+              <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback onPress={closeReviewModal}>
+                  <View style={styles.modalBackdrop} />
+                </TouchableWithoutFeedback>
+
+                <View style={styles.contactModalCard}>
+                  <Text style={styles.reportModalTitle}>Add review</Text>
+                  <Text style={styles.reportModalSubtitle}>
+                    Share your rating and a quick note about this listing.
+                  </Text>
+
+                  <AddReviewForm listing={listing} onSuccess={handleReviewCreated} />
+
+                  <View style={styles.reportModalActions}>
+                    <AppButton
+                      title="Close"
+                      onPress={closeReviewModal}
+                      variant="outline"
+                      size="sm"
+                      fullWidth={false}
+                    />
+                  </View>
+                </View>
+              </View>
+            </Modal>
 
             <Modal
               visible={reportModalVisible}
@@ -484,11 +648,15 @@ function ListingDetailsScreen({ route, navigation }) {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   contentContainer: {
     flexGrow: 1,
     paddingTop: 0,
@@ -669,6 +837,9 @@ const styles = StyleSheet.create({
   contactSection: {
     marginTop: 10,
   },
+  reviewSection: {
+    marginTop: 10,
+  },
   actionSection: {
     marginTop: 4,
   },
@@ -694,6 +865,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.surface,
     padding: 20,
+  },
+  contactModalCard: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    padding: 20,
+  },
+  contactActionList: {
+    marginTop: 16,
+    gap: 10,
   },
   reportModalTitle: {
     fontSize: 20,

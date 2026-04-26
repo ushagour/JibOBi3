@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet,
-   Alert,
-   TouchableWithoutFeedback,
-   KeyboardAvoidingView,
-  Platform,
+import {
+  View,
+  StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
   Keyboard,
-  View
- } from "react-native";
+  Alert,
+} from "react-native";
 import * as Yup from "yup";
 import Button from "../../components/Button";
 import { useFormikContext } from "formik";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Text from "../../components/Text";
+import routes from "../../navigation/routes";
 
 
 import {
@@ -121,6 +123,7 @@ function ListingAddScreen({ navigation }) {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView  contentContainerStyle={styles.container}>
 
+
       <Text variant="h3" style={styles.screenTitle}>Post Your Listing</Text>
       <Text variant="bodySmall" color="textSecondary" style={styles.screenSubtitle}>
         Fill in the details below to publish your item.
@@ -224,6 +227,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F4F0",
     paddingTop: 28,
     padding: 20,
+  },
+  topBar: {
+    marginBottom: 14,
   },
   screenTitle: {
     color: "#0C2D31",

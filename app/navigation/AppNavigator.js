@@ -15,10 +15,10 @@ import useAuth from "../auth/useAuth";
 const Tab = createBottomTabNavigator();
 
 const AppNavigator = () => {
-  useNotifications();
   const { user } = useAuth();
 
   const isAuthenticated = Boolean(user?.userId);
+  useNotifications(isAuthenticated);
   const avatarSource = user?.avatar ? { uri: user.avatar } : null;
   const userInitial = user?.name?.trim()?.charAt(0)?.toUpperCase() || "";
 
@@ -43,11 +43,13 @@ const AppNavigator = () => {
         name="ListingAdd"
         component={ListingAddScreen}
         options={({ navigation }) => ({
-          tabBarButton: () => (
+          headerShown: true,
+          headerTitle: "",
+          tabBarButton: () => (isAuthenticated ? (
             <NewListingButton
               onPress={() => navigation.navigate(routes.LISTING_ADD)}
             />
-          ),
+          ) : null),
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="plus-circle"

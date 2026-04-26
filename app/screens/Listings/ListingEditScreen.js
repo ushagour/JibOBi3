@@ -12,7 +12,7 @@ import {
   FormPicker as Picker,
   SubmitButton,
 } from "../../components/forms";
-import Screen from "../../components/Screen";
+import TopActionBar from "../../components/TopActionBar";
 import UploadScreen from "../outhers/UploadScreen";
 
 import FormImagePicker from "../../components/forms/FormImagePicker";
@@ -86,6 +86,8 @@ function ListingEditScreen({ route, navigation }) {
            >
              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
            <ScrollView  contentContainerStyle={styles.container}>
+
+           <TopActionBar navigation={navigation} style={styles.topBar} />
    
       <UploadScreen
         visible={uploadVisible}
@@ -139,6 +141,9 @@ function ListingEditScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     padding: 15,
+  },
+  topBar: {
+    marginBottom: 10,
   },
 });
 

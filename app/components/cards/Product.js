@@ -25,26 +25,29 @@ export const Product = ({
     <TouchableOpacity style={[styles.productCard, containerStyle]} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.imageWrapper}>
         <Image source={{ uri: imageUri }} style={styles.productImage} />
-        <TouchableOpacity
-          style={styles.likeButton}
-          onPress={(event) => {
-            event?.stopPropagation?.();
-            onLikePress?.();
-          }}
-          activeOpacity={0.85}
-          hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-        >
-          <Text style={[styles.likeIcon, isLiked && styles.likeIconActive]}>{isLiked ? '♥' : '♡'}</Text>
-        </TouchableOpacity>
+        {onLikePress ? (
+          <TouchableOpacity
+            style={styles.likeButton}
+            onPress={(event) => {
+              event?.stopPropagation?.();
+              onLikePress?.();
+            }}
+            activeOpacity={0.85}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          >
+            <Text style={[styles.likeIcon, isLiked && styles.likeIconActive]}>{isLiked ? '♥' : '♡'}</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
       <View style={styles.productContent}>
-        <Text style={styles.productTitle} numberOfLines={1}>{title}</Text>
+        <View style={styles.titlePriceRow}>
+          <Text style={styles.productTitle} numberOfLines={1}>{title}</Text>
+          <Text style={styles.price}>{price} MAD</Text>
+        </View>
         {!!description && (
           <Text style={styles.description} numberOfLines={2}>{description}</Text>
         )}
-        
-        <Text style={styles.price}>{price} MAD</Text>
-        
+
         {(!!createdAt || !!seller) && (
           <View style={styles.metaRow}>
             {!!createdAt && <Text style={styles.dateText}>{createdAt}</Text>}
@@ -95,11 +98,19 @@ const styles = StyleSheet.create({
     color: '#E45066',
   },
   productContent: { paddingHorizontal: 12, paddingVertical: 11 },
+  titlePriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   productTitle: {
     fontWeight: '800',
     fontSize: 14,
     lineHeight: 18,
     color: '#1A2233',
+    flex: 1,
+    marginRight: 8,
   },
   description: {
     fontSize: 12,
@@ -117,6 +128,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
+    flexShrink: 0,
   },
   metaRow: {
     flexDirection: 'row',

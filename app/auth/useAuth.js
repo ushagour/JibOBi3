@@ -30,7 +30,15 @@ const useAuth = () => {
     authStorage.removeToken();
   };
 
-  const isLoggedIn = () => !!user;
+  const continueAsGuest = () => {
+    setUser({
+      isGuest: true,
+      name: "Guest",
+    });
+  };
+
+  const isLoggedIn = () => !!user?.userId;
+  const isGuest = () => !!user?.isGuest;
 
   const isOwner = (owner) => user?.userId === owner;
 
@@ -39,8 +47,10 @@ const useAuth = () => {
     logIn,
     signUp,
     logOut,
+    continueAsGuest,
     isOwner,
     isLoggedIn,
+    isGuest,
     updateUser: (user) => setUser(user),
   };
 };

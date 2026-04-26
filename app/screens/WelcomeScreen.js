@@ -4,8 +4,10 @@ import { ImageBackground, StyleSheet, View, Image, Text } from "react-native";
 import listingsApi from "../api/listings"; // Import the API client
 
 import Button from "../components/Button";
+import useAuth from "../auth/useAuth";
 
 function WelcomeScreen({navigation}) {
+  const auth = useAuth();
 
 
   const [Total, setTotal] = useState(0); // State to hold listings data
@@ -43,6 +45,11 @@ function WelcomeScreen({navigation}) {
       <View style={styles.buttonsContainer}>
         <Button title="Login"  onPress={()=>{navigation.navigate("Login")}} />
         <Button title="Register" color="secondary"  onPress={()=>{navigation.navigate("Register")}} />
+        <Button
+          title="Continue as Guest"
+          variant="outline"
+          onPress={() => auth.continueAsGuest()}
+        />
       </View>
       <View style={styles.splashContainer}>
         <Text style={styles.copyrightText}>Copyright © 2024 Jib w’Bie3   | total listings {Total} </Text>

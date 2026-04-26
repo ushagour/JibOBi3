@@ -6,7 +6,6 @@ import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import { TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
-import routes from "./routes";
 
 
 const Stack = createStackNavigator();
@@ -33,23 +32,13 @@ const FeedNavigator = () => (
         </TouchableOpacity>
       );
     },
-    headerRight: () => (
-      <TouchableOpacity
-        style={{ marginRight: 12 }}
-        onPress={() =>
-          navigation.getParent()?.navigate("account", {
-            screen: routes.SETTINGS,
-          })
-        }
-      >
-        <MaterialCommunityIcons name="menu" size={26} color="black" />
-      </TouchableOpacity>
-    ),
+    headerRight: () => null,
   })}
 >
     <Stack.Screen name="Listings" component={ListingsScreen} />
+    <Stack.Screen name="AllListings" component={ListingsScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
-    <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
+    <Stack.Screen options={{ headerShown: false }} name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>
 );

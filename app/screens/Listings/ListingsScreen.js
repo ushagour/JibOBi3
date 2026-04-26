@@ -44,7 +44,8 @@ const resolveCategoryIcon = (category) => {
 };
 
 function ListingsScreen({ navigation }) {
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+  const isGuest = !isLoggedIn();
       /* we distructure the data from the useApi hook and 
       we call the listingsApi.getListings function */
   const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
@@ -114,31 +115,44 @@ function ListingsScreen({ navigation }) {
     ];
   }, [categoriesData, listings]);
 
-  const listingsSource = selectedCategory === "all" ? listings : categoryListings;
+  const listingsSource = isGuest
+    ? listings
+    : selectedCategory === "all"
+      ? listings
+      : categoryListings;
 
   const filteredListings = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
     return (listingsSource || []).filter((item) => {
+      if (isGuest && selectedCategory !== "all") {
+        const categoryId = String(item?.Category?.id ?? "");
+        if (categoryId !== String(selectedCategory)) return false;
+      }
+
       if (!query) return true;
 
       const title = item?.title?.toLowerCase() || "";
       const description = item?.description?.toLowerCase() || "";
       return title.includes(query) || description.includes(query);
     });
-  }, [listingsSource, searchQuery]);
+  }, [listingsSource, searchQuery, isGuest, selectedCategory]);
 
   
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      selectedCategory === "all"
-        ? fetchListings()
-        : fetchListingsByCategory(selectedCategory),
-      fetchCategories(),
-      loadFavorites(),
-    ]);
+    const requests = [fetchListings(), fetchCategories()];
+
+    if (!isGuest && selectedCategory !== "all") {
+      requests.push(fetchListingsByCategory(selectedCategory));
+    }
+
+    if (!isGuest) {
+      requests.push(loadFavorites());
+    }
+
+    await Promise.all(requests);
     setRefreshing(false);
   };
 
@@ -146,18 +160,24 @@ function ListingsScreen({ navigation }) {
   useEffect(() => {
     fetchListings();
     fetchCategories();
-    loadFavorites();
+    if (!isGuest) loadFavorites();
 }, []); 
 
   useEffect(() => {
+    if (isGuest) return;
     if (selectedCategory === "all") return;
     fetchListingsByCategory(selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, isGuest]);
 
   const activeError = selectedCategory === "all" ? error : categoryError;
   const activeLoading = loading || categoryLoading;
 
   const handleFavoritePress = async (listingId) => {
+    if (isGuest) {
+      Alert.alert("Login required", "Please login to use favorites.");
+      return;
+    }
+
     const isAlreadyFavorite = favoriteIds.includes(listingId);
 
     if (isAlreadyFavorite) {
@@ -301,7 +321,7 @@ function ListingsScreen({ navigation }) {
                   title={item.title}
                   imageUri={item.imageUri || item.imageUrl}
                   onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-                  onLikePress={() => handleFavoritePress(item.id)}
+                  onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
                   isLiked={favoriteIds.includes(item.id)}
                   price={item.price}
                   seller={item.owner?.name}
