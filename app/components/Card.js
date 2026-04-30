@@ -20,8 +20,11 @@ function Card({
 
 
 {
-  const isSoldStatus = status === "Sold Out" || status === "selled";
-  const displayStatus = isSoldStatus ? "selled" : "sekked - still avalable";
+  const isSoldStatus = (() => {
+    const normalizedStatus = String(status || "").toLowerCase();
+    return normalizedStatus.includes("selled") || normalizedStatus.includes("sold out") || normalizedStatus === "sold";
+  })();
+  const displayStatus = isSoldStatus ? "selled" : "still available";
 
   return (
     <TouchableWithoutFeedback onPress={onPress}>

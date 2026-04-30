@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-icons/FontAwesome'
 
 const COLORS = {
@@ -10,10 +10,33 @@ const COLORS = {
 };
 
 // --- Profile Card Component ---
-export const ProfileCard = ({ name, rating, avatarUri }) => {
+export const ProfileCard = ({ name, rating, avatarUri, onPress }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const showImage = !!avatarUri && !imageError;
+  const initial = useMemo(() => (name ? name.charAt(0).toUpperCase() : "A"), [name]);
+
   return (
     <View style={styles.card}>
-      <Image source={{ uri: avatarUri }} style={styles.avatar} />
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        disabled={!onPress}
+        accessibilityRole="button"
+        accessibilityLabel="Edit profile image"
+      >
+        {showImage ? (
+          <Image
+            source={{ uri: avatarUri }}
+            style={styles.avatar}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.initial}>{initial}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
       <Text style={styles.userName}>{name}</Text>
       <View style={styles.ratingContainer}>
         {[...Array(5)].map((_, i) => (
@@ -37,6 +60,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   avatar: { width: 60, height: 60, borderRadius: 30, marginBottom: 8 },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.bg,
+  },
+  initial: { fontSize: 20, fontWeight: '700', color: COLORS.teal },
   userName: { fontWeight: 'bold', fontSize: 16, color: COLORS.teal },
   ratingContainer: { flexDirection: 'row', marginVertical: 4 },
 });

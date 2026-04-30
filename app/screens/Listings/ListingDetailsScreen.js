@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -32,7 +31,8 @@ import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-ico
 
 
 function ListingDetailsScreen({ route, navigation }) {
-  const id = route.params;
+  const routeParams = route.params;
+  const id = routeParams?.listing?.id ?? routeParams?.id ?? routeParams;
   const { user, isOwner } = useAuth();
   const isAuthenticated = Boolean(user?.userId);
 
@@ -43,7 +43,7 @@ function ListingDetailsScreen({ route, navigation }) {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
-  const [locationName, setLocationName] = useState("Loading...");
+  const [locationName, setLocationName] = useState("Unknown location");
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [contactModalVisible, setContactModalVisible] = useState(false);
@@ -57,8 +57,12 @@ function ListingDetailsScreen({ route, navigation }) {
     { id: "other", label: "Other issue" },
   ];
 
-  const isSoldStatus = (status) => status === "Sold Out" || status === "selled";
-  const displayStatus = isSoldStatus(listing?.state) ? "selled" : "sekked - still avalable";
+  const isSoldStatus = (status) => {
+    const normalizedStatus = String(status || "").toLowerCase();
+    return normalizedStatus.includes("selled") || normalizedStatus.includes("sold out") || normalizedStatus === "sold";
+  };
+  const displayStatus = isSoldStatus(listing?.status) ? "selled" : "still available";
+  const isCarsCategory = listing?.Category?.name?.toLowerCase() === "cars";
 
   const fetchReviews = async () => {
     try {
@@ -79,6 +83,8 @@ function ListingDetailsScreen({ route, navigation }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchListing = async () => {
       try {
         const response = await listingsApi.getDetailListing(id);
@@ -86,22 +92,46 @@ function ListingDetailsScreen({ route, navigation }) {
           throw new Error("Failed to fetch listing details.");
         }
 
-        setListing(response.data);
-
         const { latitude, longitude } = response.data;
-        const location = await getLocationName(latitude, longitude);
-        setLocationName(location.city);
+        if (isMounted) {
+          setListing(response.data);
+          setLoading(false);
+        }
 
-        setError(false);
+        if (latitude != null && longitude != null) {
+          getLocationName(latitude, longitude)
+            .then((location) => {
+              if (isMounted && location?.city) {
+                setLocationName(location.city);
+              }
+            })
+            .catch(() => {
+              if (isMounted) {
+                setLocationName("Unknown location");
+              }
+            });
+        }
+
+        if (isMounted) {
+          setError(false);
+        }
       } catch (error) {
-        setError(error.message);
+        if (isMounted) {
+          setError(error.message);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchListing();
     fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
 
@@ -344,7 +374,14 @@ function ListingDetailsScreen({ route, navigation }) {
         
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.contentContainer}>
+          <FlatList
+            data={[]}
+            renderItem={() => null}
+            keyExtractor={() => "listing-details"}
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+            ListHeaderComponent={
+              <>
               <View style={styles.ownerInfoRow}>
                 <Ionicons name="person" size={13} color={colors.secondary} />
                 <Text style={styles.ownerNameText} numberOfLines={1}>
@@ -374,11 +411,11 @@ function ListingDetailsScreen({ route, navigation }) {
                   ))}
                 </View>
               )}
-              {!!listing.state && (
+              {!!listing.status && (
                 <View
                   style={[
                     styles.stateBadge,
-                    isSoldStatus(listing.state)
+                    isSoldStatus(listing.status)
                       ? styles.stateBadgeSold
                       : styles.stateBadgeAvailable,
                   ]}
@@ -391,7 +428,7 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.title}>{listing.title}</Text>
 
             <View style={styles.priceRow}>
-              <Text style={styles.price}>$ {listing.price}</Text>
+              <Text style={styles.price}>{listing.price}  MAD</Text>
             </View>
 
             <View style={styles.infoPanel}>
@@ -406,6 +443,22 @@ function ListingDetailsScreen({ route, navigation }) {
                   </Text>
                 </View>
               </View>
+
+              {isCarsCategory ? (
+                <View style={styles.carDetailsCard}>
+                  <View style={styles.carDetailsHeader}>
+                    <MaterialCommunityIcons name="car-outline" size={16} color={colors.primary} />
+                    <Text style={styles.infoLabel}>Car Details</Text>
+                  </View>
+
+                  <View style={styles.carDetailsGrid}>
+                    <Text style={styles.carDetailText}>Model: {listing.carModel || "N/A"}</Text>
+                    <Text style={styles.carDetailText}>Color: {listing.carColor || "N/A"}</Text>
+                    <Text style={styles.carDetailText}>Size: {listing.carSize || "N/A"}</Text>
+                    <Text style={styles.carDetailText}>Year: {listing.carYear || "N/A"}</Text>
+                  </View>
+                </View>
+              ) : null}
 
 
            
@@ -645,7 +698,9 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
           </View>
-          </ScrollView>
+              </>
+            }
+          />
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </View>
@@ -728,6 +783,7 @@ const styles = StyleSheet.create({
   priceRow: {
     marginTop: 6,
     marginBottom: 8,
+    
   },
   infoPanel: {
     backgroundColor: colors.lighterGray,
@@ -774,6 +830,28 @@ const styles = StyleSheet.create({
   descriptionInfoTextWrap: {
     flex: 1,
     marginLeft: 6,
+  },
+  carDetailsCard: {
+    marginTop: 10,
+    backgroundColor: colors.infoLight,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  carDetailsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  carDetailsGrid: {
+    gap: 4,
+  },
+  carDetailText: {
+    fontSize: 13,
+    color: colors.textPrimary,
   },
   infoLabel: {
     fontSize: 11,

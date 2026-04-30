@@ -6,6 +6,8 @@ import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import { TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
+import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
+import NotificationsScreen from "../screens/auth/NotificationsScreen";
 
 
 const Stack = createStackNavigator();
@@ -32,7 +34,7 @@ const FeedNavigator = () => (
         </TouchableOpacity>
       );
     },
-    headerRight: () => null,
+      headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
   })}
 >
     <Stack.Screen name="Listings" component={ListingsScreen} />
@@ -40,6 +42,7 @@ const FeedNavigator = () => (
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
+    <Stack.Screen name="Notifications" component={NotificationsScreen} />
   </Stack.Navigator>
 );
 

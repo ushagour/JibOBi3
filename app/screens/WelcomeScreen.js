@@ -1,7 +1,6 @@
 import {React, useEffect, useState} from "react";
 import { ImageBackground, StyleSheet, View, Image, Text } from "react-native";
 
-import listingsApi from "../api/listings"; // Import the API client
 
 import Button from "../components/Button";
 import useAuth from "../auth/useAuth";
@@ -10,7 +9,6 @@ function WelcomeScreen({navigation}) {
   const auth = useAuth();
 
 
-  const [Total, setTotal] = useState(0); // State to hold listings data
   const [loading, setLoading] = useState(true); // State to manage loading state
 
 
@@ -43,8 +41,8 @@ function WelcomeScreen({navigation}) {
         <Image style={styles.logo} source={require("../assets/logo-red.png")} />
       </View>
       <View style={styles.buttonsContainer}>
-        <Button title="Login"  onPress={()=>{navigation.navigate("Login")}} />
-        <Button title="Register" color="secondary"  onPress={()=>{navigation.navigate("Register")}} />
+        <Button title="Login" variant="primary"  onPress={()=>{navigation.navigate("Login")}} />
+        <Button title="Register" variant="secondary"  onPress={()=>{navigation.navigate("Register")}} />
         <Button
           title="Continue as Guest"
           variant="outline"
@@ -52,7 +50,7 @@ function WelcomeScreen({navigation}) {
         />
       </View>
       <View style={styles.splashContainer}>
-        <Text style={styles.copyrightText}>Copyright © 2024 Jib w’Bie3   | total listings {Total} </Text>
+        <Text style={styles.copyrightText}>Copyright © 2024 Jib w’Bie3 </Text>
       </View>
     </ImageBackground>
   );
