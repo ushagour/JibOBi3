@@ -1,9 +1,13 @@
 import client from "./client";
 const endpoint = "/listings";
 
-const getListings = () => client.get(endpoint);
+const getListings = (status) => {
+  if (!status) return client.get(endpoint);
+  return client.get(`${endpoint}?status=${encodeURIComponent(status)}`);
+};
 const getListingsByCategory = (categoryId) => client.get(`${endpoint}/category/${categoryId}`);
 const getDetailListing = (id) => client.get(`${endpoint}/detail/${id}`);
+const getTopListings = () => client.get(`${endpoint}/top`);
 
 const getMyListings = (userId) => client.get(`${endpoint}/my_listings?userId=${userId}`);
  
@@ -132,6 +136,7 @@ if (listing.location) {
 export default {
   addListing,
   getDetailListing,
+  getTopListings,
   getListings,
   getListingsByCategory,
   getMyListings,

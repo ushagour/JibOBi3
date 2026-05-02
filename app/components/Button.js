@@ -11,6 +11,8 @@ function AppButton({
   loading = false,
   icon = null,
   fullWidth = true,
+  compact = false,
+  inline = false,
 }) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -57,6 +59,21 @@ function AppButton({
     },
   };
 
+  const compactSizeStyles = {
+    sm: {
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    md: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    lg: {
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+    },
+  };
+
   const textColorMap = {
     primary: theme.colors.white,
     secondary: theme.colors.white,
@@ -71,7 +88,8 @@ function AppButton({
       style={[
         styles.button,
         variantStyles[variant],
-        sizeStyles[size],
+        compact ? compactSizeStyles[size] : sizeStyles[size],
+        inline && styles.inline,
         fullWidth && { width: "100%" },
         disabled && styles.disabled,
         { ...theme.shadows.md },
@@ -105,6 +123,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: theme.spacing.md,
   },
+  inline: {
+    flex: 1,
+    marginVertical: 0,
+  },
   content: {
     flexDirection: "row",
     justifyContent: "center",
@@ -114,7 +136,7 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing.sm,
   },
   text: {
-    fontSize: theme.typography.fontSize.lg,
+    fontSize: theme.typography.fontSize.md,
     fontWeight: theme.typography.fontWeight.semibold,
     textTransform: "capitalize",
   },

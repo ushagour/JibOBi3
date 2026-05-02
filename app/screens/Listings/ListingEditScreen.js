@@ -21,6 +21,8 @@ import categoriesAPI from "../../api/categories";
 import listingsAPI from "../../api/listings";
 import CategoryPickerItem from "../../components/CategoryPickerItem";
 import routes from "../../navigation/routes";
+import AppButton from "../../components/Button";
+
 
 function CarDetailsFields({ categories }) {
   const { values, setFieldValue } = useFormikContext();
@@ -110,6 +112,41 @@ function ListingEditScreen({ route, navigation }) {
     }
   };
 
+
+  
+     const handleDelete = (listing) => {
+        Alert.alert(
+          "Delete Confirmation",
+          `Are you sure you want to delete this ${listing.title}?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Delete",
+              onPress: async () => {
+                try {
+                  setIsDeletingListing(true);
+                  if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
+                  const response = await listingsAPI.deleteListing(listing.id);
+                  if (!response.ok) {
+                    if (__DEV__) console.error("Failed to delete listing:", response);
+                    return Alert.alert("Error", "Failed to delete listing.");
+                  }
+                  navigation.navigate(routes.LISTINGS);
+                  Alert.alert("Success", "Listing deleted successfully.");
+                } catch (error) {
+                  Alert.alert("Error", "Failed to delete listing.");
+                  if (__DEV__) console.error("Failed to delete listing:", error);
+                } finally {
+                  setIsDeletingListing(false);
+                }
+              },
+              style: "destructive",
+            },
+          ],
+          { cancelable: true }
+        );
+      };
+
   return (
           <KeyboardAvoidingView
              behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -118,7 +155,6 @@ function ListingEditScreen({ route, navigation }) {
              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
            <ScrollView  contentContainerStyle={styles.container}>
 
-           <TopActionBar navigation={navigation} style={styles.topBar} />
    
       <UploadScreen
         visible={uploadVisible}
@@ -166,10 +202,21 @@ function ListingEditScreen({ route, navigation }) {
         />
         <CarDetailsFields categories={categories} />
         <SubmitButton title="Save Changes" />
-      </Form>
+
+
+                    
+
+
+      </Form>      
+       <AppButton
+                              title="Delete"
+                              onPress={() => handleDelete(listing)}
+                              variant="danger"
+                              fullWidth={true}
+                            />
           </ScrollView>  
      </TouchableWithoutFeedback>
- 
+
      </KeyboardAvoidingView>
   );
 }

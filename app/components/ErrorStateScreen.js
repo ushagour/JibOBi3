@@ -58,6 +58,9 @@ function ErrorStateScreen({
   backSize = "md",
 }) {
   const config = CASES[type] || CASES.generic;
+  const isDevelopment = __DEV__;
+  const resolvedTitle = isDevelopment ? (title || config.title) : config.title;
+  const resolvedMessage = isDevelopment ? (message || config.message) : config.message;
 
   return (
     <Screen style={styles.screen} scrollable={false}>
@@ -71,14 +74,14 @@ function ErrorStateScreen({
         </View>
 
         <AppText variant="h4" color="textPrimary" style={styles.title}>
-          {title || config.title}
+          {resolvedTitle}
         </AppText>
 
         <AppText color="textSecondary" style={styles.message}>
-          {message || config.message}
+          {resolvedMessage}
         </AppText>
 
-        {!!details && (
+        {isDevelopment && !!details && (
           <AppText variant="bodySmall" color="textTertiary" style={styles.details}>
             {details}
           </AppText>

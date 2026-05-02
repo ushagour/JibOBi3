@@ -43,12 +43,28 @@ const resolveCategoryIcon = (category) => {
   return CATEGORY_FALLBACK_ICONS[category?.name] || "🛍️";
 };
 
+const isAvailableStatus = (status) => {
+  const normalized = String(status || "").toLowerCase().trim();
+
+  if (!normalized) return true;
+  if (
+    normalized.includes("selled") ||
+    normalized.includes("sold out") ||
+    normalized === "sold"
+  ) {
+    return false;
+  }
+
+  return normalized.includes("available");
+};
+
+
 function ListingsScreen({ navigation }) {
   const { user, isLoggedIn } = useAuth();
   const isGuest = !isLoggedIn();
       /* we distructure the data from the useApi hook and 
-      we call the listingsApi.getListings function */
-  const{data:listings, error, loading, request: fetchListings} = useApi(listingsApi.getListings)
+      we call the listingsApi.getTopListings function */
+  const{data:listings, error, loading, request: fetchPopularListings} = useApi(listingsApi.getTopListings)
 
   const {
     data: categoryListings,
@@ -125,6 +141,8 @@ function ListingsScreen({ navigation }) {
     const query = searchQuery.trim().toLowerCase();
 
     return (listingsSource || []).filter((item) => {
+      if (!isAvailableStatus(item?.status)) return false;
+
       if (isGuest && selectedCategory !== "all") {
         const categoryId = String(item?.Category?.id ?? "");
         if (categoryId !== String(selectedCategory)) return false;
@@ -142,7 +160,7 @@ function ListingsScreen({ navigation }) {
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    const requests = [fetchListings(), fetchCategories()];
+    const requests = [fetchPopularListings(), fetchCategories()];
 
     if (!isGuest && selectedCategory !== "all") {
       requests.push(fetchListingsByCategory(selectedCategory));
@@ -158,7 +176,7 @@ function ListingsScreen({ navigation }) {
 
   
   useEffect(() => {
-    fetchListings();
+    fetchPopularListings();
     fetchCategories();
     if (!isGuest) loadFavorites();
 }, []); 
@@ -246,7 +264,7 @@ function ListingsScreen({ navigation }) {
         message="We could not fetch listings right now. Check your network and retry."
         onRetry={() =>
           selectedCategory === "all"
-            ? fetchListings()
+            ? fetchPopularListings()
             : fetchListingsByCategory(selectedCategory)
         }
       />
@@ -254,85 +272,91 @@ function ListingsScreen({ navigation }) {
   }
 
 
+  // Render categories header
+  const renderListHeader = () => (
+    <View style={styles.fixedTopSection}>
+      <View style={styles.headerBlock}>
+        <Text style={styles.greetingText}>Good Morning,</Text>
+        <Text style={styles.userNameText}>{user?.name || "User"} 👋</Text>
+      </View>
+
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={20} color={colors.medium} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search for products..."
+          placeholderTextColor={colors.medium}
+          style={styles.searchInput}
+        />
+      </View>
+
+      <Text style={styles.sectionTitle}>Categories</Text>
+      <FlatList
+        horizontal
+        data={categories}
+        keyExtractor={(category) => category.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoriesContainer}
+        renderItem={({ item: category }) => {
+          const isActive = selectedCategory === category.id;
+          return (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.categoryItem, isActive && styles.categoryItemActive]}
+              onPress={() => setSelectedCategory(category.id)}
+            >
+              <View style={styles.categoryIconWrap}>
+                <Text style={styles.categoryIcon}>{category.icon}</Text>
+              </View>
+              <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+        scrollEnabled={false}
+        nestedScrollEnabled={false}
+      />
+
+      <Text style={styles.sectionTitle}>Popular Products</Text>
+    </View>
+  );
+
+  const renderListEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>No products found.</Text>
+    </View>
+  );
+
   return (
     <>
       <ActivityIndicator visible={activeLoading} />
 
-      <Screen style={styles.screen} scrollable={false}>
-        <View style={styles.fixedTopSection}>
-          <View style={styles.headerBlock}>
-            <Text style={styles.greetingText}>Good Morning,</Text>
-            <Text style={styles.userNameText}>{user?.name || "User"} 👋</Text>
-          </View>
-
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color={colors.medium} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search for products..."
-              placeholderTextColor={colors.medium}
-              style={styles.searchInput}
-            />
-          </View>
-
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <FlatList
-            horizontal
-            data={categories}
-            keyExtractor={(category) => category.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-            renderItem={({ item: category }) => {
-              const isActive = selectedCategory === category.id;
-              return (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={[styles.categoryItem, isActive && styles.categoryItemActive]}
-                  onPress={() => setSelectedCategory(category.id)}
-                >
-                  <View style={styles.categoryIconWrap}>
-                    <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  </View>
-                  <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
-                    {category.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }}  
-          />
-        </View>
-
-        <View style={styles.productsSection}>
-          <Text style={styles.sectionTitle}>Popular Products</Text>
-          {filteredListings.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No products found.</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredListings}
-              keyExtractor={(listing) => listing.id.toString()}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.productsVerticalContainer}
-              renderItem={({ item }) => (
-                <Product
-                  title={item.title}
-                  imageUri={item.imageUri || item.imageUrl}
-                  onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-                  onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
-                  isLiked={favoriteIds.includes(item.id)}
-                  price={item.price}
-                  seller={item.owner?.name}
-                  description={item.description}
-                  createdAt={dayjs(item.createdAt).format("MMM D")}
-                  containerStyle={styles.productListCard}
-                />
-              )}
+      <Screen style={styles.screen} scrollable={false} paddingSize="none">
+        <FlatList
+          data={filteredListings}
+          keyExtractor={(listing) => listing.id.toString()}
+          ListHeaderComponent={renderListHeader}
+          ListEmptyComponent={renderListEmpty}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.productsVerticalContainer}
+          renderItem={({ item }) => (
+            <Product
+              title={item.title}
+              imageUri={item.imageUri || item.imageUrl}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+              onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
+              isLiked={favoriteIds.includes(item.id)}
+              price={item.price}
+              seller={item.owner?.name}
+              description={item.description}
+              createdAt={dayjs(item.createdAt).format("MMM D")}
+              containerStyle={styles.productListCard}
             />
           )}
-        </View>
+        />
       </Screen>
     </>
   );
@@ -345,10 +369,12 @@ const styles = StyleSheet.create({
   },
   fixedTopSection: {
     backgroundColor: colors.light,
+    paddingTop: 8,
     paddingBottom: 2,
   },
   headerBlock: {
-
+    paddingHorizontal: 16,
+    paddingVertical: 4,
     borderBottomColor: colors.lightGray,
   },
   greetingText: {
@@ -363,9 +389,9 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   searchBar: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 10,
+    marginHorizontal: 12,
+    marginTop: 6,
+    marginBottom: 8,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.lightGray,
@@ -385,17 +411,17 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
     color: colors.dark,
-    marginHorizontal: 16,
-    marginBottom: 8,
+    marginHorizontal: 12,
+    marginBottom: 6,
   },
   categoriesContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    gap: 4,
   },
   categoryItem: {
     alignItems: "center",
-    width: 70,
+    width: 65,
   },
   categoryItemActive: {
     transform: [{ scale: 1.03 }],
@@ -411,22 +437,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   categoryIcon: {
-    fontSize: 20,
+    fontSize: 25,
   },
   categoryLabel: {
     marginTop: 6,
-    fontSize: 11,
+    fontSize: 9,
     color: colors.medium,
     fontWeight: "600",
   },
   categoryLabelActive: {
     color: colors.primary,
   },
-  productsSection: {
-    flex: 1,
-  },
   emptyContainer: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     backgroundColor: colors.white,
     borderRadius: 12,
     borderWidth: 1,
@@ -438,8 +461,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   productsVerticalContainer: {
-    paddingLeft: 16,
-    paddingRight: 14,
+    paddingLeft: 12,
+    paddingRight: 12,
     paddingBottom: 10,
   },
   productListCard: {

@@ -25,16 +25,7 @@ function HeaderRightPopupMenu({ navigation }) {
           setVisible(false);
           navigation?.navigate(routes.NOTIFICATIONS);
         },
-      },
-      {
-        id: "settings",
-        icon: "cog-outline",
-        label: "Settings",
-        onPress: () => {
-          setVisible(false);
-          navigation?.navigate(routes.SETTINGS);
-        },
-      },
+      }
     ],
     [navigation]
   );
@@ -85,14 +76,6 @@ function HeaderRightPopupMenu({ navigation }) {
               <Text style={styles.badgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
             </View>
           )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.triggerButton}
-          onPress={() => setVisible(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="cog-outline" size={22} color="black" />
         </TouchableOpacity>
       </View>
 

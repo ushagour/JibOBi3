@@ -47,7 +47,6 @@ function ListingDetailsScreen({ route, navigation }) {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [contactModalVisible, setContactModalVisible] = useState(false);
-  const [reviewModalVisible, setReviewModalVisible] = useState(false);
 
   const reportReasons = [
     { id: "spam", label: "Spam or misleading" },
@@ -162,38 +161,6 @@ function ListingDetailsScreen({ route, navigation }) {
   }
 
 
-   const handleDelete = (listing) => {
-      Alert.alert(
-        "Delete Confirmation",
-        `Are you sure you want to delete this ${listing.title}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            onPress: async () => {
-              try {
-                setIsDeletingListing(true);
-                if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
-                const response = await listingsApi.deleteListing(listing.id);
-                if (!response.ok) {
-                  if (__DEV__) console.error("Failed to delete listing:", response);
-                  return Alert.alert("Error", "Failed to delete listing.");
-                }
-                navigation.navigate(routes.LISTINGS);
-                Alert.alert("Success", "Listing deleted successfully.");
-              } catch (error) {
-                Alert.alert("Error", "Failed to delete listing.");
-                if (__DEV__) console.error("Failed to delete listing:", error);
-              } finally {
-                setIsDeletingListing(false);
-              }
-            },
-            style: "destructive",
-          },
-        ],
-        { cancelable: true }
-      );
-    };
 
     const handleDeleteReview = async (reviewId) => {
       Alert.alert(
@@ -291,17 +258,23 @@ function ListingDetailsScreen({ route, navigation }) {
     setContactModalVisible(false);
   };
 
-  const openReviewModal = () => {
-    setReviewModalVisible(true);
-  };
+  const handleOrderNow = () => {
+    if (!isAuthenticated) {
+      Alert.alert("Sign in required", "Please sign in to place an order.");
+      return;
+    }
 
-  const closeReviewModal = () => {
-    setReviewModalVisible(false);
-  };
+    if (isOwner(listing?.owner?.id)) {
+      Alert.alert("Not allowed", "You cannot order your own listing.");
+      return;
+    }
 
-  const handleReviewCreated = async () => {
-    closeReviewModal();
-    await fetchReviews();
+    if (isSoldStatus(listing.status)) {
+      Alert.alert("Unavailable", "This item is already sold.");
+      return;
+    }
+
+    navigation.navigate(routes.ORDER_CHECKOUT, { listing });
   };
 
   const handleCallSeller = async () => {
@@ -478,22 +451,23 @@ function ListingDetailsScreen({ route, navigation }) {
               listingOwnerId={listing.owner?.id}
             />
 
-            {isAuthenticated && user.userId !== listing.owner.id ? (
-              <View style={styles.reviewSection}>
-                <Text style={styles.sectionLabel}>Leave a Review</Text>
-                <AppButton
-                  title="Add Review"
-                  onPress={openReviewModal}
-                  variant="secondary"
-                  size="md"
-                />
-              </View>
-            ) : null}
         
 
        
 
-            {isAuthenticated && user.userId !== listing.owner.id ? (
+            {isAuthenticated && user.userId !== listing?.owner?.id ? (
+              <View style={styles.orderSection}>
+                <Text style={styles.sectionLabel}>Order</Text>
+                <AppButton
+                  title="Order Now"
+                  onPress={handleOrderNow}
+                  variant="success"
+                  size="md"
+                />
+              </View>
+            ) : null}
+
+            {isAuthenticated && user.userId !== listing?.owner?.id ? (
               <View style={styles.contactSection}>
                 <Text style={styles.sectionLabel}>Contact Seller</Text>
                 <AppButton
@@ -514,15 +488,10 @@ function ListingDetailsScreen({ route, navigation }) {
                     variant="secondary"
                     size="sm"
                     fullWidth={false}
+                    compact
+                    inline
                   />
 
-                  <AppButton
-                    title="Delete"
-                    onPress={() => handleDelete(listing)}
-                    variant="danger"
-                    size="sm"
-                    fullWidth={false}
-                  />
                 </View>
               )}
 
@@ -533,6 +502,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     variant="danger"
                     size="md"
                     fullWidth={false}
+                    compact
                   />
               )}
             </View>
@@ -556,25 +526,34 @@ function ListingDetailsScreen({ route, navigation }) {
 
                   <View style={styles.contactActionList}>
                     <AppButton
-                      title="Call Seller"
+                      title="Call"
                       onPress={handleCallSeller}
                       variant="secondary"
-                      size="md"
+                      size="sm"
+                      fullWidth={false}
+                      compact
+                      inline
                       icon={<MaterialIcons name="call" size={18} color={colors.white} />}
                     />
                     <AppButton
-                      title="Send Email"
+                      title="Email"
                       onPress={handleEmailSeller}
                       variant="primary"
-                      size="md"
+                      size="sm"
+                      fullWidth={false}
+                      compact
+                      inline
                       icon={<MaterialIcons name="email" size={18} color={colors.white} />}
                     />
                     {!!listing?.owner?.phone && (
                       <AppButton
-                        title="WhatsApp (Optional)"
+                        title="WhatsApp"
                         onPress={openWhatsApp}
                         variant="success"
-                        size="md"
+                        size="sm"
+                        fullWidth={false}
+                        compact
+                        inline
                         icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
                       />
                     )}
@@ -588,38 +567,8 @@ function ListingDetailsScreen({ route, navigation }) {
                       variant="outline"
                       size="sm"
                       fullWidth={false}
-                    />
-                  </View>
-                </View>
-              </View>
-            </Modal>
-
-            <Modal
-              visible={reviewModalVisible}
-              transparent
-              animationType="fade"
-              onRequestClose={closeReviewModal}
-            >
-              <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={closeReviewModal}>
-                  <View style={styles.modalBackdrop} />
-                </TouchableWithoutFeedback>
-
-                <View style={styles.contactModalCard}>
-                  <Text style={styles.reportModalTitle}>Add review</Text>
-                  <Text style={styles.reportModalSubtitle}>
-                    Share your rating and a quick note about this listing.
-                  </Text>
-
-                  <AddReviewForm listing={listing} onSuccess={handleReviewCreated} />
-
-                  <View style={styles.reportModalActions}>
-                    <AppButton
-                      title="Close"
-                      onPress={closeReviewModal}
-                      variant="outline"
-                      size="sm"
-                      fullWidth={false}
+                      compact
+                      inline
                     />
                   </View>
                 </View>
@@ -682,6 +631,8 @@ function ListingDetailsScreen({ route, navigation }) {
                       variant="outline"
                       size="sm"
                       fullWidth={false}
+                      compact
+                      inline
                     />
                     <AppButton
                       title="Submit report"
@@ -689,6 +640,8 @@ function ListingDetailsScreen({ route, navigation }) {
                       variant="danger"
                       size="sm"
                       fullWidth={false}
+                      compact
+                      inline
                     />
                   </View>
                 </View>
@@ -815,7 +768,7 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "left",
     marginVertical: 3,
   },
   infoText: {
@@ -918,13 +871,17 @@ const styles = StyleSheet.create({
   reviewSection: {
     marginTop: 10,
   },
+  orderSection: {
+    marginTop: 10,
+  },
   actionSection: {
     marginTop: 4,
   },
   actionButtonsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: 8,
   },
   modalOverlay: {
@@ -952,8 +909,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   contactActionList: {
-    marginTop: 16,
-    gap: 10,
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
   },
   reportModalTitle: {
     fontSize: 20,
@@ -1001,6 +961,7 @@ const styles = StyleSheet.create({
   },
   reportModalActions: {
     flexDirection: "row",
+    flexWrap: "nowrap",
     justifyContent: "flex-end",
     gap: 10,
     marginTop: 8,
