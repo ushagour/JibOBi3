@@ -8,6 +8,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
 import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
+import OrderCheckoutScreen from "../screens/auth/OrderCheckoutScreen";
+import routes from "./routes";
+
 
 
 const Stack = createStackNavigator();
@@ -40,7 +43,8 @@ const FeedNavigator = () => (
     <Stack.Screen name="Listings" component={ListingsScreen} />
     <Stack.Screen name="AllListings" component={ListingsScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
-    <Stack.Screen options={{ headerShown: false }} name="ListingEdit" component={ListingEditScreen} />
+    <Stack.Screen name="OrderCheckout" component={OrderCheckoutScreen} />
+    <Stack.Screen  name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen options={{ headerShown: false }} name="ImageDetails" component={ViewImageScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
   </Stack.Navigator>

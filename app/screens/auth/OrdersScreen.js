@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, FlatList, StyleSheet, View } from "react-native";
+import { Alert, FlatList, StyleSheet, View, Modal, TouchableWithoutFeedback } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import Screen from "../../components/Screen";
@@ -7,17 +7,17 @@ import Text from "../../components/Text";
 import colors from "../../config/colors";
 import useAuth from "../../auth/useAuth";
 import ordersApi from "../../api/orders";
+import routes from "../../navigation/routes";
+import { OrderCard } from "../../components/orders";
+import AddReviewForm from "../../components/AddReviewForm";
+import AppButton from "../../components/Button";
 
-function getStatusMeta(status) {
-  if (status === "completed") return { label: "Completed", color: colors.success, icon: "check-circle-outline" };
-  if (status === "cancelled") return { label: "Cancelled", color: colors.danger, icon: "close-circle-outline" };
-  return { label: "Pending", color: colors.warning, icon: "clock-outline" };
-}
-
-function OrdersScreen() {
+function OrdersScreen({ navigation }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const userId = user?.userId;
   const isLoggedIn = Boolean(userId);
 
@@ -47,6 +47,21 @@ function OrdersScreen() {
     loadOrders();
   }, [userId]);
 
+  const openReviewModal = (order) => {
+    setSelectedOrder(order);
+    setReviewModalVisible(true);
+  };
+
+  const closeReviewModal = () => {
+    setReviewModalVisible(false);
+    setSelectedOrder(null);
+  };
+
+  const handleReviewCreated = () => {
+    closeReviewModal();
+    // Optional: Refresh orders if needed
+  };
+
   const totalCount = orders.length;
 
   if (!isLoggedIn) {
@@ -62,7 +77,7 @@ function OrdersScreen() {
   }
 
   return (
-    <Screen style={styles.screen} paddingSize="lg">
+    <Screen  scrollable={false} style={styles.screen} paddingSize="lg">
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.title}>Orders</Text>
@@ -86,30 +101,67 @@ function OrdersScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const statusMeta = getStatusMeta(item.status);
-          const listingTitle = item.Listing?.title || item.listing?.title || "Order";
-          const totalPrice = item.total_price ?? item.total_amount;
+          const listingId = item?.Listing?.id || item?.listing_id;
 
           return (
-            <View style={styles.card}>
-              <View style={styles.cardTopRow}>
-                <Text style={styles.orderTitle} numberOfLines={1}>{listingTitle}</Text>
-                <View style={styles.statusPill}>
-                  <MaterialCommunityIcons name={statusMeta.icon} size={12} color={statusMeta.color} />
-                  <Text style={[styles.statusText, { color: statusMeta.color }]}>{statusMeta.label}</Text>
-                </View>
-              </View>
-
-              <View style={styles.metaRow}>
-                <Text style={styles.metaText}>Total: {totalPrice != null ? `$${totalPrice}` : "N/A"}</Text>
-                <Text style={styles.metaText}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}</Text>
-              </View>
-
-              {item.shipping_address ? <Text style={styles.addressText} numberOfLines={2}>{item.shipping_address}</Text> : null}
+            <View style={styles.orderItemWrapper}>
+              <OrderCard
+                order={item}
+                onPress={
+                  listingId
+                    ? () => navigation.navigate(routes.LISTING_DETAILS, { id: listingId })
+                    : undefined
+                }
+              />
+              <AppButton
+                title="Leave Review"
+                onPress={() => openReviewModal(item)}
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                compact
+              />
             </View>
           );
         }}
       />
+
+      <Modal
+        visible={reviewModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeReviewModal}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={closeReviewModal}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={styles.reviewModalCard}>
+            <Text style={styles.modalTitle}>Leave a Review</Text>
+            <Text style={styles.modalSubtitle}>
+              Share your rating and a quick note about this listing.
+            </Text>
+
+            {selectedOrder?.Listing && (
+              <AddReviewForm 
+                listing={selectedOrder.Listing} 
+                onSuccess={handleReviewCreated}
+              />
+            )}
+
+            <View style={styles.modalActions}>
+              <AppButton
+                title="Close"
+                onPress={closeReviewModal}
+                variant="outline"
+                size="sm"
+                fullWidth={false}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -152,56 +204,6 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 18,
   },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.lightGray,
-  },
-  cardTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-  },
-  orderTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: colors.lightGray,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-    marginTop: 8,
-  },
-  metaText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  addressText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: colors.medium,
-  },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
@@ -211,6 +213,43 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.medium,
     fontSize: 14,
+  },
+  orderItemWrapper: {
+    marginBottom: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  reviewModalCard: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  modalSubtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 16,
   },
 });
 
