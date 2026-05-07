@@ -54,30 +54,30 @@ function FavoritesScreen({ navigation }) {
       setLoading(false);
     }
   };
-  const handleDelete = (listing) => {
+  const handleRemoveFavorite = (listing) => {
     Alert.alert(
-      "Delete Confirmation",
-      `Are you sure you want to delete this ${listing.title}?`,
+      "Remove Favorite",
+      `Are you sure you want to remove ${listing.title} from your favorites?`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Remove",
           onPress: async () => {
             try {
               setIsDeletingListing(true);
-              if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
-              const response = await favoritesApi.removeFavorite(user.userId, listing.id);
+              if (__DEV__) console.log(`Attempting to remove favorite with listing ID: ${listing.id}`);
+              const response = await favoritesApi.removeFavorite(listing.id);
               if (!response.ok) {
-                if (__DEV__) console.error("Failed to delete listing:", response);
-                return Alert.alert("Error", "Failed to delete listing.");
+                if (__DEV__) console.error("Failed to remove favorite:", response);
+                return Alert.alert("Error", "Failed to remove from favorites.");
               }
               setFavorites((currentFavorites) =>
                 currentFavorites.filter((item) => item.id !== listing.id)
               );
-              Alert.alert("Success", "Listing deleted successfully.");
+              Alert.alert("Success", "Removed from favorites.");
             } catch (error) {
-              Alert.alert("Error", "Failed to delete listing.");
-              if (__DEV__) console.error("Failed to delete listing:", error);
+              Alert.alert("Error", "Failed to remove from favorites.");
+              if (__DEV__) console.error("Failed to remove favorite:", error);
             } finally {
               setIsDeletingListing(false);
             }
@@ -114,14 +114,14 @@ function FavoritesScreen({ navigation }) {
           data={favorites}
           keyExtractor={(favorite) => String(favorite.id)}
           renderItem={({ item }) => {
-            const renderLeftActions = () => (
-              <RectButton style={styles.leftAction} onPress={() => handleDelete(item)}>
-                <Text style={styles.leftActionText}>Remove</Text>
+            const renderRightActions = () => (
+              <RectButton style={styles.deleteAction} onPress={() => handleRemoveFavorite(item)}>
+                <Text style={styles.deleteActionText}>Remove</Text>
               </RectButton>
             );
 
             return (
-              <Swipeable renderLeftActions={renderLeftActions} overshootLeft={false}>
+              <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
                 <TouchableOpacity
                   style={styles.row}
                   onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
@@ -219,15 +219,17 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
-  leftAction: {
+  deleteAction: {
     backgroundColor: colors.danger,
     justifyContent: "center",
     alignItems: "center",
     width: 90,
+    borderRadius: 6,
   },
-  leftActionText: {
+  deleteActionText: {
     color: "#fff",
     fontWeight: "700",
+    fontSize: 12,
   },
   emptyContainer: {
     alignItems: "center",

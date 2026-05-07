@@ -18,7 +18,7 @@ const getTotalListings = () => client.get(`${endpoint}/total_listings`);
 
 
 /**
- * Sends a POST request to the server to add a new listing.
+ * Sends a POST request to the server to add a newh listing.
  *
  * @param {object} listing - The listing to be added. It should contain the following fields:
  * - title {string}
@@ -118,7 +118,7 @@ if (listing.location) {
       data.append("location[longitude]", listing.location.longitude);
     }
 
-    console.log(data);
+    // console.log(data);
     
 
   
@@ -132,6 +132,10 @@ if (listing.location) {
   };
 
 
+const nearbyListings = (latitude, longitude) => {
+  return client.get(`${endpoint}/nearby?latitude=${latitude}&longitude=${longitude}`);
+};
+
 
 export default {
   addListing,
@@ -142,6 +146,6 @@ export default {
   getMyListings,
   getTotalListings,
   deleteListing,
-  updateListing
-  
+  updateListing,
+nearbyListings  
 };

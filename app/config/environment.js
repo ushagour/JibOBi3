@@ -1,42 +1,24 @@
 import Constants from "expo-constants";
 
-const settings = {
-  dev: {
-    // apiUrl: "https://jib-o-bi3-backend-production.up.railway.app/api",
-        apiUrl: "http://192.168.1.206:3000/api", // dev server
+const getApiUrl = () => {
+  const env = process.env.EXPO_PUBLIC_APP_ENV || "prod";
 
-  },
-  staging: {
-    apiUrl: "http://192.168.1.206:3000/api", // Staging server
-  },
-  prod: {
-    apiUrl: "https://jib-o-bi3-backend-production.up.railway.app/api", // Production server
-  },
+  switch (env) {
+    case "dev":
+      return process.env.EXPO_PUBLIC_API_URL_DEV;
+    case "staging":
+      return process.env.EXPO_PUBLIC_API_URL_STAGING;
+    case "prod":
+      return process.env.EXPO_PUBLIC_API_URL_PROD;
+    default:
+      return process.env.EXPO_PUBLIC_API_URL_PROD;
+  }
 };
 
 export const getCurrentSettings = () => {
-  // Check if the app is running in development mode
+  const apiUrl = getApiUrl();
   if (__DEV__) {
-    console.log("Environment: Development");
-    return settings.dev;
+    console.log(`Environment: ${process.env.EXPO_PUBLIC_APP_ENV}, API URL: ${apiUrl}`);
   }
-
-  // Get the release channel from Expo Constants
-  const releaseChannel = Constants.manifest?.releaseChannel || "prod";
-
-  // Determine the environment based on the release channel
-  switch (releaseChannel) {
-    case "development":
-      console.log("Environment: Development");
-      return settings.dev;
-    case "staging":
-      console.log("Environment: Staging");
-      return settings.staging;
-    case "production":
-      console.log("Environment: Production");
-      return settings.prod;
-    default:
-      console.log("Environment: Production");
-      return settings.prod;
-  }
+  return { apiUrl };
 };

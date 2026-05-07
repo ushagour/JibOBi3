@@ -20,8 +20,12 @@ import categoriesApi from "../../api/categories";
 import  ActivityIndicator  from "../../components/ActivityIndicator";
 import useApi  from "../../hooks/useApi";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
+import Header from "../../components/Header";
 import useAuth from "../../auth/useAuth";
 import { Alert } from "react-native";
+import useLocation from "../../hooks/useLocation";
+import { useLocale } from "@react-navigation/native";
+
 
 const CATEGORY_FALLBACK_ICONS = {
   Sneakers: "👟",
@@ -61,10 +65,9 @@ const isAvailableStatus = (status) => {
 
 function ListingsScreen({ navigation }) {
   const { user, isLoggedIn } = useAuth();
+  const { location } = useLocation();
   const isGuest = !isLoggedIn();
-      /* we distructure the data from the useApi hook and 
-      we call the listingsApi.getTopListings function */
-  const{data:listings, error, loading, request: fetchPopularListings} = useApi(listingsApi.getTopListings)
+  const{data:listings, error, loading, request: fetchNearbyListings} = useApi(listingsApi.nearbyListings);
 
   const {
     data: categoryListings,
@@ -160,7 +163,7 @@ function ListingsScreen({ navigation }) {
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    const requests = [fetchPopularListings(), fetchCategories()];
+    const requests = [fetchNearbyListings(location.latitude, location.longitude), fetchCategories()];
 
     if (!isGuest && selectedCategory !== "all") {
       requests.push(fetchListingsByCategory(selectedCategory));
@@ -176,10 +179,14 @@ function ListingsScreen({ navigation }) {
 
   
   useEffect(() => {
-    fetchPopularListings();
+    if (location) {
+      fetchNearbyListings(location.latitude, location.longitude).catch((error) => {
+        if (__DEV__) console.error("Error fetching nearby listings:", error);
+      });
+    }
     fetchCategories();
     if (!isGuest) loadFavorites();
-}, []); 
+  }, [location]); 
 
   useEffect(() => {
     if (isGuest) return;
@@ -275,11 +282,6 @@ function ListingsScreen({ navigation }) {
   // Render categories header
   const renderListHeader = () => (
     <View style={styles.fixedTopSection}>
-      <View style={styles.headerBlock}>
-        <Text style={styles.greetingText}>Good Morning,</Text>
-        <Text style={styles.userNameText}>{user?.name || "User"} 👋</Text>
-      </View>
-
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color={colors.medium} />
         <TextInput
@@ -319,7 +321,7 @@ function ListingsScreen({ navigation }) {
         nestedScrollEnabled={false}
       />
 
-      <Text style={styles.sectionTitle}>Popular Products</Text>
+      <Text style={styles.sectionTitle}>Newest Near Me</Text>
     </View>
   );
 
@@ -332,8 +334,9 @@ function ListingsScreen({ navigation }) {
   return (
     <>
       <ActivityIndicator visible={activeLoading} />
-
+       
       <Screen style={styles.screen} scrollable={false} paddingSize="none">
+        <Header />
         <FlatList
           data={filteredListings}
           keyExtractor={(listing) => listing.id.toString()}

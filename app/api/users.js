@@ -22,7 +22,7 @@ const updateUserInfo = (id,UserData, onUploadProgress) => {
 
 
 
-const deleteUser = (id) => client.delete(`/user/${id}`);
+const deleteUser = (id, data) => client.delete(`/user/${id}`, { data });
 
 const deleteUserAvatar = (id) => client.delete(`/user/${id}/avatar`);
 

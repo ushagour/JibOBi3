@@ -33,11 +33,6 @@ function SettingsScreen() {
           subTitle="Control push and in-app notifications"
         />
         <SettingRow
-          icon="shield-check-outline"
-          title="Privacy"
-          subTitle="Review privacy and account visibility"
-        />
-        <SettingRow
           icon="theme-light-dark"
           title="Appearance"
           subTitle="Adjust theme and display options"

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { CommonActions } from "@react-navigation/native";
+// import MapView, { Marker } from "react-native-maps";//todo it woeks on  developemt build 
 
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
@@ -10,6 +11,7 @@ import colors from "../../config/colors";
 import ordersApi from "../../api/orders";
 import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
+import listings from "../../api/listings";
 
 function parsePrice(value) {
   const numeric = Number(value);
@@ -19,6 +21,7 @@ function parsePrice(value) {
 function OrderCheckoutScreen({ route, navigation }) {
   const { user } = useAuth();
   const listing = route?.params?.listing;
+  const location = listing?.location;
 
   const unitPrice = useMemo(() => parsePrice(listing?.price), [listing?.price]);
 
@@ -67,7 +70,7 @@ function OrderCheckoutScreen({ route, navigation }) {
       });
 
       if (!response.ok) {
-        Alert.alert("Order failed", "Could not place order. Please try again.");
+        Alert.alert("Order failed", "Could not Confirm Request. Please try again.");
         return;
       }
 
@@ -89,7 +92,7 @@ function OrderCheckoutScreen({ route, navigation }) {
       ]);
     } catch (error) {
       if (__DEV__) console.error("Create order failed:", error);
-      Alert.alert("Order failed", "Could not place order. Please try again.");
+      Alert.alert("Order failed", "Could not Confirm Request. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -99,6 +102,26 @@ function OrderCheckoutScreen({ route, navigation }) {
     <Screen style={styles.screen} paddingSize="lg">
       <Text style={styles.title}>Checkout</Text>
       <Text style={styles.subtitle}>Complete the details to place your order.</Text>
+      {/* <Text style={styles.subtitle}>{`Total: ${listing?.location} MAD`}</Text> */}
+{/* 
+      {location && (
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+        >
+          <Marker
+            coordinate={{
+              latitude: location.latitude,
+              longitude: location.longitude,
+            }}
+          />
+        </MapView>
+       )}  */}
 
       <View style={styles.summaryCard}>
         <Text style={styles.listingTitle} numberOfLines={2}>
@@ -146,7 +169,7 @@ function OrderCheckoutScreen({ route, navigation }) {
       />
 
       <AppButton
-        title={loading ? "Placing..." : "Place Order"}
+        title={loading ? "Placing..." : "Confirm Request"}
         onPress={handlePlaceOrder}
         loading={loading}
         variant="primary"
@@ -177,6 +200,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  map: {
+    height: 150,
+    borderRadius: 14,
+    marginBottom: 12,
   },
   summaryCard: {
     backgroundColor: colors.white,

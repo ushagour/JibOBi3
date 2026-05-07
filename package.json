@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "-": "^0.0.1",
     "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "11.4.1",
@@ -18,6 +19,7 @@
     "@react-navigation/stack": "^7.0.6",
     "@tanstack/react-query": "^5.76.1",
     "apisauce": "^3.1.1",
+    "baseline-browser-mapping": "^2.10.27",
     "dayjs": "^1.11.13",
     "expo": "~54.0.10",
     "expo-app-loading": "^1.1.2",
@@ -45,6 +47,7 @@
     "react-native-awesome-alerts": "^2.0.0",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-image-slider-box": "^2.0.7",
+    "react-native-maps": "^1.27.2",
     "react-native-progress": "^5.0.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",

@@ -100,6 +100,8 @@ function ListingDetailsScreen({ route, navigation }) {
         if (latitude != null && longitude != null) {
           getLocationName(latitude, longitude)
             .then((location) => {
+              console.log(location);
+              
               if (isMounted && location?.city) {
                 setLocationName(location.city);
               }
