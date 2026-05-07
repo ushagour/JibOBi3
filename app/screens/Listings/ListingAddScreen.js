@@ -14,6 +14,7 @@ import Button from "../../components/Button";
 import { useFormikContext } from "formik";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Text from "../../components/Text";
+import Screen from "../../components/Screen";
 import routes from "../../navigation/routes";
 
 
@@ -31,11 +32,32 @@ import categoriesAPI from "../../api/categories";
 import listingsAPI from "../../api/listings";
 import useAuth from "../../auth/useAuth";
 
+function AdditionalDetailsFields() {
+  return (
+    <View style={styles.sectionCard}>
+      <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>
+        Additional Details
+      </Text>
+      <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
+        Use these fields for extra attributes that fit your listing.
+      </Text>
+      <FormField maxLength={50} name="carModel" placeholder="Extra detail 1" />
+      <FormField maxLength={50} name="carColor" placeholder="Extra detail 2" />
+      <FormField maxLength={50} name="carSize" placeholder="Extra detail 3" />
+      <FormField keyboardType="numeric" maxLength={4} name="carYear" placeholder="Extra detail 4" />
+    </View>
+  );
+}
+
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
   price: Yup.number().required().min(1).max(100000).label("Price"),
   description: Yup.string().label("Description"),
   category: Yup.number().required().nullable().label("Category"),
+  carSize: Yup.string().label("Car Size"),
+  carColor: Yup.string().label("Car Color"),
+  carModel: Yup.string().label("Car Model"),
+  carYear: Yup.number().label("Car Year"),
   images: Yup.array().min(1, "Please select at least one image."),
 });
 
@@ -116,120 +138,137 @@ function ListingAddScreen({ navigation }) {
   };
 
   return (
-       <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView  contentContainerStyle={styles.container}>
-
-
-      <Text variant="h3" style={styles.screenTitle}>Post Your Listing</Text>
-      <Text variant="bodySmall" color="textSecondary" style={styles.screenSubtitle}>
-        Fill in the details below to publish your item.
-      </Text>
-      
-      <UploadScreen
-        visible={uploadVisible}
-        progress={progress}
-        onDone={() => setUploadVisible(false)}
-      />
-
-      <View style={styles.heroCard}>
-        <Text variant="h4" style={styles.heroTitle}>Create New Listing</Text>
-        <Text variant="bodySmall" color="textSecondary" style={styles.heroSubtitle}>
-          Add clear photos, accurate pricing, and a short description to get better responses.
-        </Text>
-        <View style={styles.metaRow}>
-          <View style={styles.metaPill}>
-            <MaterialCommunityIcons name="account" size={14} color="#0B5563" />
-            <Text variant="caption" style={styles.metaPillText}>{user?.name || "Seller"}</Text>
-          </View>
-          <View style={styles.metaPill}>
-            <MaterialCommunityIcons name="map-marker" size={14} color="#0B5563" />
-            <Text variant="caption" style={styles.metaPillText}>
-              {location ? "Location ready" : "No location"}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <Form
-        initialValues={{
-          title: "",
-          price: "",
-          description: "",
-          category: null,
-          images: [],
-        }}
-        onSubmit={handleSubmit}
-        validationSchema={validationSchema}
+    <Screen style={styles.screen} paddingSize="lg" scrollable={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
       >
-        <View style={styles.sectionCard}>
-          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Images</Text>
-          <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
-            Add at least one image. The first image will be your cover.
-          </Text>
-        <FormImagePicker name="images" />
-        </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.container}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.headerCard}>
+              <View style={styles.headerTextWrap}>
+                <Text variant="h3" style={styles.screenTitle}>Post Your Listing</Text>
+                <Text variant="bodySmall" color="textSecondary" style={styles.screenSubtitle}>
+                  Fill in the details below to publish your item.
+                </Text>
+              </View>
 
-        <View style={styles.sectionCard}>
-          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Basic Details</Text>
-        <FormField maxLength={255} name="title" placeholder="Title" />
-          <View style={styles.splitRow}>
-            <View style={styles.priceInputWrap}>
-              <FormField
-                keyboardType="numeric"
-                maxLength={8}
-                name="price"
-                placeholder="Price"
-              />
+              <View style={styles.metaRow}>
+                <View style={styles.metaPill}>
+                  <MaterialCommunityIcons name="account" size={14} color="#0B5563" />
+                  <Text variant="caption" style={styles.metaPillText}>{user?.name || "Seller"}</Text>
+                </View>
+                <View style={styles.metaPill}>
+                  <MaterialCommunityIcons name="map-marker" size={14} color="#0B5563" />
+                  <Text variant="caption" style={styles.metaPillText}>
+                    {location ? "Location ready" : "No location"}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
 
-        <View style={styles.sectionCard}>
-          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Category</Text>
-      <Picker
-          items={categories}
-          name="category"
-          numberOfColumns={3}
-          PickerItemComponent={CategoryPickerItem}
-          placeholder="Category"
-          width="100%"
+            <UploadScreen
+              visible={uploadVisible}
+              progress={progress}
+              onDone={() => setUploadVisible(false)}
+            />
 
-        />
-        </View>
+            <Form
+              initialValues={{
+                title: "",
+                price: "",
+                description: "",
+                category: null,
+                carSize: "",
+                carColor: "",
+                carModel: "",
+                carYear: "",
+                images: [],
+              }}
+              onSubmit={handleSubmit}
+              validationSchema={validationSchema}
+            >
+              <View style={styles.sectionCard}>
+                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Images</Text>
+                <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
+                  Add at least one image. The first image will be your cover.
+                </Text>
+                <FormImagePicker name="images" />
+              </View>
 
-        <View style={styles.sectionCard}>
-          <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Description</Text>
-        <FormField
-          maxLength={255}
-          multiline
-          name="description"
-          numberOfLines={3}
-          placeholder="Description"
-        />
-        </View>
+              <View style={styles.sectionCard}>
+                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Basic Details</Text>
+                <FormField maxLength={255} name="title" placeholder="Title" />
+                <View style={styles.splitRow}>
+                  <View style={styles.priceInputWrap}>
+                    <FormField
+                      keyboardType="numeric"
+                      maxLength={8}
+                      name="price"
+                      placeholder="Price"
+                    />
+                  </View>
+                </View>
+              </View>
 
-        <FormActions navigation={navigation} />
-      </Form>
-  </ScrollView>  
-    </TouchableWithoutFeedback>
+              <View style={styles.sectionCard}>
+                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Category</Text>
+                <Picker
+                  items={categories}
+                  name="category"
+                  numberOfColumns={3}
+                  PickerItemComponent={CategoryPickerItem}
+                  placeholder="Category"
+                  width="100%"
+                />
+              </View>
 
-    </KeyboardAvoidingView>
+              <View style={styles.sectionCard}>
+                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Description</Text>
+                <FormField
+                  maxLength={255}
+                  multiline
+                  name="description"
+                  numberOfLines={3}
+                  placeholder="Description"
+                />
+              </View>
+
+              <AdditionalDetailsFields />
+
+              <FormActions navigation={navigation} />
+            </Form>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: "#F7F4F0",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
     container: {
     flexGrow: 1,
-    backgroundColor: "#F7F4F0",
-    paddingTop: 28,
-    padding: 20,
+    paddingBottom: 24,
   },
-  topBar: {
-    marginBottom: 14,
+  headerCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#ECE7DE",
+  },
+  headerTextWrap: {
+    gap: 4,
   },
   screenTitle: {
     color: "#0C2D31",

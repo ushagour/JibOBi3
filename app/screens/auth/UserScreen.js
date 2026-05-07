@@ -16,7 +16,6 @@ import {
   FormField,
   SubmitButton,
 } from "../../components/forms";
-import AppButton from "../../components/Button";
 import ImageInput from "../../components/ImageInput";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import useAuth from "../../auth/useAuth";
@@ -24,23 +23,12 @@ import AppText from "../../components/Text";
 import colors from "../../config/colors";
 import AwesomeAlert from "react-native-awesome-alerts";
 
-import authApi from "../../api/auth";
 import usersApi from "../../api/users";
 import UploadScreen from "../outhers/UploadScreen";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required().label("Name"),
   email: Yup.string().required().email().label("Email"),
-});
-
-const changePasswordValidationSchema = Yup.object().shape({
-  currentPassword: Yup.string().required("Current password is required"),
-  newPassword: Yup.string()
-    .required("New password is required")
-    .min(5, "Password must be at least 5 characters"),
-  confirmNewPassword: Yup.string()
-    .oneOf([Yup.ref("newPassword"), null], "Passwords must match")
-    .required("Please confirm your new password"),
 });
 
 function UserScreen({ navigation }) {
@@ -185,77 +173,6 @@ function UserScreen({ navigation }) {
     }
   };
 
-  const handleChangePassword = async (userInfo) => {
-    try {
-      setLoading(true);
-
-      const response = await authApi.ChangePassword(
-        user.email,
-        userInfo.currentPassword,
-        userInfo.newPassword,
-        (progress) => setProgress(progress)
-      );
-      if (!response.ok) {
-        console.error("Failed to change password:", response);
-        setLoading(false);
-        setError(
-          response.data?.error ||
-            "An error occurred while updating your password."
-        );
-        return;
-      }
-      setLoading(false);
-      showSweetAlert({
-        title: "Success",
-        message: "Your password has been updated successfully.",
-        type: "success",
-      });
-    } catch (err) {
-      setLoading(false);
-      console.error("Error during request:", err);
-      showSweetAlert({
-        title: "Error",
-        message: "Network error, please try again.",
-        type: "danger",
-      });
-    }
-  };
-
-  const handleDelete = () => {
-    showSweetAlert({
-      title: "Delete Account",
-      message: "Are you sure you want to delete your account? This cannot be undone.",
-      type: "warning",
-      showCancel: true,
-      onConfirm: async () => {
-        try {
-          const response = await usersApi.deleteUser(authUser.userId);
-          if (!response.ok) {
-            console.error("Failed to delete user:", response);
-            return showSweetAlert({
-              title: "Error",
-              message: "Failed to delete account.",
-              type: "danger",
-            });
-          }
-          showSweetAlert({
-            title: "Success",
-            message: "Account deleted successfully.",
-            type: "success",
-            onConfirm: () => logOut(),
-          });
-        } catch (error) {
-          console.error("Failed to delete account:", error);
-          showSweetAlert({
-            title: "Error",
-            message: "Failed to delete account.",
-            type: "danger",
-          });
-        }
-      },
-    });
-  };
-
   const handleDeleteAvatar = async () => {
     try {
       await usersApi.deleteUserAvatar(authUser.userId);
@@ -355,68 +272,6 @@ function UserScreen({ navigation }) {
             </Form>
             </View>
 
-            {/* Change Password Button */}
-            <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-              Security
-            </AppText>
-            <View style={styles.sectionCard}>
-            <Form
-              initialValues={{
-                currentPassword: "",
-                newPassword: "",
-                confirmNewPassword: "",
-              }}
-              onSubmit={handleChangePassword}
-              validationSchema={changePasswordValidationSchema}
-            >
-              <ErrorMessage error={error} visible={!!error} />
-
-              {/* Current Password Field */}
-              <FormField
-                autoCapitalize="none"
-                autoCorrect={false}
-                icon="lock"
-                name="currentPassword"
-                placeholder="Current Password"
-                secureTextEntry
-                textContentType="password"
-              />
-
-              <FormField
-                autoCapitalize="none"
-                autoCorrect={false}
-                icon="lock"
-                name="newPassword"
-                placeholder="New Password"
-                secureTextEntry
-                textContentType="newPassword"
-              />
-
-              <FormField
-                autoCapitalize="none"
-                autoCorrect={false}
-                icon="lock"
-                name="confirmNewPassword"
-                placeholder="Confirm New Password"
-                secureTextEntry
-                textContentType="password"
-              />
-
-              <SubmitButton title="Change Password" color={"secondary"} />
-            </Form>
-            </View>
-
-            {/* Delete Account Button */}
-            <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-              Danger Zone
-            </AppText>
-            <View style={styles.sectionCard}>
-              <AppButton
-                title="Delete Account"
-                onPress={handleDelete}
-                variant="danger"
-              />
-            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

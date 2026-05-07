@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -32,7 +31,8 @@ import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-ico
 
 
 function ListingDetailsScreen({ route, navigation }) {
-  const id = route.params;
+  const routeParams = route.params;
+  const id = routeParams?.listing?.id ?? routeParams?.id ?? routeParams;
   const { user, isOwner } = useAuth();
   const isAuthenticated = Boolean(user?.userId);
 
@@ -43,11 +43,10 @@ function ListingDetailsScreen({ route, navigation }) {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
-  const [locationName, setLocationName] = useState("Loading...");
+  const [locationName, setLocationName] = useState("Unknown location");
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [contactModalVisible, setContactModalVisible] = useState(false);
-  const [reviewModalVisible, setReviewModalVisible] = useState(false);
 
   const reportReasons = [
     { id: "spam", label: "Spam or misleading" },
@@ -57,8 +56,12 @@ function ListingDetailsScreen({ route, navigation }) {
     { id: "other", label: "Other issue" },
   ];
 
-  const isSoldStatus = (status) => status === "Sold Out" || status === "selled";
-  const displayStatus = isSoldStatus(listing?.state) ? "selled" : "sekked - still avalable";
+  const isSoldStatus = (status) => {
+    const normalizedStatus = String(status || "").toLowerCase();
+    return normalizedStatus.includes("selled") || normalizedStatus.includes("sold out") || normalizedStatus === "sold";
+  };
+  const displayStatus = isSoldStatus(listing?.status) ? "selled" : "still available";
+  const isCarsCategory = listing?.Category?.name?.toLowerCase() === "cars";
 
   const fetchReviews = async () => {
     try {
@@ -79,6 +82,8 @@ function ListingDetailsScreen({ route, navigation }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchListing = async () => {
       try {
         const response = await listingsApi.getDetailListing(id);
@@ -86,22 +91,48 @@ function ListingDetailsScreen({ route, navigation }) {
           throw new Error("Failed to fetch listing details.");
         }
 
-        setListing(response.data);
-
         const { latitude, longitude } = response.data;
-        const location = await getLocationName(latitude, longitude);
-        setLocationName(location.city);
+        if (isMounted) {
+          setListing(response.data);
+          setLoading(false);
+        }
 
-        setError(false);
+        if (latitude != null && longitude != null) {
+          getLocationName(latitude, longitude)
+            .then((location) => {
+              console.log(location);
+              
+              if (isMounted && location?.city) {
+                setLocationName(location.city);
+              }
+            })
+            .catch(() => {
+              if (isMounted) {
+                setLocationName("Unknown location");
+              }
+            });
+        }
+
+        if (isMounted) {
+          setError(false);
+        }
       } catch (error) {
-        setError(error.message);
+        if (isMounted) {
+          setError(error.message);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchListing();
     fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
 
@@ -132,38 +163,6 @@ function ListingDetailsScreen({ route, navigation }) {
   }
 
 
-   const handleDelete = (listing) => {
-      Alert.alert(
-        "Delete Confirmation",
-        `Are you sure you want to delete this ${listing.title}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            onPress: async () => {
-              try {
-                setIsDeletingListing(true);
-                if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
-                const response = await listingsApi.deleteListing(listing.id);
-                if (!response.ok) {
-                  if (__DEV__) console.error("Failed to delete listing:", response);
-                  return Alert.alert("Error", "Failed to delete listing.");
-                }
-                navigation.navigate(routes.LISTINGS);
-                Alert.alert("Success", "Listing deleted successfully.");
-              } catch (error) {
-                Alert.alert("Error", "Failed to delete listing.");
-                if (__DEV__) console.error("Failed to delete listing:", error);
-              } finally {
-                setIsDeletingListing(false);
-              }
-            },
-            style: "destructive",
-          },
-        ],
-        { cancelable: true }
-      );
-    };
 
     const handleDeleteReview = async (reviewId) => {
       Alert.alert(
@@ -261,17 +260,23 @@ function ListingDetailsScreen({ route, navigation }) {
     setContactModalVisible(false);
   };
 
-  const openReviewModal = () => {
-    setReviewModalVisible(true);
-  };
+  const handleOrderNow = () => {
+    if (!isAuthenticated) {
+      Alert.alert("Sign in required", "Please sign in to place an order.");
+      return;
+    }
 
-  const closeReviewModal = () => {
-    setReviewModalVisible(false);
-  };
+    if (isOwner(listing?.owner?.id)) {
+      Alert.alert("Not allowed", "You cannot order your own listing.");
+      return;
+    }
 
-  const handleReviewCreated = async () => {
-    closeReviewModal();
-    await fetchReviews();
+    if (isSoldStatus(listing.status)) {
+      Alert.alert("Unavailable", "This item is already sold.");
+      return;
+    }
+
+    navigation.navigate(routes.ORDER_CHECKOUT, { listing });
   };
 
   const handleCallSeller = async () => {
@@ -344,7 +349,14 @@ function ListingDetailsScreen({ route, navigation }) {
         
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.contentContainer}>
+          <FlatList
+            data={[]}
+            renderItem={() => null}
+            keyExtractor={() => "listing-details"}
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+            ListHeaderComponent={
+              <>
               <View style={styles.ownerInfoRow}>
                 <Ionicons name="person" size={13} color={colors.secondary} />
                 <Text style={styles.ownerNameText} numberOfLines={1}>
@@ -374,11 +386,11 @@ function ListingDetailsScreen({ route, navigation }) {
                   ))}
                 </View>
               )}
-              {!!listing.state && (
+              {!!listing.status && (
                 <View
                   style={[
                     styles.stateBadge,
-                    isSoldStatus(listing.state)
+                    isSoldStatus(listing.status)
                       ? styles.stateBadgeSold
                       : styles.stateBadgeAvailable,
                   ]}
@@ -391,7 +403,7 @@ function ListingDetailsScreen({ route, navigation }) {
             <Text style={styles.title}>{listing.title}</Text>
 
             <View style={styles.priceRow}>
-              <Text style={styles.price}>$ {listing.price}</Text>
+              <Text style={styles.price}>{listing.price}  MAD</Text>
             </View>
 
             <View style={styles.infoPanel}>
@@ -406,6 +418,22 @@ function ListingDetailsScreen({ route, navigation }) {
                   </Text>
                 </View>
               </View>
+
+              {isCarsCategory ? (
+                <View style={styles.carDetailsCard}>
+                  <View style={styles.carDetailsHeader}>
+                    <MaterialCommunityIcons name="car-outline" size={16} color={colors.primary} />
+                    <Text style={styles.infoLabel}>Car Details</Text>
+                  </View>
+
+                  <View style={styles.carDetailsGrid}>
+                    <Text style={styles.carDetailText}>Model: {listing.carModel || "N/A"}</Text>
+                    <Text style={styles.carDetailText}>Color: {listing.carColor || "N/A"}</Text>
+                    <Text style={styles.carDetailText}>Size: {listing.carSize || "N/A"}</Text>
+                    <Text style={styles.carDetailText}>Year: {listing.carYear || "N/A"}</Text>
+                  </View>
+                </View>
+              ) : null}
 
 
            
@@ -425,22 +453,23 @@ function ListingDetailsScreen({ route, navigation }) {
               listingOwnerId={listing.owner?.id}
             />
 
-            {isAuthenticated && user.userId !== listing.owner.id ? (
-              <View style={styles.reviewSection}>
-                <Text style={styles.sectionLabel}>Leave a Review</Text>
-                <AppButton
-                  title="Add Review"
-                  onPress={openReviewModal}
-                  variant="secondary"
-                  size="md"
-                />
-              </View>
-            ) : null}
         
 
        
 
-            {isAuthenticated && user.userId !== listing.owner.id ? (
+            {isAuthenticated && user.userId !== listing?.owner?.id ? (
+              <View style={styles.orderSection}>
+                <Text style={styles.sectionLabel}>Order</Text>
+                <AppButton
+                  title="Order Now"
+                  onPress={handleOrderNow}
+                  variant="success"
+                  size="md"
+                />
+              </View>
+            ) : null}
+
+            {isAuthenticated && user.userId !== listing?.owner?.id ? (
               <View style={styles.contactSection}>
                 <Text style={styles.sectionLabel}>Contact Seller</Text>
                 <AppButton
@@ -461,15 +490,10 @@ function ListingDetailsScreen({ route, navigation }) {
                     variant="secondary"
                     size="sm"
                     fullWidth={false}
+                    compact
+                    inline
                   />
 
-                  <AppButton
-                    title="Delete"
-                    onPress={() => handleDelete(listing)}
-                    variant="danger"
-                    size="sm"
-                    fullWidth={false}
-                  />
                 </View>
               )}
 
@@ -480,6 +504,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     variant="danger"
                     size="md"
                     fullWidth={false}
+                    compact
                   />
               )}
             </View>
@@ -503,25 +528,34 @@ function ListingDetailsScreen({ route, navigation }) {
 
                   <View style={styles.contactActionList}>
                     <AppButton
-                      title="Call Seller"
+                      title="Call"
                       onPress={handleCallSeller}
                       variant="secondary"
-                      size="md"
+                      size="sm"
+                      fullWidth={false}
+                      compact
+                      inline
                       icon={<MaterialIcons name="call" size={18} color={colors.white} />}
                     />
                     <AppButton
-                      title="Send Email"
+                      title="Email"
                       onPress={handleEmailSeller}
                       variant="primary"
-                      size="md"
+                      size="sm"
+                      fullWidth={false}
+                      compact
+                      inline
                       icon={<MaterialIcons name="email" size={18} color={colors.white} />}
                     />
                     {!!listing?.owner?.phone && (
                       <AppButton
-                        title="WhatsApp (Optional)"
+                        title="WhatsApp"
                         onPress={openWhatsApp}
                         variant="success"
-                        size="md"
+                        size="sm"
+                        fullWidth={false}
+                        compact
+                        inline
                         icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
                       />
                     )}
@@ -535,38 +569,8 @@ function ListingDetailsScreen({ route, navigation }) {
                       variant="outline"
                       size="sm"
                       fullWidth={false}
-                    />
-                  </View>
-                </View>
-              </View>
-            </Modal>
-
-            <Modal
-              visible={reviewModalVisible}
-              transparent
-              animationType="fade"
-              onRequestClose={closeReviewModal}
-            >
-              <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={closeReviewModal}>
-                  <View style={styles.modalBackdrop} />
-                </TouchableWithoutFeedback>
-
-                <View style={styles.contactModalCard}>
-                  <Text style={styles.reportModalTitle}>Add review</Text>
-                  <Text style={styles.reportModalSubtitle}>
-                    Share your rating and a quick note about this listing.
-                  </Text>
-
-                  <AddReviewForm listing={listing} onSuccess={handleReviewCreated} />
-
-                  <View style={styles.reportModalActions}>
-                    <AppButton
-                      title="Close"
-                      onPress={closeReviewModal}
-                      variant="outline"
-                      size="sm"
-                      fullWidth={false}
+                      compact
+                      inline
                     />
                   </View>
                 </View>
@@ -629,6 +633,8 @@ function ListingDetailsScreen({ route, navigation }) {
                       variant="outline"
                       size="sm"
                       fullWidth={false}
+                      compact
+                      inline
                     />
                     <AppButton
                       title="Submit report"
@@ -636,6 +642,8 @@ function ListingDetailsScreen({ route, navigation }) {
                       variant="danger"
                       size="sm"
                       fullWidth={false}
+                      compact
+                      inline
                     />
                   </View>
                 </View>
@@ -645,7 +653,9 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
           </View>
-          </ScrollView>
+              </>
+            }
+          />
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </View>
@@ -728,6 +738,7 @@ const styles = StyleSheet.create({
   priceRow: {
     marginTop: 6,
     marginBottom: 8,
+    
   },
   infoPanel: {
     backgroundColor: colors.lighterGray,
@@ -759,7 +770,7 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "left",
     marginVertical: 3,
   },
   infoText: {
@@ -774,6 +785,28 @@ const styles = StyleSheet.create({
   descriptionInfoTextWrap: {
     flex: 1,
     marginLeft: 6,
+  },
+  carDetailsCard: {
+    marginTop: 10,
+    backgroundColor: colors.infoLight,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  carDetailsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  carDetailsGrid: {
+    gap: 4,
+  },
+  carDetailText: {
+    fontSize: 13,
+    color: colors.textPrimary,
   },
   infoLabel: {
     fontSize: 11,
@@ -840,13 +873,17 @@ const styles = StyleSheet.create({
   reviewSection: {
     marginTop: 10,
   },
+  orderSection: {
+    marginTop: 10,
+  },
   actionSection: {
     marginTop: 4,
   },
   actionButtonsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: 8,
   },
   modalOverlay: {
@@ -874,8 +911,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   contactActionList: {
-    marginTop: 16,
-    gap: 10,
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
   },
   reportModalTitle: {
     fontSize: 20,
@@ -923,6 +963,7 @@ const styles = StyleSheet.create({
   },
   reportModalActions: {
     flexDirection: "row",
+    flexWrap: "nowrap",
     justifyContent: "flex-end",
     gap: 10,
     marginTop: 8,

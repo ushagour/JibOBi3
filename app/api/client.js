@@ -64,6 +64,19 @@ apiClient.put = async (url, data, config) => {
     return { ok: false, error };
   }
 }
+// Custom PATCH
+const originalPatch = apiClient.patch.bind(apiClient);
+apiClient.patch = async (url, data, config) => {
+  try {
+    const response = await originalPatch(url, data, config);
+    if (response.status >= 200 && response.status < 300) {
+      return { ok: true, data: response.data };
+    }
+    return { ok: false, data: null };
+  } catch (error) {
+    return { ok: false, error };
+  }
+};
 // Custom DELETE
 const originalDelete = apiClient.delete.bind(apiClient);
 apiClient.delete = async (url, config) => {

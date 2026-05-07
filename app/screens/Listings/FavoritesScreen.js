@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { FlatList, StyleSheet, View, Alert, Text, TouchableOpacity } from "react-native";
-import dayjs from "dayjs";
+import {
+  FlatList,
+  StyleSheet,
+  View,
+  Alert,
+  Text,
+  TouchableOpacity,
+  Image,
+} from "react-native";
+import { Swipeable, RectButton } from "react-native-gesture-handler";
+// dayjs removed — not used in compact favorites list
 
 import Screen from "../../components/Screen";
-import listingsApi from "../../api/listings";
+import favoritesApi from "../../api/favorites";
 import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
-import Product from "../../components/cards/Product";
+// compact list; no Product card used here
 
 function FavoritesScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context
-  const [listings, setListings] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -26,14 +35,17 @@ function FavoritesScreen({ navigation }) {
   const loadListings = async () => {
     try {
       setLoading(true);
-      const response = await listingsApi.getMyListings(user.userId); // Pass the user ID
-      
+      const response = await favoritesApi.getAllFavorites(); // Pass the user ID
+
       if (response.ok) {
-        setListings(response.data);
+        
+        setFavorites(response.data);
         setError(false);
       } else {
         setError(true);
-        if (__DEV__) console.error("Failed to fetch listings:", response.problem);
+        if (__DEV__) console.error("Failed to fetch favorites:", response.problem);
+        console.log(response);
+        
       }
     } catch (error) {
       setError(true);
@@ -42,30 +54,30 @@ function FavoritesScreen({ navigation }) {
       setLoading(false);
     }
   };
-  const handleDelete = (listing) => {
+  const handleRemoveFavorite = (listing) => {
     Alert.alert(
-      "Delete Confirmation",
-      `Are you sure you want to delete this ${listing.title}?`,
+      "Remove Favorite",
+      `Are you sure you want to remove ${listing.title} from your favorites?`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Remove",
           onPress: async () => {
             try {
               setIsDeletingListing(true);
-              if (__DEV__) console.log(`Attempting to delete listing with ID: ${listing.id}`);
-              const response = await listingsApi.deleteListing(listing.id);
+              if (__DEV__) console.log(`Attempting to remove favorite with listing ID: ${listing.id}`);
+              const response = await favoritesApi.removeFavorite(listing.id);
               if (!response.ok) {
-                if (__DEV__) console.error("Failed to delete listing:", response);
-                return Alert.alert("Error", "Failed to delete listing.");
+                if (__DEV__) console.error("Failed to remove favorite:", response);
+                return Alert.alert("Error", "Failed to remove from favorites.");
               }
-              setListings((currentListings) =>
-                currentListings.filter((item) => item.id !== listing.id)
+              setFavorites((currentFavorites) =>
+                currentFavorites.filter((item) => item.id !== listing.id)
               );
-              Alert.alert("Success", "Listing deleted successfully.");
+              Alert.alert("Success", "Removed from favorites.");
             } catch (error) {
-              Alert.alert("Error", "Failed to delete listing.");
-              if (__DEV__) console.error("Failed to delete listing:", error);
+              Alert.alert("Error", "Failed to remove from favorites.");
+              if (__DEV__) console.error("Failed to remove favorite:", error);
             } finally {
               setIsDeletingListing(false);
             }
@@ -93,51 +105,49 @@ function FavoritesScreen({ navigation }) {
     <Screen scrollable={false}>
       <ActivityIndicator visible={loading || isDeletingListing} />
 
-      {listings.length === 0 && !loading && (
-        <View style={{ alignItems: "center", padding: 10 }}>
-          <Text style={{ color: "red" }}>You have no listings.</Text>
+      {favorites.length === 0 && !loading ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>You have no favorites.</Text>
         </View>
+      ) : (
+        <FlatList
+          data={favorites}
+          keyExtractor={(favorite) => String(favorite.id)}
+          renderItem={({ item }) => {
+            const renderRightActions = () => (
+              <RectButton style={styles.deleteAction} onPress={() => handleRemoveFavorite(item)}>
+                <Text style={styles.deleteActionText}>Remove</Text>
+              </RectButton>
+            );
+
+            return (
+              <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+                <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
+                >
+                  <Image
+                    source={item.imageUrl ? { uri: item.imageUrl } : require("../../assets/icon.png")}
+                    style={styles.thumb}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.price}>{item.price ? `$${item.price}` : ""}</Text>
+                  </View>
+                </TouchableOpacity>
+              </Swipeable>
+            );
+          }}
+          refreshing={refreshing}
+          onRefresh={async () => {
+            setRefreshing(true);
+            await loadListings();
+            setRefreshing(false);
+          }}
+          contentContainerStyle={styles.listContent}
+        />
       )}
-
-      <FlatList
-        data={listings}
-        keyExtractor={(listing) => listing.id.toString()}
-        renderItem={({ item }) => (
-          <View>
-            <Product 
-              title={item.title}
-              price={item.price}
-              imageUri={item.imageUrl}
-              rating={item.rating}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
-              createdAt={dayjs(item.createdAt).format("MMM D, YYYY")}
-            />
-
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
-                onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing: item })}
-              >
-                <Text style={[styles.actionText, styles.editText]}>Edit</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={() => handleDelete(item)}
-              >
-                <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-        refreshing={refreshing}
-        onRefresh={async () => {
-          setRefreshing(true);
-          await loadListings();
-          setRefreshing(false);
-        }}
-        contentContainerStyle={styles.listContent}
-      />
     </Screen>
   );
 }
@@ -178,6 +188,55 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: colors.danger,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  thumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    marginRight: 12,
+    backgroundColor: "#f0f0f0",
+  },
+  rowInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111",
+  },
+  price: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+  },
+  deleteAction: {
+    backgroundColor: colors.danger,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 90,
+    borderRadius: 6,
+  },
+  deleteActionText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    padding: 16,
+  },
+  emptyText: {
+    color: "#666",
   },
 });
 

@@ -31,11 +31,19 @@ const useNotifications  = (notificationListener) => {
       const pushTokenString = (await Notifications.getExpoPushTokenAsync( { projectId: Constants.expoConfig?.extra?.eas?.projectId })).data;
       //  console.log("pushTokenString", pushTokenString);
       
-      expoPushTokensApi.register(pushTokenString); 
-
+      // Silently attempt to register push token - will retry automatically if offline
+      const result = await expoPushTokensApi.register(pushTokenString);
+      if (!result.ok && result.error?.message?.includes('Network')) {
+        // Silent fail for network errors - Expo will retry automatically
+        return;
+      }
 
     } catch (error) {
-      console.log("Error getting a push token", error);
+      // Silently catch errors - Expo notifications handles retries
+      // Only log network-related errors in development
+      if (__DEV__ && error.message && !error.message.includes('Network')) {
+        console.log("Error getting a push token", error);
+      }
     }
   }
   

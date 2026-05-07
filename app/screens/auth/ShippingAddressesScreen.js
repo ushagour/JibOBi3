@@ -6,37 +6,31 @@ import Screen from "../../components/Screen";
 import Text from "../../components/Text";
 import colors from "../../config/colors";
 
-function SettingRow({ icon, title, subTitle }) {
-  return (
-    <View style={styles.row}>
-      <View style={styles.iconWrap}>
-        <MaterialCommunityIcons name={icon} size={18} color={colors.primary} />
-      </View>
-      <View style={styles.textWrap}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        {subTitle ? <Text style={styles.rowSubTitle}>{subTitle}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
-function SettingsScreen() {
+function ShippingAddressesScreen() {
   return (
     <Screen style={styles.screen} paddingSize="lg">
-      <Text style={styles.title}>App Settings</Text>
-      <Text style={styles.subtitle}>Manage your preferences and app behavior.</Text>
+      <Text style={styles.title}>Shipping Addresses</Text>
+      <Text style={styles.subtitle}>Manage your saved delivery addresses.</Text>
 
       <View style={styles.card}>
-        <SettingRow
-          icon="bell-outline"
-          title="Notifications"
-          subTitle="Control push and in-app notifications"
-        />
-        <SettingRow
-          icon="theme-light-dark"
-          title="Appearance"
-          subTitle="Adjust theme and display options"
-        />
+        <View style={styles.row}>
+          <View style={styles.iconWrap}>
+            <MaterialCommunityIcons name="map-marker-radius-outline" size={18} color={colors.primary} />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.rowTitle}>Home Address</Text>
+            <Text style={styles.rowSubTitle}>Primary delivery location</Text>
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.iconWrap}>
+            <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primary} />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.rowTitle}>Add New Address</Text>
+            <Text style={styles.rowSubTitle}>Save another shipping location</Text>
+          </View>
+        </View>
       </View>
     </Screen>
   );
@@ -96,4 +90,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsScreen;
+export default ShippingAddressesScreen;

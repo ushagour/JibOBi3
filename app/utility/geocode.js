@@ -11,7 +11,9 @@ export const getLocationName = async (latitude, longitude) => {
 
     // Check if the response is successful
     if (!response.ok) {
-      console.error(`Error fetching location name: ${response.status} ${response.statusText}`);
+      if (__DEV__) {
+        console.error(`Error fetching location name: ${response.status} ${response.statusText}`);
+      }
       return null;
     }
 
@@ -19,7 +21,9 @@ export const getLocationName = async (latitude, longitude) => {
 
     // Check if the necessary fields are present in the response
     if (!data.address || !data.address.city || !data.address.country) {
-      console.error("Error fetching location name: Incomplete data received");
+      if (__DEV__) {
+        console.error("Error fetching location name: Incomplete data received");
+      }
       return {
         city: "Unknown City",
         country: "Unknown Country",

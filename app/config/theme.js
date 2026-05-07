@@ -3,8 +3,20 @@
  * Includes colors, typography, spacing, shadows, and more
  */
 
+
+
+
 export const colors = {
   // Primary Brand Colors
+
+  background: '#F7F2E9',
+  patternGold: '#C5A059',
+  primaryTeal: '#008080',
+  textMain: '#2D2926',
+  white: '#FFFFFF',
+
+
+
   primary: "#006D6F",        // Teal - Main brand color
   primaryLight: "#1A9FA1",   // Lighter teal for hover states
   primaryDark: "#004D4F",    // Darker teal for active states

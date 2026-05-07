@@ -1,9 +1,13 @@
 import client from "./client";
 const endpoint = "/listings";
 
-const getListings = () => client.get(endpoint);
+const getListings = (status) => {
+  if (!status) return client.get(endpoint);
+  return client.get(`${endpoint}?status=${encodeURIComponent(status)}`);
+};
 const getListingsByCategory = (categoryId) => client.get(`${endpoint}/category/${categoryId}`);
 const getDetailListing = (id) => client.get(`${endpoint}/detail/${id}`);
+const getTopListings = () => client.get(`${endpoint}/top`);
 
 const getMyListings = (userId) => client.get(`${endpoint}/my_listings?userId=${userId}`);
  
@@ -14,7 +18,7 @@ const getTotalListings = () => client.get(`${endpoint}/total_listings`);
 
 
 /**
- * Sends a POST request to the server to add a new listing.
+ * Sends a POST request to the server to add a newh listing.
  *
  * @param {object} listing - The listing to be added. It should contain the following fields:
  * - title {string}
@@ -114,7 +118,7 @@ if (listing.location) {
       data.append("location[longitude]", listing.location.longitude);
     }
 
-    console.log(data);
+    // console.log(data);
     
 
   
@@ -128,15 +132,20 @@ if (listing.location) {
   };
 
 
+const nearbyListings = (latitude, longitude) => {
+  return client.get(`${endpoint}/nearby?latitude=${latitude}&longitude=${longitude}`);
+};
+
 
 export default {
   addListing,
   getDetailListing,
+  getTopListings,
   getListings,
   getListingsByCategory,
   getMyListings,
   getTotalListings,
   deleteListing,
-  updateListing
-  
+  updateListing,
+nearbyListings  
 };

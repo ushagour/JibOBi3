@@ -5,23 +5,34 @@ const useLocation = () => {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const getLocation = async () => {
+  const requestPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg("Permission to access location was denied");
-        return;
+        return false;
       }
+      return true;
+    } catch (error) {
+      console.error("Error requesting location permission:", error);
+      setErrorMsg(error.message);
+      return false;
+    }
+  };
 
-      const location = await Location.getLastKnownPositionAsync();
+  const getLocation = async () => {
+    try {
+      const hasPermission = await requestPermission();
+      if (!hasPermission) return;
+
+      const location = await Location.getCurrentPositionAsync({});
       if (location) {
         const { latitude, longitude } = location.coords;
+      
         setLocation({ latitude, longitude });
-        // console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
       } else {
-        setErrorMsg("No last known location available");
+        setErrorMsg("Could not get current location");
       }
-
     } catch (error) {
       console.error("Error getting location:", error);
       setErrorMsg(error.message);
@@ -32,7 +43,7 @@ const useLocation = () => {
     getLocation();
   }, []);
 
-  return { location, errorMsg };
+  return { location, errorMsg, requestPermission };
 };
 
 export default useLocation;
