@@ -19,6 +19,7 @@ import HelpSupportScreen from "../screens/auth/HelpSupportScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
 import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
 import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
+import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 
 const Stack = createStackNavigator();
 
@@ -58,6 +59,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="ShippingAddresses" component={ShippingAddressesScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />
     <Stack.Screen name="Listings" component={ListingsScreen} />
+    <Stack.Screen name="MyListings" component={MyListingsScreen} />
     <Stack.Screen name="AllListings" component={ListingsScreen} />
     <Stack.Screen name="ListingAdd" component={ListingAddScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />

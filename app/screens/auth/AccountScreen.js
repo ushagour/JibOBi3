@@ -22,6 +22,14 @@ function AccountScreen({ navigation }) {
   const guestMode = isGuest();
 const menuItems = [
   {
+    title: "My Listings",
+    icon: {
+      name: "format-list-bulleted",
+      backgroundColor: colors.primary,
+    },
+    targetScreen: routes.MY_LISTINGS,
+  },
+  {
     title: "Orders",
     icon: {
       name: "cart",
@@ -136,7 +144,13 @@ name={user.name}
                       backgroundColor={item.icon.backgroundColor}
                     />
                   }
-                  onPress={() => navigation.navigate(item.targetScreen)}
+                                    onPress={() => {
+                    if (item.targetScreen === routes.LISTINGS) {
+                      navigation.navigate(item.targetScreen, { myListings: true });
+                    } else {
+                      navigation.navigate(item.targetScreen);
+                    }
+                  }}
                 />
                 {index < menuItems.length - 1 && <ListItemSeparator />}
               </View>

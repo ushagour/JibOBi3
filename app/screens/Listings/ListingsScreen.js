@@ -63,11 +63,27 @@ const isAvailableStatus = (status) => {
 };
 
 
-function ListingsScreen({ navigation }) {
+function ListingsScreen({ navigation, route }) {
   const { user, isLoggedIn } = useAuth();
   const { location } = useLocation();
   const isGuest = !isLoggedIn();
-  const{data:listings, error, loading, request: fetchNearbyListings} = useApi(listingsApi.nearbyListings);
+
+  // Determine if we are viewing "My Listings"
+  const isMyListings = route.params?.myListings;
+
+  const {
+    data: listings,
+    error,
+    loading,
+    request: fetchNearbyListings,
+  } = useApi(listingsApi.nearbyListings);
+
+  const {
+    data: myListingsData,
+    error: myListingsError,
+    loading: myListingsLoading,
+    request: fetchMyListings,
+  } = useApi(listingsApi.getMyListings);
 
   const {
     data: categoryListings,
@@ -271,7 +287,7 @@ function ListingsScreen({ navigation }) {
         message="We could not fetch listings right now. Check your network and retry."
         onRetry={() =>
           selectedCategory === "all"
-            ? fetchPopularListings()
+            ? fetchNearbyListings(location.latitude, location.longitude)
             : fetchListingsByCategory(selectedCategory)
         }
       />

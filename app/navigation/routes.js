@@ -16,5 +16,6 @@ export default Object.freeze({
   SHIPPING_ADDRESSES: "ShippingAddresses",
   ACCOUNT: "Account",
   LISTINGS: "Listings",
+  MY_LISTINGS: "MyListings",
   ALL_LISTINGS: "AllListings",
 });
