@@ -37,7 +37,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const fetchOrderDetail = async () => {
     setLoading(true);
     try {
-      const response = await ordersApi.getOrder(initialOrder.id);
+      const response = await ordersApi.getOrderById(initialOrder.id);
       if (response.ok && response.data) {
         setOrder(response.data);
       }
@@ -71,10 +71,8 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const listing = order?.Listing;
   const buyer = order?.User;
   const createdAt = dayjs(order?.createdAt).format("MMM D, YYYY [at] h:mm A");
-  const firstImage = listing?.Images?.[0];
-  const imageUrl = firstImage?.file_name
-    ? `http://192.168.1.2:3000/uploads/${firstImage.file_name}`
-    : null;
+  const imageUrl = listing?.images?.[0]?.url;
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -323,7 +321,16 @@ const OrderDetailScreen = ({ route, navigation }) => {
           </TouchableWithoutFeedback>
 
           <View style={styles.reviewModalCard}>
-            <Text style={styles.modalTitle}>Leave a Review</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Leave a Review</Text>
+              <TouchableOpacity onPress={closeReviewModal}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={colors.textPrimary}
+                />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.modalSubtitle}>
               Share your rating and a quick note about this listing.
             </Text>
@@ -334,16 +341,6 @@ const OrderDetailScreen = ({ route, navigation }) => {
                 onSuccess={handleReviewCreated}
               />
             )}
-
-            <View style={styles.modalActions}>
-              <AppButton
-                title="Close"
-                onPress={closeReviewModal}
-                variant="outline"
-                size="sm"
-                fullWidth={false}
-              />
-            </View>
           </View>
         </View>
       </Modal>
@@ -545,19 +542,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 5,
   },
   modalSubtitle: {
     fontSize: 14,
     color: colors.medium,
     marginBottom: 20,
-  },
-  modalActions: {
-    marginTop: 20,
-    alignItems: "flex-end",
   },
 });
 

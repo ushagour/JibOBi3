@@ -52,12 +52,13 @@ function AppPicker({
         </View>
       </TouchableWithoutFeedback>
       <Modal visible={modalVisible} animationType="slide">
-        <Screen>
+        <Screen scrollable={false}>
           <Button title="Close" onPress={() => setModalVisible(false)} />
           <FlatList
             data={items}
             keyExtractor={(item) => item.id.toString()}
             numColumns={numberOfColumns}
+            nestedScrollEnabled={true}
             renderItem={({ item }) => (
               <PickerItemComponent
                 item={item}
