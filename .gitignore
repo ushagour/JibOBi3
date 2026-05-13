@@ -36,5 +36,6 @@ yarn-error.*
 app/config/settings.js
 
 .env
+.env.example
 
 jibobi3-28d49ebc98cd.json

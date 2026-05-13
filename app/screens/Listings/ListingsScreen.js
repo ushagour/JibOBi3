@@ -348,36 +348,33 @@ function ListingsScreen({ navigation, route }) {
   );
 
   return (
-    <>
+    <Screen style={styles.screen} scrollable={false} paddingSize="lg">
       <ActivityIndicator visible={activeLoading} />
-       
-      <Screen style={styles.screen} scrollable={false} paddingSize="none">
-        <Header />
-        <FlatList
-          data={filteredListings}
-          keyExtractor={(listing) => listing.id.toString()}
-          ListHeaderComponent={renderListHeader}
-          ListEmptyComponent={renderListEmpty}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.productsVerticalContainer}
-          renderItem={({ item }) => (
-            <Product
-              title={item.title}
-              imageUri={item.imageUri || item.imageUrl}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-              onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
-              isLiked={favoriteIds.includes(item.id)}
-              price={item.price}
-              seller={item.owner?.name}
-              description={item.description}
-              createdAt={dayjs(item.createdAt).format("MMM D")}
-              containerStyle={styles.productListCard}
-            />
-          )}
-        />
-      </Screen>
-    </>
+      <Header />
+      <FlatList
+        data={filteredListings}
+        keyExtractor={(listing) => listing.id.toString()}
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={renderListEmpty}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.productsVerticalContainer}
+        renderItem={({ item }) => (
+          <Product
+            title={item.title}
+            imageUri={item.imageUri || item.imageUrl}
+            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+            onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
+            isLiked={favoriteIds.includes(item.id)}
+            price={item.price}
+            seller={item.owner?.name}
+            description={item.description}
+            createdAt={dayjs(item.createdAt).format("MMM D")}
+            containerStyle={styles.productListCard}
+          />
+        )}
+      />
+    </Screen>
   );
 }
 

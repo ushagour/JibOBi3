@@ -9,8 +9,7 @@ import Screen from "../../components/Screen";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
 import { ProfileCard } from '../../components/cards/ProfileCard';
-
-
+import Avatar from '../../components/Avatar';
 
 
 

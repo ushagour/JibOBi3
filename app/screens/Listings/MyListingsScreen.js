@@ -46,7 +46,7 @@ function MyListingsScreen({ navigation }) {
           renderItem={({ item }) => (
             <Product
               title={item.title}
-              subTitle={"$" + item.price}
+              price={item.price}
               imageUri={item.images[0].url}
               onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
               thumbnailUrl={item.images[0].thumbnailUrl}

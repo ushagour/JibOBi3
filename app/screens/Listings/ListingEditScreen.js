@@ -22,12 +22,14 @@ import listingsAPI from "../../api/listings";
 import CategoryPickerItem from "../../components/CategoryPickerItem";
 import routes from "../../navigation/routes";
 import AppButton from "../../components/Button";
-
+import colors from "../../config/colors";
+import ActivityIndicator from "../../components/ActivityIndicator";
 
 function CarDetailsFields({ categories }) {
   const { values, setFieldValue } = useFormikContext();
   const selectedCategory = categories.find((item) => item.id === values.category);
   const isCarsCategory = selectedCategory?.name?.toLowerCase() === "cars";
+  
 
   useEffect(() => {
     if (isCarsCategory) return;
@@ -67,6 +69,7 @@ function ListingEditScreen({ route, navigation }) {
   const [categories, setCategories] = useState([]);
   const [progress, setProgress] = useState(0);
   const [uploadVisible, setUploadVisible] = useState(false);
+  const [isDeletingListing, setIsDeletingListing] = useState(false);
 
   useEffect(() => {
     // console.log("Listing data:", listing); // Debug log
@@ -147,11 +150,20 @@ function ListingEditScreen({ route, navigation }) {
         );
       };
 
+          
+  if (isDeletingListing) {
+    return <ActivityIndicator visible={isDeletingListing} />;
+  }
+
   return (
+
+
+
           <KeyboardAvoidingView
              behavior={Platform.OS === "ios" ? "padding" : "height"}
              style={{ flex: 1 }}
            >
+            
              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
            <ScrollView  contentContainerStyle={styles.container}>
 

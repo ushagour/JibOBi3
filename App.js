@@ -1,3 +1,4 @@
+import "expo-dev-client";
 import React, { useState, useEffect, useCallback } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen"; // Import SplashScreen
@@ -9,6 +10,17 @@ import AuthContext from "./app/auth/context";
 import authStorage from "./app/auth/storage";
 import { navigationRef } from "./app/navigation/rootNavigation";
 import GlobalAlertProvider from "./app/components/GlobalAlertProvider";
+
+// Suppress Expo push token warning when offline
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  const message = args[0]?.toString() || "";
+  // Suppress the Expo push token offline warning
+  if (message.includes("[expo-notifications]") && message.includes("Error thrown while updating the device push token")) {
+    return;
+  }
+  originalWarn(...args);
+};
 
 export default function App() {
   const [user, setUser] = useState();

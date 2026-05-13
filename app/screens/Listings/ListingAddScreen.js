@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  Pressable,
 } from "react-native";
 import * as Yup from "yup";
 import Button from "../../components/Button";
@@ -16,7 +17,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Text from "../../components/Text";
 import Screen from "../../components/Screen";
 import routes from "../../navigation/routes";
-
+import colors from "../../config/colors";
 
 import {
   Form,
@@ -49,6 +50,130 @@ function AdditionalDetailsFields() {
   );
 }
 
+function FraudDetectionResult({ result, onPublish, isLoading }) {
+  if (!result) return null;
+
+  const getRiskColor = (score) => {
+    if (score >= 70) return "#EF4444"; // BLOCKED - Red
+    if (score >= 40) return "#FFA500"; // UNDER REVIEW - Orange
+    return "#22C55E"; // SAFE - Green
+  };
+
+  const getRiskStatus = (score) => {
+    if (score >= 70) return { status: "BLOCKED", label: "High Risk" };
+    if (score >= 40) return { status: "UNDER REVIEW", label: "Needs Review" };
+    return { status: "SAFE", label: "Safe to Publish" };
+  };
+
+  const riskData = getRiskStatus(result.fraudScore);
+  const riskColor = getRiskColor(result.fraudScore);
+
+  return (
+    <View style={[styles.detectionCard, { borderColor: riskColor }]}>
+      <View style={styles.detectionHeader}>
+        <View style={styles.scoreContainer}>
+          <View style={[styles.scoreCircle, { borderColor: riskColor }]}>
+            <Text style={[styles.scoreText, { color: riskColor }]}>
+              {Math.round(result.fraudScore)}%
+            </Text>
+          </View>
+          <View>
+            <Text style={[styles.statusBadge, { color: riskColor }]}>
+              {riskData.status}
+            </Text>
+            <Text style={styles.statusLabel}>{riskData.label}</Text>
+          </View>
+        </View>
+        <MaterialCommunityIcons
+          name="shield-check"
+          size={32}
+          color={riskColor}
+          style={{ opacity: 0.7 }}
+        />
+      </View>
+
+      {/* Analysis Details */}
+      <View style={styles.analysisDetails}>
+        <View style={styles.detailItem}>
+          <MaterialCommunityIcons
+            name={result.priceAnomaly ? "alert-circle" : "check-circle"}
+            size={18}
+            color={result.priceAnomaly ? "#FFA500" : "#22C55E"}
+          />
+          <View style={styles.detailText}>
+            <Text style={styles.detailTitle}>Price Analysis</Text>
+            <Text style={styles.detailDesc}>
+              {result.priceAnomaly ? "Price seems unusual" : "Price is normal"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.detailItem}>
+          <MaterialCommunityIcons
+            name={result.riskyKeywords?.length > 0 ? "alert-circle" : "check-circle"}
+            size={18}
+            color={result.riskyKeywords?.length > 0 ? "#FFA500" : "#22C55E"}
+          />
+          <View style={styles.detailText}>
+            <Text style={styles.detailTitle}>Text Analysis</Text>
+            <Text style={styles.detailDesc}>
+              {result.riskyKeywords?.length > 0
+                ? `Found ${result.riskyKeywords.length} risky keywords`
+                : "No suspicious keywords"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.detailItem}>
+          <MaterialCommunityIcons
+            name={result.sellerRisk ? "alert-circle" : "check-circle"}
+            size={18}
+            color={result.sellerRisk ? "#FFA500" : "#22C55E"}
+          />
+          <View style={styles.detailText}>
+            <Text style={styles.detailTitle}>Seller Behavior</Text>
+            <Text style={styles.detailDesc}>
+              {result.sellerRisk ? "Unusual activity detected" : "Normal seller activity"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.detailItem}>
+          <MaterialCommunityIcons
+            name={result.duplicateCheck ? "alert-circle" : "check-circle"}
+            size={18}
+            color={result.duplicateCheck ? "#FFA500" : "#22C55E"}
+          />
+          <View style={styles.detailText}>
+            <Text style={styles.detailTitle}>Duplicate Check</Text>
+            <Text style={styles.detailDesc}>
+              {result.duplicateCheck ? "Similar listing found" : "No duplicates found"}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Action Button */}
+      {riskData.status !== "BLOCKED" && (
+        <Button
+          title={isLoading ? "Publishing..." : "Publish Listing"}
+          onPress={onPublish}
+          variant="primary"
+          size="md"
+          loading={isLoading}
+          style={styles.publishBtn}
+        />
+      )}
+      {riskData.status === "BLOCKED" && (
+        <View style={styles.blockedWarning}>
+          <MaterialCommunityIcons name="alert" size={18} color="#EF4444" />
+          <Text style={styles.blockedText}>This listing cannot be published due to high fraud risk.</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
 const validationSchema = Yup.object().shape({
   title: Yup.string().required().min(1).label("Title"),
   price: Yup.number().required().min(1).max(100000).label("Price"),
@@ -61,18 +186,22 @@ const validationSchema = Yup.object().shape({
   images: Yup.array().min(1, "Please select at least one image."),
 });
 
-function FormActions({ navigation }) {
+function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult }) {
   const { handleSubmit, isSubmitting } = useFormikContext();
+
+  if (fraudDetectionResult) {
+    return null; // Show publish button in FraudDetectionResult component instead
+  }
 
   return (
     <View style={styles.actionsRow}>
       <Button
-        title="Post Listing"
-        onPress={handleSubmit}
+        title={isAnalyzing ? "Analyzing..." : "Analyze & Review"}
+        onPress={onAnalyze}
         variant="primary"
         size="md"
         fullWidth={false}
-        loading={isSubmitting}
+        loading={isAnalyzing}
       />
       <Button
         title="Cancel"
@@ -91,24 +220,83 @@ function ListingAddScreen({ navigation }) {
   const [uploadVisible, setUploadVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const { user } = useAuth();
+  const [fraudDetectionResult, setFraudDetectionResult] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [currentListingData, setCurrentListingData] = useState(null);
+  const formikRef = React.useRef();
 
   useEffect(() => {
     categoriesAPI
       .getCategories()
       .then((response) => {
-        // console.log("Categories fetched:", response.data); // Debug log
         setCategories(response.data);
       })
       .catch(() => Alert.alert("Error", "Unable to fetch categories"));
   }, []);
 
-  const handleSubmit = async (listing, { resetForm }) => {
+  // Simulate fraud detection analysis
+  const analyzeListing = async (listingData) => {
+    setIsAnalyzing(true);
+    try {
+      // Simulate API call to fraud detection engine
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Mock fraud detection logic
+      const hasRiskyKeywords =
+        /urgent|quick/.test(listingData.description?.toLowerCase() || "") ||
+        /urgent|quick/.test(listingData.title?.toLowerCase() || "");
+
+      const priceAnomaly = listingData.price > 50000 || listingData.price < 1;
+      const sellerRisk = Math.random() > 0.85;
+      const duplicateCheck = Math.random() > 0.9;
+
+      const baseScore = 20;
+      let fraudScore = baseScore;
+
+      if (hasRiskyKeywords) fraudScore += 15;
+      if (priceAnomaly) fraudScore += 20;
+      if (sellerRisk) fraudScore += 15;
+      if (duplicateCheck) fraudScore += 10;
+
+      const result = {
+        fraudScore: Math.min(fraudScore, 100),
+        riskyKeywords: hasRiskyKeywords ? ["urgent", "quick"] : [],
+        priceAnomaly,
+        sellerRisk,
+        duplicateCheck,
+      };
+
+      setFraudDetectionResult(result);
+      setCurrentListingData(listingData);
+    } catch (error) {
+      Alert.alert("Error", "Failed to analyze listing. Please try again.");
+      if (__DEV__) console.error("Fraud detection error:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handlePublishAfterAnalysis = async () => {
+    if (!currentListingData) return;
+
     setProgress(0);
     setUploadVisible(true);
- 
+
     try {
       const response = await listingsAPI.addListing(
-        { ...listing, location, user_id: user.userId },
+        {
+          ...currentListingData,
+          location,
+          user_id: user.userId,
+          fraud_score: fraudDetectionResult.fraudScore,
+          fraud_status:
+            fraudDetectionResult.fraudScore >= 70
+              ? "blocked"
+              : fraudDetectionResult.fraudScore >= 40
+              ? "under_review"
+              : "safe",
+        },
         (progress) => setProgress(progress)
       );
 
@@ -120,18 +308,21 @@ function ListingAddScreen({ navigation }) {
       const createdListingId = response.data?.id;
 
       if (!createdListingId) {
-        Alert.alert("Success", "Listing added successfully.");
+        Alert.alert("Success", "Listing added successfully and is under review.");
+        setFraudDetectionResult(null);
         navigation.goBack();
         return;
       }
 
-      resetForm();
+      Alert.alert("Success", "Listing published successfully!");
+      setFraudDetectionResult(null);
       navigation.navigate("Feed", {
         screen: routes.LISTING_DETAILS,
         params: createdListingId,
       });
     } catch (error) {
       Alert.alert("Error", "An unexpected error occurred.");
+      if (__DEV__) console.error("Publish error:", error);
     } finally {
       setUploadVisible(false);
     }
@@ -176,71 +367,94 @@ function ListingAddScreen({ navigation }) {
               onDone={() => setUploadVisible(false)}
             />
 
-            <Form
-              initialValues={{
-                title: "",
-                price: "",
-                description: "",
-                category: null,
-                carSize: "",
-                carColor: "",
-                carModel: "",
-                carYear: "",
-                images: [],
-              }}
-              onSubmit={handleSubmit}
-              validationSchema={validationSchema}
-            >
-              <View style={styles.sectionCard}>
-                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Images</Text>
-                <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
-                  Add at least one image. The first image will be your cover.
-                </Text>
-                <FormImagePicker name="images" />
-              </View>
+            {fraudDetectionResult ? (
+              <>
+                <FraudDetectionResult
+                  result={fraudDetectionResult}
+                  onPublish={handlePublishAfterAnalysis}
+                  isLoading={isPublishing}
+                />
+                <Button
+                  title="Back to Edit"
+                  onPress={() => setFraudDetectionResult(null)}
+                  variant="outline"
+                  size="md"
+                  style={styles.editBtn}
+                />
+              </>
+            ) : (
+              <Form
+                innerRef={formikRef}
+                initialValues={{
+                  title: "",
+                  price: "",
+                  description: "",
+                  category: null,
+                  carSize: "",
+                  carColor: "",
+                  carModel: "",
+                  carYear: "",
+                  images: [],
+                }}
+                onSubmit={(values) => analyzeListing(values)}
+                validationSchema={validationSchema}
+              >
+                <View style={styles.sectionCard}>
+                  <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Images</Text>
+                  <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
+                    Add at least one image. The first image will be your cover.
+                  </Text>
+                  <FormImagePicker name="images" />
+                </View>
 
-              <View style={styles.sectionCard}>
-                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Basic Details</Text>
-                <FormField maxLength={255} name="title" placeholder="Title" />
-                <View style={styles.splitRow}>
-                  <View style={styles.priceInputWrap}>
-                    <FormField
-                      keyboardType="numeric"
-                      maxLength={8}
-                      name="price"
-                      placeholder="Price"
-                    />
+                <View style={styles.sectionCard}>
+                  <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Basic Details</Text>
+                  <FormField maxLength={255} name="title" placeholder="Title" />
+                  <View style={styles.splitRow}>
+                    <View style={styles.priceInputWrap}>
+                      <FormField
+                        keyboardType="numeric"
+                        maxLength={8}
+                        name="price"
+                        placeholder="Price"
+                      />
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View style={styles.sectionCard}>
-                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Category</Text>
-                <Picker
-                  items={categories}
-                  name="category"
-                  numberOfColumns={3}
-                  PickerItemComponent={CategoryPickerItem}
-                  placeholder="Category"
-                  width="100%"
+                <View style={styles.sectionCard}>
+                  <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Category</Text>
+                  <Picker
+                    items={categories}
+                    name="category"
+                    numberOfColumns={3}
+                    PickerItemComponent={CategoryPickerItem}
+                    placeholder="Category"
+                    width="100%"
+                  />
+                </View>
+
+                <View style={styles.sectionCard}>
+                  <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Description</Text>
+                  <FormField
+                    maxLength={255}
+                    multiline
+                    name="description"
+                    numberOfLines={3}
+                    placeholder="Description"
+                  />
+                </View>
+
+                <AdditionalDetailsFields />
+
+                <FormActions
+                  navigation={navigation}
+                  onAnalyze={() => formikRef.current?.handleSubmit()}
+                  isAnalyzing={isAnalyzing}
+                  fraudDetectionResult={fraudDetectionResult}
                 />
-              </View>
-
-              <View style={styles.sectionCard}>
-                <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Description</Text>
-                <FormField
-                  maxLength={255}
-                  multiline
-                  name="description"
-                  numberOfLines={3}
-                  placeholder="Description"
-                />
-              </View>
-
-              <AdditionalDetailsFields />
-
-              <FormActions navigation={navigation} />
-            </Form>
+              </Form>
+            )}
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -255,7 +469,7 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
   },
-    container: {
+  container: {
     flexGrow: 1,
     paddingBottom: 24,
   },
@@ -342,6 +556,95 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     gap: 10,
+  },
+  // Fraud Detection Styles
+  detectionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderLeftWidth: 4,
+  },
+  detectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  scoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  scoreCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 3,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+  },
+  scoreText: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  statusBadge: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  statusLabel: {
+    fontSize: 12,
+    color: "#666",
+  },
+  analysisDetails: {
+    borderTopWidth: 1,
+    borderTopColor: "#ECE7DE",
+    paddingTop: 14,
+    marginBottom: 16,
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 12,
+  },
+  detailText: {
+    flex: 1,
+  },
+  detailTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0C2D31",
+    marginBottom: 2,
+  },
+  detailDesc: {
+    fontSize: 12,
+    color: "#666",
+    lineHeight: 16,
+  },
+  publishBtn: {
+    marginBottom: 10,
+  },
+  editBtn: {
+    marginBottom: 24,
+  },
+  blockedWarning: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+    borderRadius: 8,
+    padding: 12,
+    gap: 10,
+  },
+  blockedText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#991B1B",
+    fontWeight: "600",
+    lineHeight: 16,
   },
 });
 

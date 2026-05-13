@@ -42,7 +42,6 @@ function ListingDetailsScreen({ route, navigation }) {
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
-  const [isDeletingListing, setIsDeletingListing] = useState(false);
   const [locationName, setLocationName] = useState("Unknown location");
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
@@ -139,8 +138,8 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
 
-  if (loading || isDeletingListing) {
-    return <ActivityIndicator visible={loading || isDeletingListing} />;
+  if (loading || isDeletingReview) {
+    return <ActivityIndicator visible={loading || isDeletingReview} />;
   }
   if (error) {
     const normalizedError = String(error || "");

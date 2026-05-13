@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
-import { CommonActions } from "@react-navigation/native";
+import { Alert, StyleSheet, View, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 // import MapView, { Marker } from "react-native-maps";//todo it woeks on  developemt build 
 
 import Screen from "../../components/Screen";
@@ -25,14 +25,14 @@ function OrderCheckoutScreen({ route, navigation }) {
 
   const unitPrice = useMemo(() => parsePrice(listing?.price), [listing?.price]);
 
-  const [quantity, setQuantity] = useState("1");
   const [shippingAddress, setShippingAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const qtyValue = Math.max(1, parseInt(quantity, 10) || 1);
-  const total = unitPrice * qtyValue;
+  const total = unitPrice * quantity;
 
   const handlePlaceOrder = async () => {
     if (!user?.userId) {
@@ -55,12 +55,17 @@ function OrderCheckoutScreen({ route, navigation }) {
       return;
     }
 
+    if (!agreeToTerms) {
+      Alert.alert("Terms required", "Please agree to the terms and conditions.");
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await ordersApi.createOrder({
         listing_id: listing.id,
         buyer_id: user.userId,
-        quantity: qtyValue,
+        quantity: quantity,
         total_price: total,
         payment_method: "cash_on_delivery",
         payment_status: "pending",
@@ -78,15 +83,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         {
           text: "View Orders",
           onPress: () => {
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 1,
-                routes: [
-                  { name: "AccountHome" },
-                  { name: routes.ORDERS },
-                ],
-              })
-            );
+            navigation.navigate(routes.ORDERS);
           },
         },
       ]);
@@ -102,8 +99,7 @@ function OrderCheckoutScreen({ route, navigation }) {
     <Screen style={styles.screen} paddingSize="lg">
       <Text style={styles.title}>Checkout</Text>
       <Text style={styles.subtitle}>Complete the details to place your order.</Text>
-      {/* <Text style={styles.subtitle}>{`Total: ${listing?.location} MAD`}</Text> */}
-{/* 
+
       {location && (
         <MapView
           style={styles.map}
@@ -121,7 +117,7 @@ function OrderCheckoutScreen({ route, navigation }) {
             }}
           />
         </MapView>
-       )}  */}
+       )} 
 
       <View style={styles.summaryCard}>
         <Text style={styles.listingTitle} numberOfLines={2}>
@@ -132,18 +128,40 @@ function OrderCheckoutScreen({ route, navigation }) {
           <Text style={styles.summaryValue}>{unitPrice.toFixed(2)} MAD</Text>
         </View>
         <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Quantity</Text>
+          <View style={styles.quantityControl}>
+            <TouchableOpacity
+              onPress={() => setQuantity(Math.max(1, quantity - 1))}
+              style={styles.quantityBtn}
+            >
+              <Ionicons name="remove" size={18} color={colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.quantityValue}>{quantity}</Text>
+            <TouchableOpacity
+              onPress={() => setQuantity(quantity + 1)}
+              style={styles.quantityBtn}
+            >
+              <Ionicons name="add" size={18} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Total</Text>
           <Text style={styles.totalValue}>{total.toFixed(2)} MAD</Text>
         </View>
       </View>
 
-      <AppTextInput
-        label="Quantity"
-        placeholder="1"
-        keyboardType="number-pad"
-        value={quantity}
-        onChangeText={setQuantity}
-      />
+      <View style={styles.userInfoCard}>
+        <Text style={styles.sectionLabel}>Your Information</Text>
+        <View style={styles.userInfoRow}>
+          <Text style={styles.userInfoLabel}>Name</Text>
+          <Text style={styles.userInfoValue}>{user?.firstName || ""} {user?.lastName || ""}</Text>
+        </View>
+        <View style={styles.userInfoRow}>
+          <Text style={styles.userInfoLabel}>Email</Text>
+          <Text style={styles.userInfoValue}>{user?.email || "N/A"}</Text>
+        </View>
+      </View>
 
       <AppTextInput
         label="Shipping Address"
@@ -167,6 +185,23 @@ function OrderCheckoutScreen({ route, navigation }) {
         onChangeText={setNotes}
         multiline
       />
+
+      <TouchableOpacity
+        style={styles.termsContainer}
+        onPress={() => setAgreeToTerms(!agreeToTerms)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.checkboxWrapper}>
+          <Ionicons
+            name={agreeToTerms ? "checkbox" : "square-outline"}
+            size={24}
+            color={agreeToTerms ? colors.primary : colors.medium}
+          />
+        </View>
+        <Text style={styles.termsText}>
+          I agree to the terms and conditions
+        </Text>
+      </TouchableOpacity>
 
       <AppButton
         title={loading ? "Placing..." : "Confirm Request"}
@@ -238,6 +273,72 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.primary,
     fontWeight: "700",
+  },
+  userInfoCard: {
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    padding: 14,
+    marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  userInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  userInfoLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  userInfoValue: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  termsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 12,
+    paddingHorizontal: 4,
+  },
+  checkboxWrapper: {
+    marginRight: 10,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: "500",
+  },
+  quantityControl: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  quantityBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: colors.light,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  quantityValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    minWidth: 20,
+    textAlign: "center",
   },
 });
 
