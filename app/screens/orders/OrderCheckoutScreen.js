@@ -79,11 +79,17 @@ function OrderCheckoutScreen({ route, navigation }) {
         return;
       }
 
+      // Get the created order data
+      const createdOrder = response.data;
+
       Alert.alert("Order placed", "Your order has been created successfully.", [
         {
-          text: "View Orders",
+          text: "View Order Details",
           onPress: () => {
-            navigation.navigate(routes.ORDERS);
+            // Navigate to order details screen with the created order
+            navigation.replace(routes.ORDER_DETAILS, {
+              order: createdOrder,
+            });
           },
         },
       ]);

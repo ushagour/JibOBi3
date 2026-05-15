@@ -10,6 +10,8 @@ import {
   Alert,
   Modal,
   FlatList,
+  TextInput,
+  ScrollView,
 } from "react-native";
 import colors from "../../config/colors";
 import Text from "../../components/Text";
@@ -19,6 +21,7 @@ import { Linking } from "react-native"; // Import the Linking API
 import AppButton from "../../components/Button";
 import listingsApi from "../../api/listings"; // Import the API client
 import reviewsApi from "../../api/reviews"; // Import the reviews API client
+import notificationsApi from "../../api/notifications"; // Import notifications API
 import useAuth from "../../auth/useAuth";
 
 import ActivityIndicator from "../../components/ActivityIndicator";
@@ -47,6 +50,8 @@ function ListingDetailsScreen({ route, navigation }) {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [quickMessage, setQuickMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const reportReasons = [
     { id: "spam", label: "Spam or misleading" },
@@ -256,6 +261,51 @@ function ListingDetailsScreen({ route, navigation }) {
 
   const closeContactModal = () => {
     setContactModalVisible(false);
+    setQuickMessage("");
+  };
+
+  const handleSendQuickMessage = async () => {
+    if (!isAuthenticated) {
+      Alert.alert("Sign in required", "Please sign in to send a message.");
+      return;
+    }
+
+    if (!quickMessage.trim()) {
+      Alert.alert("Empty message", "Please enter a message before sending.");
+      return;
+    }
+
+    if (!listing?.owner?.id) {
+      Alert.alert("Error", "Seller information not available.");
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      const response = await notificationsApi.createNotification({
+        type: "message",
+        title: `New message about "${listing.title}" from ${user?.firstName || "a buyer"}`,
+        content: quickMessage.trim(),
+        listingId: listing.id,
+      });
+
+      if (!response.ok) {
+        Alert.alert("Failed", "Could not send message. Please try again.");
+        return;
+      }
+
+      Alert.alert(
+        "Message sent",
+        "Your message has been sent to the seller. They will be notified."
+      );
+      setQuickMessage("");
+      closeContactModal();
+    } catch (error) {
+      if (__DEV__) console.error("Error sending message:", error);
+      Alert.alert("Error", "Failed to send message. Please try again.");
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const handleOrderNow = () => {
@@ -519,58 +569,85 @@ function ListingDetailsScreen({ route, navigation }) {
                 </TouchableWithoutFeedback>
 
                 <View style={styles.contactModalCard}>
-                  <Text style={styles.reportModalTitle}>Contact seller</Text>
-                  <Text style={styles.reportModalSubtitle}>
-                    Choose how you want to reach the seller.
-                  </Text>
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contactModalContent}>
+                    <Text style={styles.reportModalTitle}>Contact seller</Text>
+                    <Text style={styles.reportModalSubtitle}>
+                      Choose how you want to reach the seller.
+                    </Text>
 
-                  <View style={styles.contactActionList}>
-                    <AppButton
-                      title="Call"
-                      onPress={handleCallSeller}
-                      variant="secondary"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                      icon={<MaterialIcons name="call" size={18} color={colors.white} />}
-                    />
-                    <AppButton
-                      title="Email"
-                      onPress={handleEmailSeller}
-                      variant="primary"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                      icon={<MaterialIcons name="email" size={18} color={colors.white} />}
-                    />
-                    {!!listing?.owner?.phone && (
+                    <View style={styles.contactActionList}>
                       <AppButton
-                        title="WhatsApp"
-                        onPress={openWhatsApp}
-                        variant="success"
+                        title="Call"
+                        onPress={handleCallSeller}
+                        variant="secondary"
                         size="sm"
                         fullWidth={false}
                         compact
                         inline
-                        icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
+                        icon={<MaterialIcons name="call" size={18} color={colors.white} />}
                       />
-                    )}
-                  </View>
+                      <AppButton
+                        title="Email"
+                        onPress={handleEmailSeller}
+                        variant="primary"
+                        size="sm"
+                        fullWidth={false}
+                        compact
+                        inline
+                        icon={<MaterialIcons name="email" size={18} color={colors.white} />}
+                      />
+                      {!!listing?.owner?.phone && (
+                        <AppButton
+                          title="WhatsApp"
+                          onPress={openWhatsApp}
+                          variant="success"
+                          size="sm"
+                          fullWidth={false}
+                          compact
+                          inline
+                          icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
+                        />
+                      )}
+                    </View>
 
+                    <View style={styles.quickMessageSection}>
+                      <Text style={styles.quickMessageLabel}>Send a quick message</Text>
+                      <TextInput
+                        style={styles.quickMessageInput}
+                        placeholder="Ask the seller anything about this listing..."
+                        placeholderTextColor={colors.medium}
+                        value={quickMessage}
+                        onChangeText={setQuickMessage}
+                        multiline
+                        maxLength={500}
+                        editable={!sendingMessage}
+                      />
+                      <Text style={styles.charCount}>
+                        {quickMessage.length}/500
+                      </Text>
+                      <AppButton
+                        title={sendingMessage ? "Sending..." : "Send Message"}
+                        onPress={handleSendQuickMessage}
+                        variant="primary"
+                        size="sm"
+                        fullWidth
+                        loading={sendingMessage}
+                        disabled={!quickMessage.trim() || sendingMessage}
+                      />
+                    </View>
 
-                  <View style={styles.reportModalActions}>
-                    <AppButton
-                      title="Close"
-                      onPress={closeContactModal}
-                      variant="outline"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                    />
-                  </View>
+                    <View style={styles.reportModalActions}>
+                      <AppButton
+                        title="Close"
+                        onPress={closeContactModal}
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        compact
+                        inline
+                      />
+                    </View>
+                  </ScrollView>
                 </View>
               </View>
             </Modal>
@@ -914,6 +991,41 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     gap: 8,
+  },
+  contactModalContent: {
+    paddingBottom: 10,
+  },
+  quickMessageSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray,
+  },
+  quickMessageLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  quickMessageInput: {
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.textPrimary,
+    backgroundColor: colors.white,
+    minHeight: 80,
+    maxHeight: 150,
+    textAlignVertical: "top",
+  },
+  charCount: {
+    fontSize: 12,
+    color: colors.medium,
+    marginTop: 6,
+    marginBottom: 10,
+    textAlign: "right",
   },
   reportModalTitle: {
     fontSize: 20,
