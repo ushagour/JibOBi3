@@ -105,12 +105,7 @@ const settingsMenuItems = [
 
   return (
     <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} paddingSize="lg">
-      <View style={styles.headerRow}>
-        <AppText variant="h2" color="textPrimary" style={styles.screenTitle}>
-          {guestMode ? "Guest Mode" : "Account"}
-        </AppText>
 
-      </View>
       {guestMode ? (
         <View style={[styles.guestBanner, { backgroundColor: themeColors.warningLight, borderColor: themeColors.warning }]}>
           <AppText style={[styles.guestBannerText, { color: themeColors.textPrimary }]}>

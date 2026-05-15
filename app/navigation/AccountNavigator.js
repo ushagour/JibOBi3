@@ -1,7 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
+import AnimatedHeader from "../components/AnimatedHeader";
+import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 
 import AccountScreen from "../screens/auth/AccountScreen";
 import FavoritesScreen from "../screens/Listings/FavoritesScreen";
@@ -19,37 +19,57 @@ import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
 import HelpSupportScreen from "../screens/auth/HelpSupportScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
 import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
-import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 
 const Stack = createStackNavigator();
 
+const getHeaderTitle = (routeName) => {
+  const titles = {
+    AccountHome: "Account",
+    UserEdit: "Edit Profile",
+    Settings: "Settings",
+    Notifications: "Notifications",
+    Orders: "Orders",
+    OrderDetails: "Order Details",
+    OrderCheckout: "Checkout",
+    HelpSupport: "Help & Support",
+    PrivacySecurity: "Privacy & Security",
+    ShippingAddresses: "Shipping Addresses",
+    Favorites: "Favorites",
+    Listings: "Listings",
+    MyListings: "My Listings",
+    AllListings: "All Listings",
+    ListingAdd: "Add Listing",
+    ListingEdit: "Edit Listing",
+    ListingDetails: "Listing Details",
+    ImageDetails: "Image Details",
+  };
+
+  return titles[routeName] || routeName;
+};
+
 const AccountNavigator = () => (
   <Stack.Navigator
-    screenOptions={({ navigation }) => ({
+    screenOptions={({ navigation, route }) => ({
       headerShown: true,
-      headerTitle: "",
-      headerBackTitleVisible: false,
-      headerLeft: () => {
-        if (!navigation.canGoBack()) return null;
-
-        return (
-          <TouchableOpacity
-            style={{ marginLeft: 15 }}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
-              color="black"
-            />
-          </TouchableOpacity>
-        );
-      },
-      headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
+      header: ({ navigation: headerNavigation, route: headerRoute, options, back }) => (
+        <AnimatedHeader
+          title={options.title || getHeaderTitle(route.name)}
+          subtitle={options.headerSubtitle}
+          rightAction={options.headerRight ? options.headerRight({ navigation: headerNavigation, route: headerRoute }) : null}
+          showBackButton={Boolean(back)}
+          onBackPress={() => headerNavigation.goBack()}
+        />
+      ),
     })}
   >
-    <Stack.Screen name="AccountHome" component={AccountScreen} />
+    <Stack.Screen
+      name="AccountHome"
+      component={AccountScreen}
+      options={({ navigation }) => ({
+        headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
+      })}
+    />
     <Stack.Screen name="UserEdit" component={UserScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />

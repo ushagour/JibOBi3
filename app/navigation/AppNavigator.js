@@ -47,8 +47,7 @@ const AppNavigator = () => {
         name="ListingAdd"
         component={ListingAddScreen}
         options={({ navigation }) => ({
-          headerShown: true,
-          headerTitle: "",
+          headerShown: false,
           tabBarButton: () => (isAuthenticated ? (
             <NewListingButton
               onPress={() => navigation.navigate(routes.LISTING_ADD)}

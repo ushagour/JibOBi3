@@ -1,5 +1,6 @@
 import "expo-dev-client";
 import React, { useState, useEffect, useCallback } from "react";
+import { StatusBar } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen"; // Import SplashScreen
 import myTheme from "./app/navigation/myTheme";
@@ -10,6 +11,7 @@ import AuthContext from "./app/auth/context";
 import authStorage from "./app/auth/storage";
 import { navigationRef } from "./app/navigation/rootNavigation";
 import GlobalAlertProvider from "./app/components/GlobalAlertProvider";
+import colors from "./app/config/colors";
 
 // Suppress Expo push token warning when offline
 const originalWarn = console.warn;
@@ -59,12 +61,15 @@ export default function App() {
   if (!isReady) return null;
 
   return (
-    <NavigationContainer ref={navigationRef} theme={myTheme} onReady={onLayoutRootView}>
-      <OfflineNotice />
-      <AuthContext.Provider  value={{ user, setUser }}>
-        {user ? <AppNavigator /> : <AuthNavigator />}
-      </AuthContext.Provider>
-      <GlobalAlertProvider />
-    </NavigationContainer>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} translucent={false} />
+      <NavigationContainer ref={navigationRef} theme={myTheme} onReady={onLayoutRootView}>
+        <OfflineNotice />
+        <AuthContext.Provider  value={{ user, setUser }}>
+          {user ? <AppNavigator /> : <AuthNavigator />}
+        </AuthContext.Provider>
+        <GlobalAlertProvider />
+      </NavigationContainer>
+    </>
   );
 }
