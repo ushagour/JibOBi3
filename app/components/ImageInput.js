@@ -39,6 +39,7 @@ function ImageInput({ imageUri, onChangeImage, onDeleteImage }) {
 
   const pickImage = async () => {
     try {
+      console.log("📷 Opening image picker...");
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -47,15 +48,19 @@ function ImageInput({ imageUri, onChangeImage, onDeleteImage }) {
 
       if (!result.canceled) {
         const { uri, type } = result.assets[0];
+        console.log("📸 Image picked - URI:", uri, "Type:", type);
 
         if (type === 'image') {
+          console.log("✅ Image valid, calling onChangeImage");
           onChangeImage(result.assets[0].uri);  // Pass the URI to the parent component
         } else {
-          console.error('Unsupported file type');
+          console.error('❌ Unsupported file type');
         }
+      } else {
+        console.log("ℹ️ Image picker cancelled");
       }
     } catch (error) {
-      console.log("Error picking an image", error);
+      console.log("❌ Error picking an image", error);
     }
   };
 

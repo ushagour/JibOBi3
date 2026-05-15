@@ -10,7 +10,7 @@ const COLORS = {
 };
 
 // --- Profile Card Component ---
-export const ProfileCard = ({ name, rating, avatarUri, onPress }) => {
+export const ProfileCard = ({ name, rating, avatarUri, onPress, isVerified = false }) => {
   const [imageError, setImageError] = useState(false);
 
   const showImage = !!avatarUri && !imageError;
@@ -44,7 +44,17 @@ export const ProfileCard = ({ name, rating, avatarUri, onPress }) => {
           </View>
         ) : null}
       </View>
-      <Text style={styles.userName}>{name}</Text>
+      <View style={styles.nameContainer}>
+        <Text style={styles.userName}>{name}</Text>
+        {isVerified && (
+          <MaterialCommunityIcons
+            name="check-decagram"
+            size={18}
+            color={COLORS.gold}
+            style={styles.verifiedBadge}
+          />
+        )}
+      </View>
       {onPress ? <Text style={styles.editHint}>Tap to edit profile</Text> : null}
       <View style={styles.ratingContainer}>
         {[...Array(5)].map((_, i) => (
@@ -91,7 +101,17 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
   },
   initial: { fontSize: 20, fontWeight: '700', color: COLORS.teal },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   userName: { fontWeight: 'bold', fontSize: 16, color: COLORS.teal },
+  verifiedBadge: {
+    marginLeft: 6,
+    marginTop: 2,
+  },
   editHint: {
     marginTop: 2,
     fontSize: 11,

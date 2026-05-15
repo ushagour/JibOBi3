@@ -29,6 +29,8 @@ import UploadScreen from "../outhers/UploadScreen";
 const validationSchema = Yup.object().shape({
   name: Yup.string().required().label("Name"),
   email: Yup.string().required().email().label("Email"),
+  phone: Yup.string().label("Phone"),
+  address: Yup.string().label("Address"),
 });
 
 function UserScreen({ navigation }) {
@@ -101,6 +103,10 @@ function UserScreen({ navigation }) {
   };
 
   const handleSubmit = async (userInfo) => {
+    console.log("📝 handleSubmit called with:", userInfo);
+    console.log("📸 Current avatar state:", avatar);
+    console.log("👤 authUser.avatar:", authUser.avatar);
+
     setLoading(true);
     setError(null);
     setProgress(0);
@@ -112,9 +118,12 @@ function UserScreen({ navigation }) {
 
       formData.append("name", userInfo.name);
       formData.append("email", userInfo.email);
+      formData.append("phone", userInfo.phone);
+      formData.append("address", userInfo.address);
 
       // If the avatar is updated, append it to the form data
       if (avatar && avatar !== authUser.avatar) {
+        console.log("🖼️ New avatar detected, preparing upload...");
         const uriParts = avatar.split(".");
         const fileType = uriParts[uriParts.length - 1];
 
@@ -124,6 +133,9 @@ function UserScreen({ navigation }) {
           name: `avatar_${authUser.userId}.${fileType}`,
           type: `image/${fileType}`,
         });
+        console.log("✅ Avatar appended to FormData");
+      } else {
+        console.log("ℹ️ No new avatar or avatar unchanged");
       }
 
       const response = await usersApi.updateUserInfo(
@@ -140,19 +152,40 @@ function UserScreen({ navigation }) {
         return;
       }
 
+      console.log("✅ Avatar update response:", response.data);
+      console.log("📸 New avatar URI:", response.data.avatar);
+      console.log("✅ Verified status:", response.data.is_verified);
+
       // Update the user in the auth context
-      updateUser((prevUser) => ({
-        ...prevUser,
-        name: response.data.name,
-        email: response.data.email,
-        avatar: response.data.avatar,
-      }));
-      setUser((prev) => ({
-        ...prev,
-        name: response.data.name,
-        email: response.data.email,
-        avatar: response.data.avatar,
-      }));
+      updateUser((prevUser) => {
+        const updatedUser = {
+          ...prevUser,
+          name: response.data.name,
+          email: response.data.email,
+          phone: response.data.phone,
+          address: response.data.address,
+          avatar: response.data.avatar,
+          is_verified: response.data.is_verified,
+        };
+        console.log("🔄 Updating auth context with:", updatedUser);
+        return updatedUser;
+      });
+
+      setUser((prev) => {
+        const updatedUser = {
+          ...prev,
+          name: response.data.name,
+          email: response.data.email,
+          phone: response.data.phone,
+          address: response.data.address,
+          avatar: response.data.avatar,
+          is_verified: response.data.is_verified,
+        };
+        console.log("🔄 Updating local user state with:", updatedUser);
+        return updatedUser;
+      });
+      setAvatar(response.data.avatar);
+      console.log("✅ Avatar state updated to:", response.data.avatar);
 
       showSweetAlert({
         title: "Success",
@@ -231,6 +264,8 @@ function UserScreen({ navigation }) {
               initialValues={{
                 name: user?.name || authUser?.name || "",
                 email: user?.email || authUser?.email || "",
+                phone: user?.phone || "",
+                address: user?.address || "",
                 avatar: user?.avatar || authUser?.avatar || null,
               }}
               key={`profile-${user?.id || authUser?.userId || "user"}-${user?.email || authUser?.email || ""}`}
@@ -267,9 +302,114 @@ function UserScreen({ navigation }) {
                 textContentType="emailAddress"
               />
 
+              {/* Phone Field */}
+              <FormField
+                autoCapitalize="none"
+                autoCorrect={false}
+                icon="phone"
+                keyboardType="phone-pad"
+                name="phone"
+                placeholder="Phone Number"
+                textContentType="telephoneNumber"
+              />
+
+              {/* Address Field */}
+              <FormField
+                autoCapitalize="none"
+                autoCorrect={true}
+                icon="map-marker"
+                name="address"
+                placeholder="Address"
+                textContentType="streetAddress"
+              />
+
               {/* Submit Button */}
               <SubmitButton title="Update Profile" />
             </Form>
+            </View>
+
+            {/* Account Information Section */}
+            <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
+              Account Information
+            </AppText>
+            <View style={styles.sectionCard}>
+              {/* Role */}
+              <View style={styles.infoRow}>
+                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
+                  Role
+                </AppText>
+                <AppText variant="body1" color="textPrimary" style={styles.infoValue}>
+                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : authUser?.role || "Customer"}
+                </AppText>
+              </View>
+
+              {/* Account Status */}
+              <View style={styles.infoRow}>
+                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
+                  Status
+                </AppText>
+                <AppText 
+                  variant="body1" 
+                  color={user?.status === "active" ? "success" : user?.status === "inactive" ? "warning" : "danger"}
+                  style={styles.infoValue}
+                >
+                  {user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : "Active"}
+                </AppText>
+              </View>
+
+              {/* Verification Status */}
+              <View style={styles.infoRow}>
+                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
+                  Email Verified
+                </AppText>
+                <AppText 
+                  variant="body1" 
+                  color={user?.is_email_verified ? "success" : "warning"}
+                  style={styles.infoValue}
+                >
+                  {user?.is_email_verified ? "✓ Verified" : "✗ Not Verified"}
+                </AppText>
+              </View>
+
+              {/* Phone Verification */}
+              <View style={styles.infoRow}>
+                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
+                  Phone Verified
+                </AppText>
+                <AppText 
+                  variant="body1" 
+                  color={user?.is_phone_verified ? "success" : "warning"}
+                  style={styles.infoValue}
+                >
+                  {user?.is_phone_verified ? "✓ Verified" : "✗ Not Verified"}
+                </AppText>
+              </View>
+
+              {/* Overall Verification */}
+              <View style={styles.infoRow}>
+                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
+                  Account Verified
+                </AppText>
+                <AppText 
+                  variant="body1" 
+                  color={user?.is_verified ? "success" : "warning"}
+                  style={styles.infoValue}
+                >
+                  {user?.is_verified ? "✓ Verified" : "✗ Not Verified"}
+                </AppText>
+              </View>
+
+              {/* Quick Responder Badge */}
+              {user?.is_quick_responder && (
+                <View style={styles.infoRow}>
+                  <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
+                    Quick Responder
+                  </AppText>
+                  <AppText variant="body1" color="success" style={styles.infoValue}>
+                    ⭐ Enabled
+                  </AppText>
+                </View>
+              )}
             </View>
 
           </ScrollView>
@@ -333,6 +473,23 @@ const styles = StyleSheet.create({
   imageWrapper: {
     alignItems: "center",
     marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray,
+  },
+  infoLabel: {
+    fontWeight: "600",
+    flex: 1,
+  },
+  infoValue: {
+    fontWeight: "500",
+    flex: 1,
+    textAlign: "right",
   },
 });
 

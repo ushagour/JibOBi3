@@ -33,7 +33,7 @@ function LoginScreen({ navigation }) {
     setLoading(false);
 
     if (!result.ok) return setLoginFailed(true);
-    auth.logIn(result.data); // Pass the token to the auth context
+    auth.logIn(result.data.token, result.data.user); // Pass token and user data
     setLoginFailed(false);
   };
 
@@ -49,7 +49,9 @@ function LoginScreen({ navigation }) {
     <>
       <ActivityIndicator visible={loading} />
       <Screen style={styles.container}>
-        <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
+        <View style={styles.logoContainer}>
+          <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
+        </View>
 
         <Form
           initialValues={{ email: "", password: "" }}
@@ -118,13 +120,26 @@ const styles = StyleSheet.create({
   container: {
     padding: 10,
   },
+  logoContainer: {
+    alignSelf: "center",
+    marginTop: 60,
+    marginBottom: 30,
+    backgroundColor: "#ffffff",
+    borderRadius: 30,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+    borderWidth: 1,
+  },
   logo: {
     width: 100,
     height: 100,
     alignSelf: "center",
-    marginTop: 50,
-    marginBottom: 20,
-    borderRadius: 25,
+    borderRadius: 20,
+    backgroundColor: "#fff5f5",
   },
   forgotPassword: {
     color: colors.black,
@@ -143,6 +158,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
     marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
   },
   socialButtonText: {
     color: "white",

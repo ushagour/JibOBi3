@@ -187,7 +187,26 @@ const validationSchema = Yup.object().shape({
 });
 
 function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult }) {
-  const { handleSubmit, isSubmitting } = useFormikContext();
+  const { handleSubmit, isSubmitting, errors, touched, values } = useFormikContext();
+
+  const handleAnalyzePress = () => {
+    console.log("🔘 Analyze button pressed");
+    console.log("Form values:", values);
+    console.log("Form errors:", errors);
+    console.log("Touched fields:", touched);
+    
+    // Show any existing errors
+    if (Object.keys(errors).length > 0) {
+      console.log("❌ Form has validation errors:", errors);
+      const errorMessages = Object.entries(errors)
+        .map(([field, error]) => `${field}: ${error}`)
+        .join("\n");
+      Alert.alert("Form Errors", errorMessages);
+      return;
+    }
+    
+    onAnalyze();
+  };
 
   if (fraudDetectionResult) {
     return null; // Show publish button in FraudDetectionResult component instead
@@ -197,7 +216,7 @@ function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult 
     <View style={styles.actionsRow}>
       <Button
         title={isAnalyzing ? "Analyzing..." : "Analyze & Review"}
-        onPress={onAnalyze}
+        onPress={handleAnalyzePress}
         variant="primary"
         size="md"
         fullWidth={false}
@@ -237,8 +256,34 @@ function ListingAddScreen({ navigation }) {
 
   // Simulate fraud detection analysis
   const analyzeListing = async (listingData) => {
-    setIsAnalyzing(true);
+    console.log("🔍 analyzeListing called with:", { title: listingData.title, price: listingData.price, category: listingData.category, imagesCount: listingData.images?.length });
+    
     try {
+      // Validate required fields
+      if (!listingData.title || !listingData.title.trim()) {
+        console.log("❌ Missing title");
+        Alert.alert("Missing Info", "Please enter a title.");
+        return;
+      }
+      if (!listingData.price) {
+        console.log("❌ Missing price");
+        Alert.alert("Missing Info", "Please enter a price.");
+        return;
+      }
+      if (!listingData.category) {
+        console.log("❌ Missing category");
+        Alert.alert("Missing Info", "Please select a category.");
+        return;
+      }
+      if (!listingData.images || listingData.images.length === 0) {
+        console.log("❌ Missing images");
+        Alert.alert("Missing Info", "Please select at least one image.");
+        return;
+      }
+
+      console.log("✅ All validations passed, starting analysis...");
+      setIsAnalyzing(true);
+
       // Simulate API call to fraud detection engine
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -269,7 +314,9 @@ function ListingAddScreen({ navigation }) {
 
       setFraudDetectionResult(result);
       setCurrentListingData(listingData);
+      console.log("✅ Fraud detection complete. Score:", result.fraudScore, "Status:", result);
     } catch (error) {
+      console.error("❌ Fraud detection error:", error);
       Alert.alert("Error", "Failed to analyze listing. Please try again.");
       if (__DEV__) console.error("Fraud detection error:", error);
     } finally {
@@ -278,8 +325,22 @@ function ListingAddScreen({ navigation }) {
   };
 
   const handlePublishAfterAnalysis = async () => {
-    if (!currentListingData) return;
+    console.log("📤 Publish button pressed");
+    console.log("Current listing data:", currentListingData);
+    console.log("Location:", location);
+    
+    if (!currentListingData) {
+      console.log("❌ No current listing data");
+      return;
+    }
 
+    if (!location?.latitude || !location?.longitude) {
+      console.log("❌ Location not available");
+      Alert.alert("Location Required", "Please enable location services to publish.");
+      return;
+    }
+
+    console.log("✅ Publishing with location:", location);
     setProgress(0);
     setUploadVisible(true);
 
@@ -300,7 +361,10 @@ function ListingAddScreen({ navigation }) {
         (progress) => setProgress(progress)
       );
 
+      console.log("📨 API Response:", response);
+
       if (!response.ok) {
+        console.log("❌ API error:", response.data?.error);
         Alert.alert("Error", response.data?.error || "Unable to post listing");
         return;
       }
@@ -308,12 +372,14 @@ function ListingAddScreen({ navigation }) {
       const createdListingId = response.data?.id;
 
       if (!createdListingId) {
+        console.log("✅ Listing added (under review)");
         Alert.alert("Success", "Listing added successfully and is under review.");
         setFraudDetectionResult(null);
         navigation.goBack();
         return;
       }
 
+      console.log("✅ Listing published with ID:", createdListingId);
       Alert.alert("Success", "Listing published successfully!");
       setFraudDetectionResult(null);
       navigation.navigate("Feed", {
@@ -321,6 +387,7 @@ function ListingAddScreen({ navigation }) {
         params: createdListingId,
       });
     } catch (error) {
+      console.error("❌ Publish error:", error);
       Alert.alert("Error", "An unexpected error occurred.");
       if (__DEV__) console.error("Publish error:", error);
     } finally {

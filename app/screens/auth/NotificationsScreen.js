@@ -37,6 +37,7 @@ function NotificationsScreen({ navigation }) {
 
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
+      console.log("Loaded notifications:", response.data.notifications);
 
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
@@ -167,31 +168,82 @@ function NotificationsScreen({ navigation }) {
         renderItem={({ item }) => {
           const meta = getNotificationTypeMeta(item.type);
           const timeAgo = dayjs(item.createdAt).fromNow();
+          const formattedDate = dayjs(item.createdAt).format("MMM DD, YYYY");
+          const formattedTime = dayjs(item.createdAt).format("h:mm A");
 
           return (
-            <ListItemCard
-              title={item.title}
-              subTitle={`${item.content}\n${timeAgo}`}
-              isRead={item.is_read}
-              IconComponent={
-                <View style={styles.notificationTypeRow}>
-                  <AppText style={[styles.notificationTypeText, { color: meta.color }]}>
-                  <Avatar
-                    name={item?.buyer?.name}
-                    avatar={item?.buyer?.avatar}
-                    size={35}
-                  />
-                                        </AppText>
-                </View>
-              }
+            <Pressable
               onPress={async () => {
                 if (!item.is_read) {
                   await handleToggleRead(item);
                 }
-                navigation.navigate("ListingDetails", { listingId: item.listing_id });
+                if (item.type === "order" && item.order_id) {
+                  navigation.navigate("OrderDetails", { order: { id: item.order_id } });
+                } else if (item.type === "review" && item.listing_id) {
+                  navigation.navigate("ListingDetails", { id: item.listing_id });
+                }
               }}
-              renderRightActions={() => renderRightActions(item)}
-            />
+              style={[
+                styles.notificationCard,
+                item.is_read ? styles.readCard : styles.unreadCard,
+              ]}
+            >
+              <Avatar
+                name={item?.actor?.name}
+                avatar={item?.actor?.avatar}
+                size={40}
+              />
+
+              <View style={styles.notificationContentWrapper}>
+                <View style={styles.notificationHeader}>
+                  <AppText style={styles.notificationTitle}>
+                    {item?.actor?.name || "User"}
+                  </AppText>
+                  <AppText style={styles.notificationTime}>
+                    {timeAgo}
+                  </AppText>
+                </View>
+
+                <AppText style={styles.notificationContent}>
+                  {item.content}
+                </AppText>
+
+                <View style={styles.dateTimeRow}>
+                  <AppText style={styles.dateTimeText}>
+                    📅 {formattedDate}
+                  </AppText>
+                  <AppText style={styles.dateTimeText}>
+                    🕐 {formattedTime}
+                  </AppText>
+                </View>
+
+                <View style={styles.metaRow}>
+                  <View style={[styles.metaBadge, { backgroundColor: meta.color }]}>
+                    <MaterialCommunityIcons
+                      name={meta.icon}
+                      size={12}
+                      color={colors.white}
+                    />
+                    <AppText style={styles.metaBadgeText}>{meta.label}</AppText>
+                  </View>
+                  <AppText style={[styles.statusBadge, item.is_read ? styles.readBadge : styles.unreadBadge]}>
+                    {item.is_read ? "Read" : "Unread"}
+                  </AppText>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => handleDeleteNotification(item.id)}
+                style={styles.deleteIconButton}
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={20}
+                  color={colors.danger}
+                />
+              </TouchableOpacity>
+            </Pressable>
           );
         }}
       />
@@ -255,41 +307,102 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     flexDirection: "row",
-    backgroundColor: colors.white,
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.lightGray,
-    alignItems: "center",
+    borderWidth: 1.5,
+    alignItems: "flex-start",
+    gap: 12,
+    backgroundColor: colors.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   unreadCard: {
     borderColor: colors.primary,
-    backgroundColor: colors.infoLight,
+    backgroundColor: "#f8f9ff",
   },
-  notificationTypeRow: {
+  readCard: {
+    backgroundColor: colors.lighterGray,
+    borderColor: colors.lightGray,
+    opacity: 0.85,
+  },
+  notificationContentWrapper: {
+    flex: 1,
+    gap: 8,
+  },
+  notificationHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
-  },
-  notificationTypeText: {
-    fontSize: 12,
-    fontWeight: "700",
+    gap: 8,
   },
   notificationTitle: {
     color: colors.textPrimary,
     fontSize: 15,
     fontWeight: "700",
+    flex: 1,
+  },
+  notificationTime: {
+    color: colors.textTertiary,
+    fontSize: 12,
+    fontWeight: "500",
   },
   notificationContent: {
     color: colors.textSecondary,
     fontSize: 13,
-    marginTop: 3,
+    lineHeight: 18,
   },
-  deleteButton: {
-    padding: 6,
-    marginLeft: 10,
+  dateTimeRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingTop: 6,
+  },
+  dateTimeText: {
+    color: colors.medium,
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  metaRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+    paddingTop: 4,
+  },
+  metaBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  metaBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  statusBadge: {
+    fontSize: 10,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  readBadge: {
+    backgroundColor: "#e8f5e9",
+    color: colors.success || "#4caf50",
+  },
+  unreadBadge: {
+    backgroundColor: "#fff3e0",
+    color: colors.warning || "#ff9800",
+  },
+  deleteIconButton: {
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   swipeActionsContainer: {
     flexDirection: "row",
@@ -316,11 +429,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
   },
-  notificationContentWrapper: {
-    flex: 1,
-  },
-  
-
 });
 
 export default NotificationsScreen;

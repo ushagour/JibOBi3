@@ -33,6 +33,7 @@ const CATEGORY_FALLBACK_ICONS = {
   Electronics: "🎧",
   Fashion: "👕",
   Furniture: "🪑",
+  cars: "🚗",
   Other: "📦",
 };
 
@@ -65,7 +66,8 @@ const isAvailableStatus = (status) => {
 
 function ListingsScreen({ navigation, route }) {
   const { user, isLoggedIn } = useAuth();
-  const { location } = useLocation();
+  const { location,getLocationName } = useLocation();
+  const { city, country } = getLocationName();
   const isGuest = !isLoggedIn();
 
   // Determine if we are viewing "My Listings"
@@ -179,18 +181,27 @@ function ListingsScreen({ navigation, route }) {
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    const requests = [fetchNearbyListings(location.latitude, location.longitude), fetchCategories()];
+    try {
+      const requests = [fetchCategories()];
 
-    if (!isGuest && selectedCategory !== "all") {
-      requests.push(fetchListingsByCategory(selectedCategory));
+      if (location?.latitude && location?.longitude) {
+        requests.push(fetchNearbyListings(location.latitude, location.longitude));
+      } else {
+        await getLocation();
+      }
+
+      if (!isGuest && selectedCategory !== "all") {
+        requests.push(fetchListingsByCategory(selectedCategory));
+      }
+
+      if (!isGuest) {
+        requests.push(loadFavorites());
+      }
+
+      await Promise.all(requests);
+    } finally {
+      setRefreshing(false);
     }
-
-    if (!isGuest) {
-      requests.push(loadFavorites());
-    }
-
-    await Promise.all(requests);
-    setRefreshing(false);
   };
 
   
@@ -324,7 +335,8 @@ function ListingsScreen({ navigation, route }) {
             categories={categories}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
-            locationName={location?.name || location?.city || location?.address || "Unknown"}
+            locationName={city && country ? `${city}, ${country}` : null}
+            
           />
         }
         ListEmptyComponent={renderListEmpty}

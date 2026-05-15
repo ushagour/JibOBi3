@@ -72,9 +72,13 @@ const AppNavigator = () => {
               <Avatar
                 name={user?.name}
                 avatar={user?.avatar}
-                size={30}
+                size={32}
                 bgColor={colors.primary}
                 textColor="white"
+                showBorder={true}
+                borderColor={colors.primary}
+                showShadow={true}
+                isVerified={user?.is_verified || false}
               />
             ) : (
               <MaterialCommunityIcons name="account" color={color} size={24} />
