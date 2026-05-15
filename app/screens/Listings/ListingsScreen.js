@@ -4,12 +4,11 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import dayjs from "dayjs";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Product from "../../components/cards/Product";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
@@ -17,10 +16,11 @@ import Screen from "../../components/Screen";
 import listingsApi from "../../api/listings";
 import favoritesApi from "../../api/favorites";
 import categoriesApi from "../../api/categories";
-import  ActivityIndicator  from "../../components/ActivityIndicator";
-import useApi  from "../../hooks/useApi";
+import ActivityIndicator from "../../components/ActivityIndicator";
+import useApi from "../../hooks/useApi";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
 import Header from "../../components/Header";
+import ListingsHeader from "../../components/ListingsHeader";
 import useAuth from "../../auth/useAuth";
 import { Alert } from "react-native";
 import useLocation from "../../hooks/useLocation";
@@ -33,6 +33,7 @@ const CATEGORY_FALLBACK_ICONS = {
   Electronics: "🎧",
   Fashion: "👕",
   Furniture: "🪑",
+  cars: "🚗",
   Other: "📦",
 };
 
@@ -63,11 +64,28 @@ const isAvailableStatus = (status) => {
 };
 
 
-function ListingsScreen({ navigation }) {
+function ListingsScreen({ navigation, route }) {
   const { user, isLoggedIn } = useAuth();
-  const { location } = useLocation();
+  const { location,getLocationName } = useLocation();
+  const { city, country } = getLocationName();
   const isGuest = !isLoggedIn();
-  const{data:listings, error, loading, request: fetchNearbyListings} = useApi(listingsApi.nearbyListings);
+
+  // Determine if we are viewing "My Listings"
+  const isMyListings = route.params?.myListings;
+
+  const {
+    data: listings,
+    error,
+    loading,
+    request: fetchNearbyListings,
+  } = useApi(listingsApi.nearbyListings);
+
+  const {
+    data: myListingsData,
+    error: myListingsError,
+    loading: myListingsLoading,
+    request: fetchMyListings,
+  } = useApi(listingsApi.getMyListings);
 
   const {
     data: categoryListings,
@@ -163,18 +181,27 @@ function ListingsScreen({ navigation }) {
   
   const handleRefresh = async () => {
     setRefreshing(true);
-    const requests = [fetchNearbyListings(location.latitude, location.longitude), fetchCategories()];
+    try {
+      const requests = [fetchCategories()];
 
-    if (!isGuest && selectedCategory !== "all") {
-      requests.push(fetchListingsByCategory(selectedCategory));
+      if (location?.latitude && location?.longitude) {
+        requests.push(fetchNearbyListings(location.latitude, location.longitude));
+      } else {
+        await getLocation();
+      }
+
+      if (!isGuest && selectedCategory !== "all") {
+        requests.push(fetchListingsByCategory(selectedCategory));
+      }
+
+      if (!isGuest) {
+        requests.push(loadFavorites());
+      }
+
+      await Promise.all(requests);
+    } finally {
+      setRefreshing(false);
     }
-
-    if (!isGuest) {
-      requests.push(loadFavorites());
-    }
-
-    await Promise.all(requests);
-    setRefreshing(false);
   };
 
   
@@ -271,7 +298,7 @@ function ListingsScreen({ navigation }) {
         message="We could not fetch listings right now. Check your network and retry."
         onRetry={() =>
           selectedCategory === "all"
-            ? fetchPopularListings()
+            ? fetchNearbyListings(location.latitude, location.longitude)
             : fetchListingsByCategory(selectedCategory)
         }
       />
@@ -279,89 +306,59 @@ function ListingsScreen({ navigation }) {
   }
 
 
-  // Render categories header
-  const renderListHeader = () => (
-    <View style={styles.fixedTopSection}>
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color={colors.medium} />
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search for products..."
-          placeholderTextColor={colors.medium}
-          style={styles.searchInput}
-        />
-      </View>
-
-      <Text style={styles.sectionTitle}>Categories</Text>
-      <FlatList
-        horizontal
-        data={categories}
-        keyExtractor={(category) => category.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
-        renderItem={({ item: category }) => {
-          const isActive = selectedCategory === category.id;
-          return (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.categoryItem, isActive && styles.categoryItemActive]}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <View style={styles.categoryIconWrap}>
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
-              </View>
-              <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
-                {category.name}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        scrollEnabled={false}
-        nestedScrollEnabled={false}
-      />
-
-      <Text style={styles.sectionTitle}>Newest Near Me</Text>
-    </View>
-  );
-
   const renderListEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No products found.</Text>
+      <MaterialCommunityIcons
+        name="package-off"
+        size={48}
+        color={colors.medium}
+        style={styles.emptyIcon}
+      />
+      <Text style={styles.emptyTitle}>No Products Found</Text>
+      <Text style={styles.emptyDescription}>
+        Try adjusting your search or filters to find what you're looking for
+      </Text>
     </View>
   );
 
   return (
-    <>
+    <Screen style={styles.screen} scrollable={false} paddingSize="md">
       <ActivityIndicator visible={activeLoading} />
-       
-      <Screen style={styles.screen} scrollable={false} paddingSize="none">
-        <Header />
-        <FlatList
-          data={filteredListings}
-          keyExtractor={(listing) => listing.id.toString()}
-          ListHeaderComponent={renderListHeader}
-          ListEmptyComponent={renderListEmpty}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.productsVerticalContainer}
-          renderItem={({ item }) => (
-            <Product
-              title={item.title}
-              imageUri={item.imageUri || item.imageUrl}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-              onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
-              isLiked={favoriteIds.includes(item.id)}
-              price={item.price}
-              seller={item.owner?.name}
-              description={item.description}
-              createdAt={dayjs(item.createdAt).format("MMM D")}
-              containerStyle={styles.productListCard}
-            />
-          )}
-        />
-      </Screen>
-    </>
+      <Header />
+      <FlatList
+        data={filteredListings}
+        keyExtractor={(listing) => listing.id.toString()}
+        ListHeaderComponent={
+          <ListingsHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            locationName={city && country ? `${city}, ${country}` : null}
+            
+          />
+        }
+        ListEmptyComponent={renderListEmpty}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.productsVerticalContainer}
+        renderItem={({ item }) => (
+          <Product
+            title={item.title}
+            imageUri={item.imageUri || item.imageUrl}
+            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
+            onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
+            isLiked={favoriteIds.includes(item.id)}
+            price={item.price}
+            seller={item.owner?.name}
+            description={item.description}
+            createdAt={dayjs(item.createdAt).format("MMM D")}
+            containerStyle={styles.productListCard}
+          />
+        )}
+      />
+    </Screen>
   );
 }
 
@@ -370,19 +367,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light,
   },
-  fixedTopSection: {
-    backgroundColor: colors.light,
-    paddingTop: 8,
-    paddingBottom: 2,
-  },
   headerBlock: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
     borderBottomColor: colors.lightGray,
   },
   greetingText: {
     color: colors.medium,
-    fontSize: 12,
     fontWeight: "600",
   },
   userNameText: {
@@ -391,82 +380,38 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 1,
   },
-  searchBar: {
-    marginHorizontal: 12,
-    marginTop: 6,
-    marginBottom: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.lightGray,
-    backgroundColor: colors.white,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.dark,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: colors.dark,
-    marginHorizontal: 12,
-    marginBottom: 6,
-  },
-  categoriesContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 6,
-    gap: 4,
-  },
-  categoryItem: {
-    alignItems: "center",
-    width: 65,
-  },
-  categoryItemActive: {
-    transform: [{ scale: 1.03 }],
-  },
-  categoryIconWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 14,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.lightGray,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  categoryIcon: {
-    fontSize: 25,
-  },
-  categoryLabel: {
-    marginTop: 6,
-    fontSize: 9,
-    color: colors.medium,
-    fontWeight: "600",
-  },
-  categoryLabelActive: {
-    color: colors.primary,
-  },
   emptyContainer: {
     marginHorizontal: 12,
+    marginTop: 40,
     backgroundColor: colors.white,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.lightGray,
-    padding: 12,
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  emptyText: {
-    color: colors.medium,
-    fontSize: 16,
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyDescription: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 18,
   },
   productsVerticalContainer: {
     paddingLeft: 12,
     paddingRight: 12,
-    paddingBottom: 10,
+    paddingBottom: 8,
+    gap: 8,
   },
   productListCard: {
     width: "100%",

@@ -9,6 +9,7 @@ export default Object.freeze({
   LOGIN: "Login",
   REGISTER: "Register",
   ORDERS: "Orders",
+  ORDER_DETAILS: "OrderDetails",
   ORDER_CHECKOUT: "OrderCheckout",
   Favorites: "Favorites",
   HELP: "HelpSupport",
@@ -16,5 +17,6 @@ export default Object.freeze({
   SHIPPING_ADDRESSES: "ShippingAddresses",
   ACCOUNT: "Account",
   LISTINGS: "Listings",
+  MY_LISTINGS: "MyListings",
   ALL_LISTINGS: "AllListings",
 });

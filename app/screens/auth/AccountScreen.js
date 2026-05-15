@@ -1,5 +1,6 @@
 import React from "react";
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { ListItem, ListItemSeparator } from "../../components/lists";
 import colors from "../../config/colors";
@@ -9,8 +10,7 @@ import Screen from "../../components/Screen";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
 import { ProfileCard } from '../../components/cards/ProfileCard';
-
-
+import Avatar from '../../components/Avatar';
 
 
 
@@ -20,7 +20,29 @@ function AccountScreen({ navigation }) {
   const { user, logOut, isLoggedIn, isGuest } = useAuth();
   const loggedIn = isLoggedIn();
   const guestMode = isGuest();
+
+  // Monitor avatar changes
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("👁️ AccountScreen focused");
+      console.log("👤 Current user:", user);
+      console.log("📸 Current avatar:", user?.avatar);
+      console.log("✅ Verified status:", user?.is_verified);
+      return () => {
+        console.log("👁️ AccountScreen unfocused");
+      };
+    }, [user])
+  );
+
 const menuItems = [
+  {
+    title: "My Listings",
+    icon: {
+      name: "format-list-bulleted",
+      backgroundColor: colors.primary,
+    },
+    targetScreen: routes.MY_LISTINGS,
+  },
   {
     title: "Orders",
     icon: {
@@ -97,17 +119,6 @@ const settingsMenuItems = [
 
 
 
-
-
-      {/* <View style={styles.sectionCard}>
-        <ListItem
-          title={user?.name || "My Account"}
-          subTitle={user?.email || "Signed in user"}
-          image={user?.userId && user?.avatar ? { uri: user.avatar } : null}
-          onPress={() => navigation.navigate(routes.USER_EDIT)}
-        />
-      </View> */}
-
       {loggedIn ? (
 
 
@@ -120,7 +131,11 @@ const settingsMenuItems = [
 name={user.name}
   rating={5} 
   avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"} 
-          onPress={() => navigation.navigate(routes.USER_EDIT)}
+  isVerified={user?.is_verified || false}
+          onPress={() => {
+            console.log("👤 Opening user edit screen. Current avatar:", user?.avatar);
+            navigation.navigate(routes.USER_EDIT);
+          }}
 />
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
             Quick Actions
@@ -136,7 +151,13 @@ name={user.name}
                       backgroundColor={item.icon.backgroundColor}
                     />
                   }
-                  onPress={() => navigation.navigate(item.targetScreen)}
+                                    onPress={() => {
+                    if (item.targetScreen === routes.LISTINGS) {
+                      navigation.navigate(item.targetScreen, { myListings: true });
+                    } else {
+                      navigation.navigate(item.targetScreen);
+                    }
+                  }}
                 />
                 {index < menuItems.length - 1 && <ListItemSeparator />}
               </View>

@@ -26,7 +26,7 @@ import ErrorStateScreen from "../../components/ErrorStateScreen";
 import AddReviewForm from "../../components/AddReviewForm";
 import ReviewsSection from "../../components/ReviewsSection"; // Import the reviews component
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons"; // Import icons
-import { getLocationName } from "../../utility/geocode"; // Import the geocoding function
+import useLocation from "../../hooks/useLocation"; // Import location hook
 import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-icons/FontAwesome'
 
 
@@ -34,15 +34,15 @@ function ListingDetailsScreen({ route, navigation }) {
   const routeParams = route.params;
   const id = routeParams?.listing?.id ?? routeParams?.id ?? routeParams;
   const { user, isOwner } = useAuth();
+  const { getLocationName } = useLocation();
   const isAuthenticated = Boolean(user?.userId);
 
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
-  const [isDeletingListing, setIsDeletingListing] = useState(false);
   const [locationName, setLocationName] = useState("Unknown location");
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
@@ -100,8 +100,6 @@ function ListingDetailsScreen({ route, navigation }) {
         if (latitude != null && longitude != null) {
           getLocationName(latitude, longitude)
             .then((location) => {
-              console.log(location);
-              
               if (isMounted && location?.city) {
                 setLocationName(location.city);
               }
@@ -139,8 +137,8 @@ function ListingDetailsScreen({ route, navigation }) {
 
 
 
-  if (loading || isDeletingListing) {
-    return <ActivityIndicator visible={loading || isDeletingListing} />;
+  if (loading || isDeletingReview) {
+    return <ActivityIndicator visible={loading || isDeletingReview} />;
   }
   if (error) {
     const normalizedError = String(error || "");

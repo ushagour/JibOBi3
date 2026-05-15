@@ -93,6 +93,20 @@ Feel free to customize the description to better fit your project's specifics an
 
 Let me know if you need help with specific parts of the implementation!
 
+## Environment setup (API URL switching)
+
+To avoid changing API addresses in code each time:
+
+1. Copy `.env.example` to `.env` in this folder.
+2. Set values for:
+   - `EXPO_PUBLIC_APP_ENV` (`dev`, `staging`, or `prod`)
+   - `EXPO_PUBLIC_API_URL_DEV`
+   - `EXPO_PUBLIC_API_URL_STAGING`
+   - `EXPO_PUBLIC_API_URL_PROD`
+3. Restart Expo after changing `.env` values.
+
+The app reads these values from `app/config/environment.js` and automatically sets Axios base URL.
+
 
 ### 6. **OPTIMISATION BEFORE EAS **
       -

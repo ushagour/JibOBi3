@@ -2,13 +2,25 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Alert, FlatList, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 import Screen from "../../components/Screen";
 import AppText from "../../components/Text";
 import colors from "../../config/colors";
 import notificationsApi from "../../api/notifications";
 
-function NotificationsScreen() {
+import ListItemCard from "../../components/cards/ListItemCard";
+import ListItemSeparator from "../../components/ListItemSeparator";
+import ListItemDeleteAction from "../../components/ListItemDeleteAction";
+import Avatar from "../../components/Avatar";   
+import useAuth from "../../auth/useAuth";
+import ordersApi from "../../api/orders";
+
+
+function NotificationsScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -25,6 +37,8 @@ function NotificationsScreen() {
 
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
+      console.log("Loaded notifications:", response.data.notifications);
+
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
       Alert.alert("Error", "Could not load notifications.");
@@ -141,6 +155,7 @@ function NotificationsScreen() {
       <FlatList
         data={notifications}
         keyExtractor={(item) => String(item.id)}
+        ItemSeparatorComponent={ListItemSeparator}
         onRefresh={loadNotifications}
         refreshing={loading}
         contentContainerStyle={styles.listContent}
@@ -152,37 +167,82 @@ function NotificationsScreen() {
         }
         renderItem={({ item }) => {
           const meta = getNotificationTypeMeta(item.type);
+          const timeAgo = dayjs(item.createdAt).fromNow();
+          const formattedDate = dayjs(item.createdAt).format("MMM DD, YYYY");
+          const formattedTime = dayjs(item.createdAt).format("h:mm A");
 
           return (
-            <Pressable style={[styles.notificationCard, !item.is_read && styles.unreadCard]}>
-              <View style={styles.notificationTypeRow}>
-                <MaterialCommunityIcons name={meta.icon} size={14} color={meta.color} />
-                <AppText style={[styles.notificationTypeText, { color: meta.color }]}>
-                  {meta.label}
+            <Pressable
+              onPress={async () => {
+                if (!item.is_read) {
+                  await handleToggleRead(item);
+                }
+                if (item.type === "order" && item.order_id) {
+                  navigation.navigate("OrderDetails", { order: { id: item.order_id } });
+                } else if (item.type === "review" && item.listing_id) {
+                  navigation.navigate("ListingDetails", { id: item.listing_id });
+                }
+              }}
+              style={[
+                styles.notificationCard,
+                item.is_read ? styles.readCard : styles.unreadCard,
+              ]}
+            >
+              <Avatar
+                name={item?.actor?.name}
+                avatar={item?.actor?.avatar}
+                size={40}
+              />
+
+              <View style={styles.notificationContentWrapper}>
+                <View style={styles.notificationHeader}>
+                  <AppText style={styles.notificationTitle}>
+                    {item?.actor?.name || "User"}
+                  </AppText>
+                  <AppText style={styles.notificationTime}>
+                    {timeAgo}
+                  </AppText>
+                </View>
+
+                <AppText style={styles.notificationContent}>
+                  {item.content}
                 </AppText>
+
+                <View style={styles.dateTimeRow}>
+                  <AppText style={styles.dateTimeText}>
+                    📅 {formattedDate}
+                  </AppText>
+                  <AppText style={styles.dateTimeText}>
+                    🕐 {formattedTime}
+                  </AppText>
+                </View>
+
+                <View style={styles.metaRow}>
+                  <View style={[styles.metaBadge, { backgroundColor: meta.color }]}>
+                    <MaterialCommunityIcons
+                      name={meta.icon}
+                      size={12}
+                      color={colors.white}
+                    />
+                    <AppText style={styles.metaBadgeText}>{meta.label}</AppText>
+                  </View>
+                  <AppText style={[styles.statusBadge, item.is_read ? styles.readBadge : styles.unreadBadge]}>
+                    {item.is_read ? "Read" : "Unread"}
+                  </AppText>
+                </View>
               </View>
 
-              <AppText style={styles.notificationTitle}>{item.title}</AppText>
-              <AppText style={styles.notificationContent}>{item.content}</AppText>
-              <AppText style={styles.notificationMeta}>{item.is_read ? "Read" : "Unread"}</AppText>
-
-              <View style={styles.cardActionsRow}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.cardReadAction}
-                  onPress={() => handleToggleRead(item)}
-                >
-                  <AppText style={styles.cardActionText}>{item.is_read ? "Unread" : "Read"}</AppText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.cardDeleteAction}
-                  onPress={() => handleDeleteNotification(item.id)}
-                >
-                  <AppText style={styles.cardActionText}>Delete</AppText>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => handleDeleteNotification(item.id)}
+                style={styles.deleteIconButton}
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={20}
+                  color={colors.danger}
+                />
+              </TouchableOpacity>
             </Pressable>
           );
         }}
@@ -246,43 +306,103 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   notificationCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    flexDirection: "row",
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.lightGray,
+    borderWidth: 1.5,
+    alignItems: "flex-start",
+    gap: 12,
+    backgroundColor: colors.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   unreadCard: {
     borderColor: colors.primary,
-    backgroundColor: colors.infoLight,
+    backgroundColor: "#f8f9ff",
   },
-  notificationTypeRow: {
+  readCard: {
+    backgroundColor: colors.lighterGray,
+    borderColor: colors.lightGray,
+    opacity: 0.85,
+  },
+  notificationContentWrapper: {
+    flex: 1,
+    gap: 8,
+  },
+  notificationHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
-  },
-  notificationTypeText: {
-    fontSize: 12,
-    fontWeight: "700",
+    gap: 8,
   },
   notificationTitle: {
     color: colors.textPrimary,
     fontSize: 15,
     fontWeight: "700",
+    flex: 1,
+  },
+  notificationTime: {
+    color: colors.textTertiary,
+    fontSize: 12,
+    fontWeight: "500",
   },
   notificationContent: {
     color: colors.textSecondary,
     fontSize: 13,
-    marginTop: 3,
+    lineHeight: 18,
   },
-  notificationMeta: {
+  dateTimeRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingTop: 6,
+  },
+  dateTimeText: {
     color: colors.medium,
     fontSize: 11,
+    fontWeight: "500",
+  },
+  metaRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+    paddingTop: 4,
+  },
+  metaBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  metaBadgeText: {
+    color: colors.white,
+    fontSize: 10,
     fontWeight: "600",
-    marginTop: 6,
+  },
+  statusBadge: {
+    fontSize: 10,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  readBadge: {
+    backgroundColor: "#e8f5e9",
+    color: colors.success || "#4caf50",
+  },
+  unreadBadge: {
+    backgroundColor: "#fff3e0",
+    color: colors.warning || "#ff9800",
+  },
+  deleteIconButton: {
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   swipeActionsContainer: {
     flexDirection: "row",
@@ -308,34 +428,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
     fontSize: 12,
-  },
-  cardActionsRow: {
-    flexDirection: "row",
-    marginTop: 12,
-    gap: 10,
-  },
-  cardReadAction: {
-    flex: 1,
-    backgroundColor: colors.infoLight,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  cardDeleteAction: {
-    flex: 1,
-    backgroundColor: colors.dangerLight,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  cardActionText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textPrimary,
   },
 });
 

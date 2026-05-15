@@ -13,12 +13,14 @@ import ViewImageScreen from "../screens/outhers/ViewImageScreen";
 import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import SettingsScreen from "../screens/auth/SettingsScreen";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
-import OrdersScreen from "../screens/auth/OrdersScreen";
-import OrderCheckoutScreen from "../screens/auth/OrderCheckoutScreen";
+import OrdersScreen from "../screens/orders/OrdersScreen";
+import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
+import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
 import HelpSupportScreen from "../screens/auth/HelpSupportScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
 import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
 import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
+import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 
 const Stack = createStackNavigator();
 
@@ -52,12 +54,14 @@ const AccountNavigator = () => (
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Orders" component={OrdersScreen} />
+    <Stack.Screen name="OrderDetails" component={OrderDetailScreen} />
     <Stack.Screen name="OrderCheckout" component={OrderCheckoutScreen} />
     <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
     <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
     <Stack.Screen name="ShippingAddresses" component={ShippingAddressesScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />
     <Stack.Screen name="Listings" component={ListingsScreen} />
+    <Stack.Screen name="MyListings" component={MyListingsScreen} />
     <Stack.Screen name="AllListings" component={ListingsScreen} />
     <Stack.Screen name="ListingAdd" component={ListingAddScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />

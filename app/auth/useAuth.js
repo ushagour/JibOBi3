@@ -6,10 +6,17 @@ import authStorage from "./storage";
 const useAuth = () => {
   const { user, setUser } = useContext(AuthContext);
 
-  const logIn = (authToken) => {
+  const logIn = (authToken, userData) => {
     try {
-      const user = jwtDecode(authToken);
-      authStorage.storeToken(authToken);
+      // Handle both string token and response object formats
+      let token = authToken;
+      if (typeof authToken === 'object' && authToken.token) {
+        token = authToken.token;
+      }
+      
+      // Use provided userData or decode from token
+      const user = userData || jwtDecode(token);
+      authStorage.storeToken(token);
       setUser(user);
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -42,6 +49,15 @@ const useAuth = () => {
 
   const isOwner = (owner) => user?.userId === owner;
 
+  // Support both value and function form for updateUser
+  const updateUser = (updater) => {
+    if (typeof updater === 'function') {
+      setUser((prevUser) => updater(prevUser));
+    } else {
+      setUser(updater);
+    }
+  };
+
   return {
     user,
     logIn,
@@ -51,7 +67,7 @@ const useAuth = () => {
     isOwner,
     isLoggedIn,
     isGuest,
-    updateUser: (user) => setUser(user),
+    updateUser,
   };
 };
 

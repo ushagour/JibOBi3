@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import React, { useEffect } from "react";
+import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -7,6 +7,7 @@ import AccountNavigator from "./AccountNavigator";
 import FeedNavigator from "./FeedNavigator";
 import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import NewListingButton from "./NewListingButton";
+import Avatar from "../components/Avatar";
 import routes from "./routes";
 import navigation from "./rootNavigation";
 import useNotifications from "../hooks/useNotifications";
@@ -17,17 +18,13 @@ const Tab = createBottomTabNavigator();
 
 const AppNavigator = () => {
   const { user } = useAuth();
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const isAuthenticated = Boolean(user?.userId);
   useNotifications(isAuthenticated);
-  const userInitial = user?.name?.trim()?.charAt(0)?.toUpperCase() || "";
 
   useEffect(() => {
-    setAvatarLoadError(false);
+    // Cleanup or side effects if needed
   }, [user?.avatar, user?.userId]);
-
-  const avatarSource = user?.avatar && !avatarLoadError ? { uri: user.avatar } : null;
 
   return (
     <Tab.Navigator
@@ -70,51 +67,28 @@ const AppNavigator = () => {
         name={routes.ACCOUNT}
         component={AccountNavigator}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            isAuthenticated && avatarSource ? (
-              <View style={styles.avatarWrap}>
-                <Image
-                  source={avatarSource}
-                  style={styles.avatar}
-                  onError={() => setAvatarLoadError(true)}
-                />
-              </View>
-            ) : isAuthenticated && userInitial ? (
-              <View style={styles.avatarWrap}>
-                <Text style={styles.avatarInitial}>{userInitial}</Text>
-              </View>
+          tabBarIcon: ({ color }) =>
+            isAuthenticated ? (
+              <Avatar
+                name={user?.name}
+                avatar={user?.avatar}
+                size={32}
+                bgColor={colors.primary}
+                textColor="white"
+                showBorder={true}
+                borderColor={colors.primary}
+                showShadow={true}
+                isVerified={user?.is_verified || false}
+              />
             ) : (
-              <MaterialCommunityIcons name="account" color={color} size={size} />
-            )
-          ),
+              <MaterialCommunityIcons name="account" color={color} size={24} />
+            ),
         }}
       />
     </Tab.Navigator>
   );
 };
 
-const styles = StyleSheet.create({
-  avatarWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#D9D9D9",
-    backgroundColor: "#F2F2F2",
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarInitial: {
-    flex: 1,
-    textAlign: "center",
-    textAlignVertical: "center",
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-});
+const styles = StyleSheet.create({});
 
 export default AppNavigator;

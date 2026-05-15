@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
 import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
-import OrderCheckoutScreen from "../screens/auth/OrderCheckoutScreen";
+import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
 import routes from "./routes";
 
 

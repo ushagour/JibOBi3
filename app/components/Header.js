@@ -8,7 +8,6 @@ function Header() {
 
   return (
     <View style={styles.headerBlock}>
-      <Text style={styles.greetingText}>Good Morning,</Text>
       <Text style={styles.userNameText}>{user?.name || "User"} 👋</Text>
     </View>
   );
@@ -16,8 +15,6 @@ function Header() {
 
 const styles = StyleSheet.create({
   headerBlock: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
     borderBottomColor: colors.lightGray,
   },
   greetingText: {

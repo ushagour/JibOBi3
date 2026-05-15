@@ -49,8 +49,8 @@ const changePasswordValidationSchema = Yup.object().shape({
 function PrivacySecurityScreen() {
   const { user, logOut } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [deletionStep, setDeletionStep] = useState(0); // 0: initial, 1: reason, 2: email confirm
+  const [error, setError] = useState(false);
+  const [deletionStep, setDeletionStep] = useState(0);
   const [deletionReason, setDeletionReason] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [sweetAlert, setSweetAlert] = useState({
@@ -216,7 +216,8 @@ if (response.ok) {
           Manage your password, privacy preferences, and account safety.
         </Text>
 
-        <View style={styles.card}>
+        {/* Password Section */}
+        <View style={[styles.card, styles.passwordCard]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="shield-lock-outline" size={18} color={colors.primary} />
@@ -440,6 +441,9 @@ const styles = StyleSheet.create({
     borderColor: colors.lightGray,
   },
   cardSpacing: {
+    marginTop: 14,
+  },
+  passwordCard: {
     marginTop: 14,
   },
   row: {

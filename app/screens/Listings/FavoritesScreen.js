@@ -7,9 +7,9 @@ import {
   Text,
   TouchableOpacity,
   Image,
+  Pressable,
 } from "react-native";
-import { Swipeable, RectButton } from "react-native-gesture-handler";
-// dayjs removed — not used in compact favorites list
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import Screen from "../../components/Screen";
 import favoritesApi from "../../api/favorites";
@@ -18,7 +18,6 @@ import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
-// compact list; no Product card used here
 
 function FavoritesScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context
@@ -102,43 +101,73 @@ function FavoritesScreen({ navigation }) {
   }
 
   return (
-    <Screen scrollable={false}>
+    <Screen scrollable={false} paddingSize="md">
       <ActivityIndicator visible={loading || isDeletingListing} />
 
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Favorites</Text>
+        <Text style={styles.headerSubtitle}>
+          {favorites.length} {favorites.length === 1 ? "item" : "items"}
+        </Text>
+      </View>
+
+      {/* Empty State */}
       {favorites.length === 0 && !loading ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>You have no favorites.</Text>
+          <MaterialCommunityIcons
+            name="heart-outline"
+            size={64}
+            color={colors.lightGray}
+          />
+          <Text style={styles.emptyTitle}>No Favorites Yet</Text>
+          <Text style={styles.emptyText}>
+            Start adding items to your favorites to see them here.
+          </Text>
         </View>
       ) : (
         <FlatList
           data={favorites}
           keyExtractor={(favorite) => String(favorite.id)}
-          renderItem={({ item }) => {
-            const renderRightActions = () => (
-              <RectButton style={styles.deleteAction} onPress={() => handleRemoveFavorite(item)}>
-                <Text style={styles.deleteActionText}>Remove</Text>
-              </RectButton>
-            );
-
-            return (
-              <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-                <TouchableOpacity
-                  style={styles.row}
-                  onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.favoriteCard}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
+            >
+              {/* Card Image */}
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+                {/* Heart Icon */}
+                <Pressable
+                  style={styles.heartButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleRemoveFavorite(item);
+                  }}
                 >
-                  <Image
-                    source={item.imageUrl ? { uri: item.imageUrl } : require("../../assets/icon.png")}
-                    style={styles.thumb}
-                    resizeMode="cover"
+                  <MaterialCommunityIcons
+                    name="heart"
+                    size={22}
+                    color={colors.danger}
                   />
-                  <View style={styles.rowInfo}>
-                    <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                    <Text style={styles.price}>{item.price ? `$${item.price}` : ""}</Text>
-                  </View>
-                </TouchableOpacity>
-              </Swipeable>
-            );
-          }}
+                </Pressable>
+              </View>
+
+              {/* Card Content */}
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                <Text style={styles.cardPrice}>${item.price}</Text>
+              </View>
+            </Pressable>
+          )}
           refreshing={refreshing}
           onRefresh={async () => {
             setRefreshing(true);
@@ -153,90 +182,93 @@ function FavoritesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingHorizontal: 8,
-    paddingBottom: 14,
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: -20,
+  header: {
     marginBottom: 20,
-    paddingHorizontal: 12,
   },
-  actionButton: {
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-  },
-  editButton: {
-    backgroundColor: colors.infoLight,
-    borderColor: colors.info,
-  },
-  deleteButton: {
-    backgroundColor: colors.dangerLight,
-    borderColor: colors.danger,
-  },
-  actionText: {
-    fontSize: 13,
+  headerTitle: {
+    fontSize: 28,
     fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 4,
   },
-  editText: {
-    color: colors.info,
-  },
-  deleteText: {
-    color: colors.danger,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  thumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-    marginRight: 12,
-    backgroundColor: "#f0f0f0",
-  },
-  rowInfo: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  title: {
+  headerSubtitle: {
     fontSize: 14,
+    color: colors.textSecondary,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  columnWrapper: {
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  favoriteCard: {
+    width: "48%",
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+    height: 160,
+    backgroundColor: colors.lightGray,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  heartButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: 6,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  cardContent: {
+    padding: 12,
+  },
+  cardTitle: {
+    fontSize: 13,
     fontWeight: "600",
-    color: "#111",
+    color: colors.textPrimary,
+    marginBottom: 6,
+    lineHeight: 18,
   },
-  price: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
-  },
-  deleteAction: {
-    backgroundColor: colors.danger,
-    justifyContent: "center",
-    alignItems: "center",
-    width: 90,
-    borderRadius: 6,
-  },
-  deleteActionText: {
-    color: "#fff",
+  cardPrice: {
+    fontSize: 14,
     fontWeight: "700",
-    fontSize: 12,
+    color: colors.primary,
   },
   emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginTop: 16,
+    marginBottom: 8,
   },
   emptyText: {
-    color: "#666",
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
 
