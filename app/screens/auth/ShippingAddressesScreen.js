@@ -5,14 +5,16 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 
 function ShippingAddressesScreen() {
+  const { colors: themeColors, isDark } = useTheme();
   return (
     <Screen style={styles.screen} paddingSize="lg">
       <Text style={styles.title}>Shipping Addresses</Text>
       <Text style={styles.subtitle}>Manage your saved delivery addresses.</Text>
 
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
         <View style={styles.row}>
           <View style={styles.iconWrap}>
             <MaterialCommunityIcons name="map-marker-radius-outline" size={18} color={colors.primary} />

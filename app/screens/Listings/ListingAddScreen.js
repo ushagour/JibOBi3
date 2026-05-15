@@ -18,6 +18,8 @@ import Text from "../../components/Text";
 import Screen from "../../components/Screen";
 import routes from "../../navigation/routes";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
+
 
 import {
   Form,
@@ -53,6 +55,8 @@ function AdditionalDetailsFields() {
 function FraudDetectionResult({ result, onPublish, isLoading }) {
   if (!result) return null;
 
+    const { colors: themeColors } = useTheme();
+  
   const getRiskColor = (score) => {
     if (score >= 70) return "#EF4444"; // BLOCKED - Red
     if (score >= 40) return "#FFA500"; // UNDER REVIEW - Orange
@@ -69,7 +73,7 @@ function FraudDetectionResult({ result, onPublish, isLoading }) {
   const riskColor = getRiskColor(result.fraudScore);
 
   return (
-    <View style={[styles.detectionCard, { borderColor: riskColor }]}>
+    <View style={[styles.detectionCard, { borderColor: riskColor, backgroundColor: themeColors.surface }]}>
       <View style={styles.detectionHeader}>
         <View style={styles.scoreContainer}>
           <View style={[styles.scoreCircle, { borderColor: riskColor }]}>
@@ -187,7 +191,8 @@ const validationSchema = Yup.object().shape({
 });
 
 function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult }) {
-  const { handleSubmit, isSubmitting, errors, touched, values } = useFormikContext();
+  const { handleSubmit, errors, touched, values } = useFormikContext();
+
 
   const handleAnalyzePress = () => {
     console.log("🔘 Analyze button pressed");
@@ -205,7 +210,7 @@ function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult 
       return;
     }
     
-    onAnalyze();
+    handleSubmit();
   };
 
   if (fraudDetectionResult) {
@@ -235,6 +240,7 @@ function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult 
 
 function ListingAddScreen({ navigation }) {
   const { location } = useLocation();
+  const { colors: themeColors } = useTheme();
   const [categories, setCategories] = useState([]);
   const [uploadVisible, setUploadVisible] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -406,7 +412,7 @@ function ListingAddScreen({ navigation }) {
             contentContainerStyle={styles.container}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.headerCard}>
+            <View style={[styles.headerCard, { backgroundColor: themeColors.surface }]}>
               <View style={styles.headerTextWrap}>
                 <Text variant="h3" style={styles.screenTitle}>Post Your Listing</Text>
                 <Text variant="bodySmall" color="textSecondary" style={styles.screenSubtitle}>
@@ -466,7 +472,7 @@ function ListingAddScreen({ navigation }) {
                 onSubmit={(values) => analyzeListing(values)}
                 validationSchema={validationSchema}
               >
-                <View style={styles.sectionCard}>
+                <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                   <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Images</Text>
                   <Text variant="bodySmall" color="textSecondary" style={styles.sectionHint}>
                     Add at least one image. The first image will be your cover.
@@ -474,7 +480,7 @@ function ListingAddScreen({ navigation }) {
                   <FormImagePicker name="images" />
                 </View>
 
-                <View style={styles.sectionCard}>
+                <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                   <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Basic Details</Text>
                   <FormField maxLength={255} name="title" placeholder="Title" />
                   <View style={styles.splitRow}>
@@ -489,7 +495,7 @@ function ListingAddScreen({ navigation }) {
                   </View>
                 </View>
 
-                <View style={styles.sectionCard}>
+                <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                   <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Category</Text>
                   <Picker
                     items={categories}
@@ -501,7 +507,7 @@ function ListingAddScreen({ navigation }) {
                   />
                 </View>
 
-                <View style={styles.sectionCard}>
+                <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                   <Text variant="overline" color="textSecondary" style={styles.sectionLabel}>Description</Text>
                   <FormField
                     maxLength={255}

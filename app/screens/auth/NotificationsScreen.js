@@ -11,6 +11,7 @@ import Screen from "../../components/Screen";
 import AppText from "../../components/Text";
 import colors from "../../config/colors";
 import notificationsApi from "../../api/notifications";
+import useTheme from "../../hooks/useTheme";
 
 import ListItemCard from "../../components/cards/ListItemCard";
 import ListItemSeparator from "../../components/ListItemSeparator";
@@ -24,6 +25,7 @@ function NotificationsScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { colors: themeColors, isDark } = useTheme();
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -185,6 +187,7 @@ function NotificationsScreen({ navigation }) {
               }}
               style={[
                 styles.notificationCard,
+                { backgroundColor: themeColors.surface },
                 item.is_read ? styles.readCard : styles.unreadCard,
               ]}
             >
@@ -226,7 +229,11 @@ function NotificationsScreen({ navigation }) {
                     />
                     <AppText style={styles.metaBadgeText}>{meta.label}</AppText>
                   </View>
-                  <AppText style={[styles.statusBadge, item.is_read ? styles.readBadge : styles.unreadBadge]}>
+                  <AppText style={[
+                    styles.statusBadge,
+                    item.is_read ? styles.readBadge : styles.unreadBadge,
+                    !item.is_read && { backgroundColor: themeColors.warningLight }
+                  ]}>
                     {item.is_read ? "Read" : "Unread"}
                   </AppText>
                 </View>

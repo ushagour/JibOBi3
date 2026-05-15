@@ -8,6 +8,7 @@ import Icon from "../../components/Icon";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
 import useAuth from "../../auth/useAuth";
+import useTheme from "../../hooks/useTheme";
 import AppText from "../../components/Text";
 import { ProfileCard } from '../../components/cards/ProfileCard';
 import Avatar from '../../components/Avatar';
@@ -18,6 +19,7 @@ import Avatar from '../../components/Avatar';
 
 function AccountScreen({ navigation }) {
   const { user, logOut, isLoggedIn, isGuest } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const loggedIn = isLoggedIn();
   const guestMode = isGuest();
 
@@ -102,7 +104,7 @@ const settingsMenuItems = [
 
 
   return (
-    <Screen style={styles.screen} paddingSize="lg">
+    <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} paddingSize="lg">
       <View style={styles.headerRow}>
         <AppText variant="h2" color="textPrimary" style={styles.screenTitle}>
           {guestMode ? "Guest Mode" : "Account"}
@@ -110,8 +112,8 @@ const settingsMenuItems = [
 
       </View>
       {guestMode ? (
-        <View style={styles.guestBanner}>
-          <AppText style={styles.guestBannerText}>
+        <View style={[styles.guestBanner, { backgroundColor: themeColors.warningLight, borderColor: themeColors.warning }]}>
+          <AppText style={[styles.guestBannerText, { color: themeColors.textPrimary }]}>
             You are browsing as guest. Login or register to use favorites, notifications, and posting.
           </AppText>
         </View>
@@ -129,7 +131,7 @@ const settingsMenuItems = [
         <ProfileCard 
   // name={user?.name || ""} 
 name={user.name}
-  rating={5} 
+is_quick={true}
   avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"} 
   isVerified={user?.is_verified || false}
           onPress={() => {
@@ -140,7 +142,7 @@ name={user.name}
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
             Quick Actions
           </AppText>
-          <View style={styles.sectionCard}>
+          <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             {menuItems.map((item, index) => (
               <View key={item.title}>
                 <ListItem
@@ -171,7 +173,7 @@ name={user.name}
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
             Account Actions
           </AppText>
-          <View style={styles.sectionCard}>
+          <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             {settingsMenuItems.map((item, index) => (
               <View key={item.title}>
                 <ListItem
@@ -191,7 +193,7 @@ name={user.name}
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
             Guest Actions
           </AppText>
-          <View style={styles.sectionCard}>
+          <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             <ListItem
               title="Exit Guest Mode"
               IconComponent={<Icon name="logout" backgroundColor="#ffe66d" />}
@@ -227,7 +229,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   sectionCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     overflow: "hidden",
     shadowColor: "#000",
@@ -275,6 +277,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: colors.danger,
+  },
+  guestBanner: {
+    backgroundColor: colors.warningLight,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.warning,
+  },
+  guestBannerText: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "500",
   },
 });
 

@@ -21,6 +21,7 @@ import ActivityIndicator from "../../components/ActivityIndicator";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import AwesomeAlert from "react-native-awesome-alerts";
 
 import usersApi from "../../api/users";
@@ -38,6 +39,7 @@ function UserScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { user: authUser, updateUser, logOut } = useAuth(); // Access user and setUser from the auth context
+  const { colors: themeColors, isDark } = useTheme();
   const [avatar, setAvatar] = useState(authUser.avatar); // State to handle avatar upload
   const [progress, setProgress] = useState(0);
   const [uploadVisible, setUploadVisible] = useState(false);
@@ -259,7 +261,7 @@ function UserScreen({ navigation }) {
             <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
               Profile Details
             </AppText>
-            <View style={styles.sectionCard}>
+            <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             <Form
               initialValues={{
                 name: user?.name || authUser?.name || "",
@@ -332,7 +334,7 @@ function UserScreen({ navigation }) {
             <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
               Account Information
             </AppText>
-            <View style={styles.sectionCard}>
+            <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
               {/* Role */}
               <View style={styles.infoRow}>
                 <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>

@@ -15,12 +15,14 @@ import Screen from "../../components/Screen";
 import favoritesApi from "../../api/favorites";
 import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
+import useTheme from "../../hooks/useTheme";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
 
 function FavoritesScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context
+  const { colors: themeColors, isDark } = useTheme();
   const [favorites, setFavorites] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -101,27 +103,27 @@ function FavoritesScreen({ navigation }) {
   }
 
   return (
-    <Screen scrollable={false} paddingSize="md">
+    <Screen scrollable={false} paddingSize="md" backgroundColor={themeColors.background}>
       <ActivityIndicator visible={loading || isDeletingListing} />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Favorites</Text>
-        <Text style={styles.headerSubtitle}>
+        <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>My Favorites</Text>
+        <Text style={[styles.headerSubtitle, { color: themeColors.textSecondary }]}>
           {favorites.length} {favorites.length === 1 ? "item" : "items"}
         </Text>
       </View>
 
       {/* Empty State */}
       {favorites.length === 0 && !loading ? (
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { backgroundColor: themeColors.surface, borderColor: themeColors.lightGray }]}>
           <MaterialCommunityIcons
             name="heart-outline"
             size={64}
-            color={colors.lightGray}
+            color={themeColors.lightGray}
           />
-          <Text style={styles.emptyTitle}>No Favorites Yet</Text>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>No Favorites Yet</Text>
+          <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
             Start adding items to your favorites to see them here.
           </Text>
         </View>
@@ -133,7 +135,7 @@ function FavoritesScreen({ navigation }) {
           columnWrapperStyle={styles.columnWrapper}
           renderItem={({ item }) => (
             <Pressable
-              style={styles.favoriteCard}
+              style={[styles.favoriteCard, { backgroundColor: themeColors.surface }]}
               onPress={() => navigation.navigate(routes.LISTING_DETAILS, { listing: item })}
             >
               {/* Card Image */}
@@ -145,7 +147,7 @@ function FavoritesScreen({ navigation }) {
                 />
                 {/* Heart Icon */}
                 <Pressable
-                  style={styles.heartButton}
+                  style={[styles.heartButton, { backgroundColor: themeColors.surface }]}
                   onPress={(e) => {
                     e.stopPropagation();
                     handleRemoveFavorite(item);
@@ -161,7 +163,7 @@ function FavoritesScreen({ navigation }) {
 
               {/* Card Content */}
               <View style={styles.cardContent}>
-                <Text style={styles.cardTitle} numberOfLines={2}>
+                <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]} numberOfLines={2}>
                   {item.title}
                 </Text>
                 <Text style={styles.cardPrice}>${item.price}</Text>
@@ -256,6 +258,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   emptyTitle: {
     fontSize: 18,

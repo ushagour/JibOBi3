@@ -10,7 +10,7 @@ const COLORS = {
 };
 
 // --- Profile Card Component ---
-export const ProfileCard = ({ name, rating, avatarUri, onPress, isVerified = false }) => {
+export const ProfileCard = ({ name, quickResponder, avatarUri, onPress, isVerified = false }) => {
   const [imageError, setImageError] = useState(false);
 
   const showImage = !!avatarUri && !imageError;
@@ -56,12 +56,31 @@ export const ProfileCard = ({ name, rating, avatarUri, onPress, isVerified = fal
         )}
       </View>
       {onPress ? <Text style={styles.editHint}>Tap to edit profile</Text> : null}
-      <View style={styles.ratingContainer}>
-        {[...Array(5)].map((_, i) => (
-          <FontAwesome key={i} name={i < rating ? "star" : "star-o"} size={14} color={COLORS.gold} />
-        ))}
-      </View>
-    </TouchableOpacity>
+
+{ quickResponder && ( 
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#EEF7FF",
+            padding: 12,
+            borderRadius: 14
+          }}>
+            <MaterialCommunityIcons
+                name="flash"
+                size={20}
+                color="#007BFF"
+            />
+
+            <Text style={{
+                marginLeft: 10,
+                color: "#007BFF",
+                flex: 1
+            }}>
+                {quickResponder}
+            </Text>
+          </View>
+          )}
+              </TouchableOpacity>
   );
 };
 

@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import AwesomeAlert from "react-native-awesome-alerts";
 
 function SettingRow({ icon, title, subTitle }) {
@@ -22,6 +23,7 @@ function SettingRow({ icon, title, subTitle }) {
 }
 
 function SettingsScreen() {
+  const { colors: themeColors, isDark } = useTheme();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({
     pushEnabled: true,
@@ -93,7 +95,7 @@ function SettingsScreen() {
         <Text style={styles.subtitle}>Manage your preferences and app behavior.</Text>
 
         {/* Dark Mode Toggle */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="brightness-4" size={18} color={colors.primary} />
@@ -112,7 +114,7 @@ function SettingsScreen() {
         </View>
 
         {/* Notification Preferences */}
-        <View style={[styles.card, styles.cardSpacing]}>
+        <View style={[styles.card, styles.cardSpacing, { backgroundColor: themeColors.surface }]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="bell-outline" size={18} color={colors.primary} />

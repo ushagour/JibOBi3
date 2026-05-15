@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import AppButton from "../../components/Button";
 import {
   ErrorMessage,
@@ -48,6 +49,7 @@ const changePasswordValidationSchema = Yup.object().shape({
 
 function PrivacySecurityScreen() {
   const { user, logOut } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [deletionStep, setDeletionStep] = useState(0);
@@ -217,7 +219,7 @@ if (response.ok) {
         </Text>
 
         {/* Password Section */}
-        <View style={[styles.card, styles.passwordCard]}>
+        <View style={[styles.card, styles.passwordCard, { backgroundColor: themeColors.surface }]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="shield-lock-outline" size={18} color={colors.primary} />
@@ -278,7 +280,7 @@ if (response.ok) {
         </View>
 
         <View style={styles.cardSpacing}>
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             <View style={styles.row}>
               <View style={styles.iconWrapDanger}>
                 <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.danger} />

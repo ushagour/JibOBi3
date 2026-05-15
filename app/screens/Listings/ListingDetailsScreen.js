@@ -14,6 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import Text from "../../components/Text";
 import routes from "../../navigation/routes";
 import ImageSlider from "../../components/lists/ImageSlider";
@@ -37,6 +38,7 @@ function ListingDetailsScreen({ route, navigation }) {
   const routeParams = route.params;
   const id = routeParams?.listing?.id ?? routeParams?.id ?? routeParams;
   const { user, isOwner } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const { getLocationName } = useLocation();
   const isAuthenticated = Boolean(user?.userId);
 
@@ -613,7 +615,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     <View style={styles.quickMessageSection}>
                       <Text style={styles.quickMessageLabel}>Send a quick message</Text>
                       <TextInput
-                        style={styles.quickMessageInput}
+                        style={[styles.quickMessageInput, { backgroundColor: themeColors.surface }]}
                         placeholder="Ask the seller anything about this listing..."
                         placeholderTextColor={colors.medium}
                         value={quickMessage}

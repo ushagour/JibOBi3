@@ -5,6 +5,7 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import AppButton from "../../components/Button";
 
 const FAQs = [
@@ -44,6 +45,7 @@ const SUPPORT_EMAIL = "support@jibobi.com";
 const SUPPORT_PHONE = "+1234567890";
 
 function HelpSupportScreen() {
+  const { colors: themeColors, isDark } = useTheme();
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [contactModalVisible, setContactModalVisible] = useState(false);
 
@@ -114,11 +116,11 @@ function HelpSupportScreen() {
             <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
           </View>
 
-          <View style={styles.faqContainer}>
+          <View style={[styles.faqContainer, { backgroundColor: themeColors.surface }]}>
             {FAQs.map((faq, index) => (
               <View key={faq.id}>
                 <TouchableOpacity
-                  style={[styles.faqItem, expandedFAQ === faq.id && styles.faqItemExpanded]}
+                  style={[styles.faqItem, expandedFAQ === faq.id && styles.faqItemExpanded, { backgroundColor: themeColors.surface }]}
                   onPress={() => toggleFAQ(faq.id)}
                 >
                   <View style={styles.faqQuestion}>
@@ -152,7 +154,7 @@ function HelpSupportScreen() {
             <Text style={styles.sectionTitle}>Contact Support</Text>
           </View>
 
-          <View style={styles.contactCard}>
+          <View style={[styles.contactCard, { backgroundColor: themeColors.surface }]}>
             <Text style={styles.contactDescription}>
               Have a question we didn't answer? Our support team is ready to help!
             </Text>
@@ -187,25 +189,25 @@ function HelpSupportScreen() {
           </View>
 
           <View style={styles.tipsContainer}>
-            <View style={styles.tip}>
+            <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
               <Text style={styles.tipText}>Complete your profile to increase trust with buyers</Text>
             </View>
-            <View style={styles.tip}>
+            <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
               <Text style={styles.tipText}>Upload clear photos for better listing visibility</Text>
             </View>
-            <View style={styles.tip}>
+            <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
               <Text style={styles.tipText}>Respond quickly to buyer inquiries</Text>
             </View>
-            <View style={styles.tip}>
+            <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>

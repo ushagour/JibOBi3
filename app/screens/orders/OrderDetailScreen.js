@@ -18,12 +18,14 @@ import AppButton from "../../components/Button";
 import Avatar from "../../components/Avatar";
 import AddReviewForm from "../../components/AddReviewForm";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import ordersApi from "../../api/orders";
 import useAuth from "../../auth/useAuth";
 
 const OrderDetailScreen = ({ route, navigation }) => {
   const { order: initialOrder } = route.params || {};
   const { user } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const [order, setOrder] = useState(initialOrder);
   const [loading, setLoading] = useState(false);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
@@ -117,7 +119,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
         {/* Buyer Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Buyer Information</Text>
-          <View style={styles.infoCard}>
+          <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.userRow}>
               <Avatar
                 name={buyer?.name}
@@ -136,7 +138,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
         {/* Item Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Item Details</Text>
-          <View style={styles.itemCard}>
+          <View style={[styles.itemCard, { backgroundColor: themeColors.surface }]}>
             {imageUrl ? (
               <View
                 style={{
@@ -197,7 +199,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
         {/* Shipping Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Shipping Information</Text>
-          <View style={styles.infoCard}>
+          <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.infoRow}>
               <MaterialCommunityIcons
                 name="map-marker"
@@ -243,7 +245,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
         {/* Payment Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Details</Text>
-          <View style={styles.priceCard}>
+          <View style={[styles.priceCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Unit Price</Text>
               <Text style={styles.priceValue}>
@@ -320,7 +322,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={styles.reviewModalCard}>
+          <View style={[styles.reviewModalCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Leave a Review</Text>
               <TouchableOpacity onPress={closeReviewModal}>

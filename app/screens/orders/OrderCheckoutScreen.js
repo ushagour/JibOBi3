@@ -8,6 +8,7 @@ import Text from "../../components/Text";
 import AppTextInput from "../../components/TextInput";
 import AppButton from "../../components/Button";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import ordersApi from "../../api/orders";
 import routes from "../../navigation/routes";
 import useAuth from "../../auth/useAuth";
@@ -20,6 +21,7 @@ function parsePrice(value) {
 
 function OrderCheckoutScreen({ route, navigation }) {
   const { user } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const listing = route?.params?.listing;
   const location = listing?.location;
 
@@ -125,7 +127,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         </MapView>
        )} 
 
-      <View style={styles.summaryCard}>
+      <View style={[styles.summaryCard, { backgroundColor: themeColors.surface }]}>
         <Text style={styles.listingTitle} numberOfLines={2}>
           {listing?.title || "Listing"}
         </Text>
@@ -157,7 +159,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         </View>
       </View>
 
-      <View style={styles.userInfoCard}>
+      <View style={[styles.userInfoCard, { backgroundColor: themeColors.surface }]}>
         <Text style={styles.sectionLabel}>Your Information</Text>
         <View style={styles.userInfoRow}>
           <Text style={styles.userInfoLabel}>Name</Text>

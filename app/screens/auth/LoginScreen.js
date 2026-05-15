@@ -10,7 +10,8 @@ import {
   SubmitButton,
 } from "../../components/forms";
 import authApi from "../../api/auth";
-import  useAuth  from '../../auth/useAuth';
+import useAuth from '../../auth/useAuth';
+import useTheme from "../../hooks/useTheme";
 
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
@@ -23,6 +24,7 @@ const validationSchema = Yup.object().shape({
 function LoginScreen({ navigation }) {
 
   const auth = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
 
   const [loginFailed, setLoginFailed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,8 +51,8 @@ function LoginScreen({ navigation }) {
     <>
       <ActivityIndicator visible={loading} />
       <Screen style={styles.container}>
-        <View style={styles.logoContainer}>
-          <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
+        <View style={[styles.logoContainer, { backgroundColor: themeColors.surface }]}>
+          <Image style={[styles.logo, { backgroundColor: themeColors.lightGray }]} source={require("../../assets/logo-red.png")} />
         </View>
 
         <Form
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 60,
     marginBottom: 30,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.white,
     borderRadius: 30,
     padding: 20,
     shadowColor: "#000",
@@ -139,7 +141,7 @@ const styles = StyleSheet.create({
     height: 100,
     alignSelf: "center",
     borderRadius: 20,
-    backgroundColor: "#fff5f5",
+    backgroundColor: colors.lightGray,
   },
   forgotPassword: {
     color: colors.black,

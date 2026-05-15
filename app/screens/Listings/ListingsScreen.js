@@ -25,6 +25,7 @@ import useAuth from "../../auth/useAuth";
 import { Alert } from "react-native";
 import useLocation from "../../hooks/useLocation";
 import { useLocale } from "@react-navigation/native";
+import useTheme from "../../hooks/useTheme";
 
 
 const CATEGORY_FALLBACK_ICONS = {
@@ -65,6 +66,7 @@ const isAvailableStatus = (status) => {
 
 
 function ListingsScreen({ navigation, route }) {
+  const { colors: themeColors } = useTheme();
   const { user, isLoggedIn } = useAuth();
   const { location,getLocationName } = useLocation();
   const { city, country } = getLocationName();
@@ -307,7 +309,7 @@ function ListingsScreen({ navigation, route }) {
 
 
   const renderListEmpty = () => (
-    <View style={styles.emptyContainer}>
+    <View style={[styles.emptyContainer, { backgroundColor: themeColors.surface }]}>
       <MaterialCommunityIcons
         name="package-off"
         size={48}
