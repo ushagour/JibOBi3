@@ -254,13 +254,9 @@ function UserScreen({ navigation }) {
               onDone={() => setUploadVisible(false)}
             />
 
-            <AppText variant="h2" color="textPrimary" style={styles.screenTitle}>
-              Edit Profile
-            </AppText>
+           
 
-            <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-              Profile Details
-            </AppText>
+    
             <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             <Form
               initialValues={{
@@ -268,7 +264,7 @@ function UserScreen({ navigation }) {
                 email: user?.email || authUser?.email || "",
                 phone: user?.phone || "",
                 address: user?.address || "",
-                avatar: user?.avatar || authUser?.avatar || null,
+                avatar: user?.avatar || authUser?.avatar 
               }}
               key={`profile-${user?.id || authUser?.userId || "user"}-${user?.email || authUser?.email || ""}`}
               onSubmit={handleSubmit}

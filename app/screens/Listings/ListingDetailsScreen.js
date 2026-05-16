@@ -39,60 +39,16 @@ import { FontAwesome } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get("window");
 
-// Premium Color Palette
-const palette = {
-  primary: "#6366F1",
-  primaryDark: "#4F46E5",
-  primaryLight: "#818CF8",
-  secondary: "#10B981",
-  accent: "#F59E0B",
-  background: "#F8FAFC",
-  surface: "#FFFFFF",
-  textPrimary: "#1E293B",
-  textSecondary: "#64748B",
-  textMuted: "#94A3B8",
-  border: "#E2E8F0",
-  error: "#EF4444",
-  success: "#10B981",
-  warning: "#F59E0B",
-  info: "#3B82F6",
-  shadow: "#000000",
-  gradientStart: "#6366F1",
-  gradientEnd: "#8B5CF6",
-};
-
-// Animated Header Component
-const AnimatedHeader = ({ scrollY, title, onBack, onShare }) => {
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 150, 200],
-    outputRange: [0, 0.5, 1],
-    extrapolate: "clamp",
-  });
-
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 150],
-    outputRange: [-100, 0],
-    extrapolate: "clamp",
-  });
-
-  const titleOpacity = scrollY.interpolate({
-    inputRange: [150, 200],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-
+// Static Header Component
+const AnimatedHeader = ({ title, onBack, onShare }) => {
   return (
     <Animated.View
       style={[
         styles.animatedHeader,
-        {
-          opacity: headerOpacity,
-          transform: [{ translateY: headerTranslateY }],
-        },
       ]}
     >
       <LinearGradient
-        colors={[palette.gradientStart, palette.gradientEnd]}
+        colors={[colors.primaryDark, colors.primaryLight]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.headerGradient}
@@ -102,9 +58,9 @@ const AnimatedHeader = ({ scrollY, title, onBack, onShare }) => {
             <TouchableOpacity onPress={onBack} style={styles.headerButton}>
               <Ionicons name="arrow-back" size={24} color="#FFF" />
             </TouchableOpacity>
-            <Animated.Text style={[styles.headerTitle, { opacity: titleOpacity }]} numberOfLines={1}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
               {title}
-            </Animated.Text>
+            </Text>
             <TouchableOpacity onPress={onShare} style={styles.headerButton}>
               <Feather name="share-2" size={22} color="#FFF" />
             </TouchableOpacity>
@@ -164,7 +120,7 @@ const SellerCard = ({ seller, onContact }) => {
         <View style={styles.sellerHeader}>
           <View style={styles.sellerAvatar}>
             <LinearGradient
-              colors={[palette.gradientStart, palette.gradientEnd]}
+              colors={[colors.primaryDark, colors.primaryLight]}
               style={styles.avatarGradient}
             >
               <Text style={styles.avatarText}>
@@ -175,13 +131,13 @@ const SellerCard = ({ seller, onContact }) => {
           <View style={styles.sellerInfo}>
             <Text style={styles.sellerName}>{seller?.name || "Unknown Seller"}</Text>
             <View style={styles.sellerRating}>
-              <MaterialCommunityIcons name="shield-check" size={14} color={palette.secondary} />
+              <MaterialCommunityIcons name="shield-check" size={14} color={colors.secondary} />
               <Text style={styles.sellerBadge}>Verified Member</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.contactButton} onPress={onContact}>
             <LinearGradient
-              colors={[palette.gradientStart, palette.gradientEnd]}
+              colors={[colors.primaryDark, colors.primaryLight]}
               style={styles.contactButtonGradient}
             >
               <MaterialCommunityIcons name="chat-processing" size={20} color="#FFF" />
@@ -212,7 +168,7 @@ const SellerCard = ({ seller, onContact }) => {
           <MaterialCommunityIcons
             name={isExpanded ? "chevron-up" : "chevron-down"}
             size={20}
-            color={palette.textSecondary}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
@@ -228,7 +184,7 @@ const ActionButtons = ({ onOrder, onContact, isOwner, isAuthenticated, isSold })
         {!isOwner && isAuthenticated && !isSold && (
           <TouchableOpacity style={styles.orderButton} onPress={onOrder}>
             <LinearGradient
-              colors={[palette.gradientStart, palette.gradientEnd]}
+              colors={[colors.primaryDark, colors.primaryLight]}
               style={styles.orderButtonGradient}
             >
               <MaterialCommunityIcons name="shopping-cart" size={22} color="#FFF" />
@@ -240,7 +196,7 @@ const ActionButtons = ({ onOrder, onContact, isOwner, isAuthenticated, isSold })
         {!isOwner && isAuthenticated && (
           <TouchableOpacity style={styles.messageButton} onPress={onContact}>
             <View style={styles.messageButtonContent}>
-              <MaterialCommunityIcons name="chat-outline" size={22} color={palette.primary} />
+              <MaterialCommunityIcons name="chat-outline" size={22} color={colors.primary} />
               <Text style={styles.messageButtonText}>Message Seller</Text>
             </View>
           </TouchableOpacity>
@@ -248,7 +204,7 @@ const ActionButtons = ({ onOrder, onContact, isOwner, isAuthenticated, isSold })
         
         {isOwner && (
           <TouchableOpacity style={styles.editButton} onPress={onOrder}>
-            <MaterialCommunityIcons name="pencil" size={22} color={palette.primary} />
+            <MaterialCommunityIcons name="pencil" size={22} color={colors.primary} />
             <Text style={styles.editButtonText}>Edit Listing</Text>
           </TouchableOpacity>
         )}
@@ -265,8 +221,6 @@ function ListingDetailsScreen({ route, navigation }) {
   const { colors: themeColors, isDark } = useTheme();
   const { getLocationName } = useLocation();
   const isAuthenticated = Boolean(user?.userId);
-  const scrollY = useRef(new Animated.Value(0)).current;
-
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -274,19 +228,9 @@ function ListingDetailsScreen({ route, navigation }) {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
   const [locationName, setLocationName] = useState("Unknown location");
-  const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [contactModalVisible, setContactModalVisible] = useState(false);
   const [quickMessage, setQuickMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-
-  const reportReasons = [
-    { id: "spam", label: "Spam or misleading", icon: "spam" },
-    { id: "scam", label: "Suspicious or scam listing", icon: "security" },
-    { id: "prohibited", label: "Prohibited item or service", icon: "block" },
-    { id: "duplicate", label: "Duplicate or irrelevant listing", icon: "copy" },
-    { id: "other", label: "Other issue", icon: "help" },
-  ];
 
   const isSoldStatus = (status) => {
     const normalizedStatus = String(status || "").toLowerCase();
@@ -452,11 +396,6 @@ function ListingDetailsScreen({ route, navigation }) {
     }
   };
 
-  const openReportModal = () => {
-    setSelectedReportReason("spam");
-    setReportModalVisible(true);
-  };
-
   const openContactModal = () => {
     setContactModalVisible(true);
   };
@@ -575,15 +514,6 @@ function ListingDetailsScreen({ route, navigation }) {
     }
   };
 
-  const submitReport = () => {
-    const reason = reportReasons.find((item) => item.id === selectedReportReason);
-    setReportModalVisible(false);
-    Alert.alert(
-      "Report submitted",
-      `Thanks. We received your report for: ${reason?.label || "this listing"}.`
-    );
-  };
-
   if (loading || isDeletingReview) {
     return <ActivityIndicator visible={loading || isDeletingReview} />;
   }
@@ -603,8 +533,8 @@ function ListingDetailsScreen({ route, navigation }) {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: palette.background }]}>
-      <AnimatedHeader scrollY={scrollY} title={listing?.title} onBack={() => navigation.goBack()} onShare={handleShare} />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <AnimatedHeader title={listing?.title} onBack={() => navigation.goBack()} onShare={handleShare} />
       
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -614,11 +544,6 @@ function ListingDetailsScreen({ route, navigation }) {
             keyExtractor={() => "listing-details"}
             contentContainerStyle={styles.contentContainer}
             keyboardShouldPersistTaps="handled"
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: false }
-            )}
-            scrollEventThrottle={16}
             ListHeaderComponent={
               <>
                 {/* Image Section */}
@@ -626,7 +551,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   <ImageSlider images={listing.images} style={styles.image} />
                   <View style={styles.statusBadge}>
                     <LinearGradient
-                      colors={isSold ? [palette.error, palette.error] : [palette.success, palette.success]}
+                      colors={isSold ? [colors.error, colors.error] : [colors.success, colors.success]}
                       style={styles.statusGradient}
                     >
                       <Text style={styles.statusText}>{displayStatus}</Text>
@@ -648,7 +573,7 @@ function ListingDetailsScreen({ route, navigation }) {
                               key={i} 
                               name={i < listing.rating ? "star" : "star-o"} 
                               size={12} 
-                              color={palette.warning} 
+                              color={colors.warning} 
                             />
                           ))}
                           <Text style={styles.ratingText}> ({listing.reviewCount || 0})</Text>
@@ -668,7 +593,7 @@ function ListingDetailsScreen({ route, navigation }) {
                       <Text style={styles.price}>{listing.price} MAD</Text>
                       {!isSold && (
                         <View style={styles.availableBadge}>
-                          <MaterialCommunityIcons name="check-circle" size={14} color={palette.success} />
+                          <MaterialCommunityIcons name="check-circle" size={14} color={colors.success} />
                           <Text style={styles.availableText}>In Stock</Text>
                         </View>
                       )}
@@ -682,7 +607,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   <AnimatedInfoCard delay={250}>
                     <View style={styles.sectionCard}>
                       <View style={styles.sectionHeader}>
-                        <MaterialIcons name="notes" size={20} color={palette.primary} />
+                        <MaterialIcons name="notes" size={20} color={colors.primary} />
                         <Text style={styles.sectionTitle}>Description</Text>
                       </View>
                       <Text style={styles.description}>{listing.description || "No description provided."}</Text>
@@ -694,7 +619,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     <AnimatedInfoCard delay={300}>
                       <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
-                          <MaterialCommunityIcons name="car-outline" size={20} color={palette.primary} />
+                          <MaterialCommunityIcons name="car-outline" size={20} color={colors.primary} />
                           <Text style={styles.sectionTitle}>Vehicle Details</Text>
                         </View>
                         <View style={styles.carDetailsGrid}>
@@ -719,7 +644,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   <AnimatedInfoCard delay={350}>
                     <View style={styles.sectionCard}>
                       <View style={styles.sectionHeader}>
-                        <MaterialIcons name="location-on" size={20} color={palette.primary} />
+                        <MaterialIcons name="location-on" size={20} color={colors.primary} />
                         <Text style={styles.sectionTitle}>Location</Text>
                       </View>
                       <Text style={styles.locationText}>{locationName}</Text>
@@ -734,16 +659,6 @@ function ListingDetailsScreen({ route, navigation }) {
                     isAuthenticated={isAuthenticated}
                     isSold={isSold}
                   />
-
-                  {/* Report Button */}
-                  {isAuthenticated && !isOwner(listing?.owner?.id) && (
-                    <AnimatedInfoCard delay={400}>
-                      <TouchableOpacity style={styles.reportButton} onPress={openReportModal}>
-                        <MaterialCommunityIcons name="flag-outline" size={18} color={palette.textSecondary} />
-                        <Text style={styles.reportButtonText}>Report this listing</Text>
-                      </TouchableOpacity>
-                    </AnimatedInfoCard>
-                  )}
 
                   {/* Reviews Section */}
                   <AnimatedInfoCard delay={450}>
@@ -769,7 +684,7 @@ function ListingDetailsScreen({ route, navigation }) {
           </TouchableWithoutFeedback>
           
           <Animated.View style={styles.contactModalCard}>
-            <LinearGradient colors={[palette.gradientStart, palette.gradientEnd]} style={styles.modalHeader}>
+            <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Contact Seller</Text>
               <TouchableOpacity onPress={closeContactModal} style={styles.modalCloseButton}>
                 <Ionicons name="close" size={24} color="#FFF" />
@@ -779,23 +694,23 @@ function ListingDetailsScreen({ route, navigation }) {
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.contactMethods}>
                 <TouchableOpacity style={styles.contactMethod} onPress={handleCallSeller}>
-                  <View style={[styles.contactIcon, { backgroundColor: `${palette.info}15` }]}>
-                    <MaterialIcons name="call" size={24} color={palette.info} />
+                  <View style={[styles.contactIcon, { backgroundColor: `${colors.info}15` }]}>
+                    <MaterialIcons name="call" size={24} color={colors.info} />
                   </View>
                   <Text style={styles.contactMethodLabel}>Call</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.contactMethod} onPress={handleEmailSeller}>
-                  <View style={[styles.contactIcon, { backgroundColor: `${palette.primary}15` }]}>
-                    <MaterialIcons name="email" size={24} color={palette.primary} />
+                  <View style={[styles.contactIcon, { backgroundColor: `${colors.primary}15` }]}>
+                    <MaterialIcons name="email" size={24} color={colors.primary} />
                   </View>
                   <Text style={styles.contactMethodLabel}>Email</Text>
                 </TouchableOpacity>
                 
                 {!!listing?.owner?.phone && (
                   <TouchableOpacity style={styles.contactMethod} onPress={openWhatsApp}>
-                    <View style={[styles.contactIcon, { backgroundColor: `${palette.success}15` }]}>
-                      <MaterialCommunityIcons name="whatsapp" size={24} color={palette.success} />
+                    <View style={[styles.contactIcon, { backgroundColor: `${colors.success}15` }]}>
+                      <MaterialCommunityIcons name="whatsapp" size={24} color={colors.success} />
                     </View>
                     <Text style={styles.contactMethodLabel}>WhatsApp</Text>
                   </TouchableOpacity>
@@ -805,9 +720,9 @@ function ListingDetailsScreen({ route, navigation }) {
               <View style={styles.quickMessageSection}>
                 <Text style={styles.quickMessageLabel}>Send a quick message</Text>
                 <TextInput
-                  style={[styles.quickMessageInput, { backgroundColor: palette.background, borderColor: palette.border }]}
+                  style={[styles.quickMessageInput, { backgroundColor: colors.background, borderColor: colors.border }]}
                   placeholder="Ask the seller anything about this listing..."
-                  placeholderTextColor={palette.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={quickMessage}
                   onChangeText={setQuickMessage}
                   multiline
@@ -821,7 +736,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   disabled={!quickMessage.trim() || sendingMessage}
                 >
                   <LinearGradient
-                    colors={[palette.gradientStart, palette.gradientEnd]}
+                    colors={[colors.primaryDark, colors.primaryLight]}
                     style={styles.sendButtonGradient}
                   >
                     <Text style={styles.sendButtonText}>
@@ -835,67 +750,7 @@ function ListingDetailsScreen({ route, navigation }) {
         </View>
       </Modal>
 
-      {/* Report Modal */}
-      <Modal visible={reportModalVisible} transparent animationType="fade" onRequestClose={() => setReportModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={() => setReportModalVisible(false)}>
-            <View style={styles.modalBackdrop} />
-          </TouchableWithoutFeedback>
-          
-          <Animated.View style={styles.reportModalCard}>
-            <LinearGradient colors={[palette.error, palette.error]} style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Listing</Text>
-              <TouchableOpacity onPress={() => setReportModalVisible(false)} style={styles.modalCloseButton}>
-                <Ionicons name="close" size={24} color="#FFF" />
-              </TouchableOpacity>
-            </LinearGradient>
-            
-            <Text style={styles.modalSubtitle}>Choose the reason that best matches the issue.</Text>
-            
-            <FlatList
-              data={reportReasons}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.reportReasonList}
-              renderItem={({ item }) => {
-                const selected = item.id === selectedReportReason;
-                return (
-                  <TouchableOpacity
-                    style={[styles.reportReasonItem, selected && styles.reportReasonItemSelected]}
-                    onPress={() => setSelectedReportReason(item.id)}
-                  >
-                    <MaterialCommunityIcons 
-                      name={item.icon} 
-                      size={22} 
-                      color={selected ? palette.error : palette.textSecondary} 
-                    />
-                    <View style={styles.reportReasonTextWrap}>
-                      <Text style={[styles.reportReasonLabel, selected && { color: palette.error }]}>
-                        {item.label}
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name={selected ? "radio-button-checked" : "radio-button-unchecked"}
-                      size={22}
-                      color={selected ? palette.error : palette.textMuted}
-                    />
-                  </TouchableOpacity>
-                );
-              }}
-            />
-            
-            <View style={styles.reportModalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setReportModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.submitButton} onPress={submitReport}>
-                <LinearGradient colors={[palette.error, palette.error]} style={styles.submitButtonGradient}>
-                  <Text style={styles.submitButtonText}>Submit Report</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
+
     </View>
   );
 }
@@ -903,7 +758,7 @@ function ListingDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.background,
+    backgroundColor: colors.background,
   },
   animatedHeader: {
     position: "absolute",
@@ -946,6 +801,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
+    paddingTop: Platform.OS === "ios" ? 104 : 92,
   },
   imageContainer: {
     position: "relative",
@@ -985,13 +841,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryBadge: {
-    backgroundColor: `${palette.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
   categoryText: {
-    color: palette.primary,
+    color: colors.primary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -1002,13 +858,13 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 11,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
     marginLeft: 4,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: palette.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 8,
     lineHeight: 32,
   },
@@ -1021,29 +877,29 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 28,
     fontWeight: "800",
-    color: palette.primary,
+    color: colors.primary,
   },
   availableBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: `${palette.success}15`,
+    backgroundColor: `${colors.success}15`,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   availableText: {
     fontSize: 12,
-    color: palette.success,
+    color: colors.success,
     fontWeight: "600",
   },
   sellerCard: {
-    backgroundColor: palette.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     ...Platform.select({
       ios: {
-        shadowColor: palette.shadow,
+        shadowColor: colors.shadowColor,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
@@ -1080,7 +936,7 @@ const styles = StyleSheet.create({
   sellerName: {
     fontSize: 16,
     fontWeight: "700",
-    color: palette.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   sellerRating: {
@@ -1090,7 +946,7 @@ const styles = StyleSheet.create({
   },
   sellerBadge: {
     fontSize: 11,
-    color: palette.secondary,
+    color: colors.secondary,
     fontWeight: "500",
   },
   contactButton: {
@@ -1109,13 +965,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
+    borderTopColor: colors.border,
   },
   sellerExpanded: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
+    borderTopColor: colors.border,
   },
   sellerStats: {
     flexDirection: "row",
@@ -1127,20 +983,20 @@ const styles = StyleSheet.create({
   sellerStatNumber: {
     fontSize: 18,
     fontWeight: "700",
-    color: palette.textPrimary,
+    color: colors.textPrimary,
   },
   sellerStatLabel: {
     fontSize: 11,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
   },
   sectionCard: {
-    backgroundColor: palette.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     ...Platform.select({
       ios: {
-        shadowColor: palette.shadow,
+        shadowColor: colors.shadowColor,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
@@ -1159,12 +1015,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: palette.textPrimary,
+    color: colors.textPrimary,
   },
   description: {
     fontSize: 14,
     lineHeight: 22,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
   },
   carDetailsGrid: {
     gap: 12,
@@ -1175,20 +1031,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+    borderBottomColor: colors.border,
   },
   carDetailLabel: {
     fontSize: 13,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
   },
   carDetailValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: palette.textPrimary,
+    color: colors.textPrimary,
   },
   locationText: {
     fontSize: 14,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
   },
   actionButtonsContainer: {
     gap: 12,
@@ -1210,12 +1066,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   messageButton: {
-    backgroundColor: palette.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: colors.border,
   },
   messageButtonContent: {
     flexDirection: "row",
@@ -1223,12 +1079,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   messageButtonText: {
-    color: palette.primary,
+    color: colors.primary,
     fontSize: 16,
     fontWeight: "600",
   },
   editButton: {
-    backgroundColor: palette.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
@@ -1236,24 +1092,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: colors.border,
   },
   editButtonText: {
-    color: palette.primary,
+    color: colors.primary,
     fontSize: 16,
     fontWeight: "600",
   },
-  reportButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-  },
-  reportButtonText: {
-    fontSize: 13,
-    color: palette.textSecondary,
-  },
+
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -1268,14 +1114,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
     maxHeight: height * 0.8,
-    backgroundColor: palette.surface,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  reportModalCard: {
-    width: "100%",
-    maxWidth: 420,
-    backgroundColor: palette.surface,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     overflow: "hidden",
   },
@@ -1301,7 +1140,7 @@ const styles = StyleSheet.create({
   },
   modalSubtitle: {
     fontSize: 14,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
@@ -1325,7 +1164,7 @@ const styles = StyleSheet.create({
   },
   contactMethodLabel: {
     fontSize: 13,
-    color: palette.textSecondary,
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   quickMessageSection: {
@@ -1335,7 +1174,7 @@ const styles = StyleSheet.create({
   quickMessageLabel: {
     fontSize: 14,
     fontWeight: "700",
-    color: palette.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   quickMessageInput: {
@@ -1344,13 +1183,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
-    color: palette.textPrimary,
+    color: colors.textPrimary,
     minHeight: 100,
     textAlignVertical: "top",
   },
   charCount: {
     fontSize: 11,
-    color: palette.textMuted,
+    color: colors.textMuted,
     marginTop: 8,
     marginBottom: 16,
     textAlign: "right",
@@ -1367,66 +1206,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sendButtonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  reportReasonList: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  reportReasonItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: palette.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  reportReasonItemSelected: {
-    borderColor: palette.error,
-    backgroundColor: `${palette.error}10`,
-  },
-  reportReasonTextWrap: {
-    flex: 1,
-  },
-  reportReasonLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: palette.textPrimary,
-  },
-  reportModalActions: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: palette.border,
-  },
-  cancelButtonText: {
-    color: palette.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  submitButton: {
-    flex: 1,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  submitButtonGradient: {
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  submitButtonText: {
     color: "#FFF",
     fontSize: 15,
     fontWeight: "600",

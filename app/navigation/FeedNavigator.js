@@ -45,9 +45,7 @@ const FeedNavigator = () => (
     <Stack.Screen
       name="ListingDetails"
       component={ListingDetailsScreen}
-      options={({ navigation }) => ({
-        headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
-      })}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="OrderCheckout"

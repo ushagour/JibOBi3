@@ -138,9 +138,7 @@ function NotificationsScreen({ navigation }) {
     <Screen scrollable={false} style={styles.screen} paddingSize="lg">
       <View style={styles.headerRow}>
         <View>
-          <AppText variant="h2" color="textPrimary" style={styles.title}>
-            Notifications
-          </AppText>
+      
           <AppText color="textSecondary" style={styles.subtitle}>
             Review all your alerts in one place
           </AppText>
@@ -217,24 +215,6 @@ function NotificationsScreen({ navigation }) {
                   </AppText>
                   <AppText style={styles.dateTimeText}>
                     🕐 {formattedTime}
-                  </AppText>
-                </View>
-
-                <View style={styles.metaRow}>
-                  <View style={[styles.metaBadge, { backgroundColor: meta.color }]}>
-                    <MaterialCommunityIcons
-                      name={meta.icon}
-                      size={12}
-                      color={colors.white}
-                    />
-                    <AppText style={styles.metaBadgeText}>{meta.label}</AppText>
-                  </View>
-                  <AppText style={[
-                    styles.statusBadge,
-                    item.is_read ? styles.readBadge : styles.unreadBadge,
-                    !item.is_read && { backgroundColor: themeColors.warningLight }
-                  ]}>
-                    {item.is_read ? "Read" : "Unread"}
                   </AppText>
                 </View>
               </View>

@@ -108,7 +108,6 @@ function FavoritesScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>My Favorites</Text>
         <Text style={[styles.headerSubtitle, { color: themeColors.textSecondary }]}>
           {favorites.length} {favorites.length === 1 ? "item" : "items"}
         </Text>

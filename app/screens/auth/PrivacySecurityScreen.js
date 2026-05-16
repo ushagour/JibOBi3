@@ -213,7 +213,6 @@ if (response.ok) {
       <ActivityIndicator visible={loading} />
 
       <Screen style={styles.screen} paddingSize="lg">
-        <Text style={styles.title}>Privacy & Security</Text>
         <Text style={styles.subtitle}>
           Manage your password, privacy preferences, and account safety.
         </Text>

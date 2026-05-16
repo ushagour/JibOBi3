@@ -91,7 +91,6 @@ function SettingsScreen() {
   return (
     <>
       <Screen style={styles.screen} paddingSize="lg">
-        <Text style={styles.title}>App Settings</Text>
         <Text style={styles.subtitle}>Manage your preferences and app behavior.</Text>
 
         {/* Dark Mode Toggle */}

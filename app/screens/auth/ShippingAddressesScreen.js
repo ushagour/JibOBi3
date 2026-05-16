@@ -11,7 +11,6 @@ function ShippingAddressesScreen() {
   const { colors: themeColors, isDark } = useTheme();
   return (
     <Screen style={styles.screen} paddingSize="lg">
-      <Text style={styles.title}>Shipping Addresses</Text>
       <Text style={styles.subtitle}>Manage your saved delivery addresses.</Text>
 
       <View style={[styles.card, { backgroundColor: themeColors.surface }]}>

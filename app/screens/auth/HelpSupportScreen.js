@@ -105,7 +105,6 @@ function HelpSupportScreen() {
 
   return (
     <Screen style={styles.screen} paddingSize="lg" scrollable={false}>
-      <Text style={styles.title}>Help & Support</Text>
       <Text style={styles.subtitle}>Find answers, contact support, and get help with your account.</Text>
 
       <ScrollView showsVerticalScrollIndicator={false}>

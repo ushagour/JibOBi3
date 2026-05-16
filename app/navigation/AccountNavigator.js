@@ -85,7 +85,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="AllListings" component={ListingsScreen} />
     <Stack.Screen name="ListingAdd" component={ListingAddScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
-    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
+    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} options={{ headerShown: false }} />
     <Stack.Screen name="ImageDetails" component={ViewImageScreen} />
   </Stack.Navigator>
 );
