@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Animated, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -12,6 +12,7 @@ function AnimatedHeader({
   rightAction,
   showBackButton = false,
   onBackPress,
+  scrollY,
   gradientColors = [colors.primaryDark, colors.primaryLight],
   style,
 }) {
@@ -22,29 +23,29 @@ function AnimatedHeader({
       : insets.top > 0
       ? insets.top + 8
       : 12;
-  const translateY = useRef(new Animated.Value(-10)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 280,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 280,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [opacity, translateY]);
+  // Use scroll-based animations if scrollY is provided
+  const animatedOpacity = scrollY
+    ? scrollY.interpolate({
+        inputRange: [0, 100, 150],
+        outputRange: [1, 0.5, 0],
+        extrapolate: "clamp",
+      })
+    : useRef(new Animated.Value(1)).current;
+
+  const animatedTranslateY = scrollY
+    ? scrollY.interpolate({
+        inputRange: [0, 100],
+        outputRange: [0, -100],
+        extrapolate: "clamp",
+      })
+    : useRef(new Animated.Value(0)).current;
 
   return (
     <Animated.View
       style={[
         styles.container,
-        { opacity, transform: [{ translateY }] },
+        { opacity: animatedOpacity, transform: [{ translateY: animatedTranslateY }] },
         style,
       ]}
     >

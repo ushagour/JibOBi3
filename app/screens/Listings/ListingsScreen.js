@@ -164,14 +164,14 @@ const StatsWidget = ({ listings }) => {
 };
 
 // Trending Categories Widget
-const TrendingCategories = ({ categories, selectedCategory, onSelectCategory }) => {
+const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, onSeeAll }) => {
   const scrollX = useRef(new Animated.Value(0)).current;
 
   return (
     <View style={styles.trendingSection}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Trending Categories</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onSeeAll}>
           <Text style={styles.seeAllText}>See All</Text>
         </TouchableOpacity>
       </View>
@@ -335,6 +335,13 @@ function ListingsScreen({ navigation, route }) {
   } = useApi(listingsApi.nearbyListings);
 
   const {
+    data: allListings,
+    error: allListingsError,
+    loading: allListingsLoading,
+    request: fetchAllListings,
+  } = useApi(listingsApi.getListings);
+
+  const {
     data: categoryListings,
     error: categoryError,
     loading: categoryLoading,
@@ -350,23 +357,25 @@ function ListingsScreen({ navigation, route }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [activeFilter, setActiveFilter] = useState(null);
+  const [showAllListings, setShowAllListings] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: user?.name || "Explorer",
       headerSubtitle: `Welcome back · ${city || country || "Nearby"}`,
-      headerRight: () => (
-        <TouchableOpacity
-          style={styles.notificationButton}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
-        >
-          <View style={styles.notificationBadge} />
-          <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-      ),
+      headerRight: () =>
+        isGuest ? null : (
+          <TouchableOpacity
+            style={styles.notificationButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
+          >
+            <View style={styles.notificationBadge} />
+            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
+        ),
     });
-  }, [navigation, user?.name, city, country]);
+  }, [navigation, user?.name, city, country, isGuest]);
 
   const loadFavorites = async () => {
     try {
@@ -409,7 +418,9 @@ function ListingsScreen({ navigation, route }) {
     return [{ id: "all", name: "All", icon: "🧭" }, ...derivedCategories];
   }, [categoriesData, listings]);
 
-  const listingsSource = isGuest
+  const listingsSource = showAllListings
+    ? allListings
+    : isGuest
     ? listings
     : selectedCategory === "all"
     ? listings
@@ -444,6 +455,11 @@ function ListingsScreen({ navigation, route }) {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      if (showAllListings) {
+        await fetchAllListings();
+        return;
+      }
+
       // Only refresh the listings list (nearby or by category).
       if (selectedCategory && selectedCategory !== "all" && !isGuest) {
         await fetchListingsByCategory(selectedCategory);
@@ -459,6 +475,17 @@ function ListingsScreen({ navigation, route }) {
     }
   };
 
+  const handleSeeAll = async () => {
+    setSelectedCategory("all");
+    setShowAllListings(true);
+    await fetchAllListings();
+  };
+
+  const handleSelectCategory = (categoryId) => {
+    setShowAllListings(false);
+    setSelectedCategory(categoryId);
+  };
+
   useEffect(() => {
     if (location) {
       fetchNearbyListings(location.latitude, location.longitude);
@@ -468,13 +495,17 @@ function ListingsScreen({ navigation, route }) {
   }, [location]);
 
   useEffect(() => {
-    if (isGuest) return;
+    if (isGuest || showAllListings) return;
     if (selectedCategory === "all") return;
     fetchListingsByCategory(selectedCategory);
-  }, [selectedCategory, isGuest]);
+  }, [selectedCategory, isGuest, showAllListings]);
 
-  const activeError = selectedCategory === "all" ? error : categoryError;
-  const activeLoading = loading || categoryLoading;
+  const activeError = showAllListings
+    ? allListingsError
+    : selectedCategory === "all"
+    ? error
+    : categoryError;
+  const activeLoading = showAllListings ? allListingsLoading : loading || categoryLoading;
 
   const handleFavoritePress = async (listingId) => {
     if (isGuest) {
@@ -579,7 +610,8 @@ function ListingsScreen({ navigation, route }) {
             <TrendingCategories
               categories={categories}
               selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
+              onSelectCategory={handleSelectCategory}
+              onSeeAll={handleSeeAll}
             />
           </View>
         }

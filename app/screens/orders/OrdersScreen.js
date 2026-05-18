@@ -101,6 +101,7 @@ function OrdersScreen({ navigation }) {
     <Screen  scrollable={false} style={styles.screen} paddingSize="lg">
       <View style={styles.headerRow}>
         <View>
+          <Text style={styles.title}>My Orders</Text>
           <Text style={styles.subtitle}>You have {totalCount} orders</Text>
         </View>
       </View>

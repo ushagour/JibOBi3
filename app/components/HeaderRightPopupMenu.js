@@ -65,18 +65,18 @@ function HeaderRightPopupMenu({ navigation }) {
   return (
     <>
       <View style={styles.triggerRow}>
-        <TouchableOpacity
-          style={styles.triggerButton}
-          onPress={() => navigation?.navigate(routes.NOTIFICATIONS)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="bell-outline" size={22} color="black" />
-          {unreadCount > 0 && (
-            <View style={styles.badgeWrap}>
-              <Text style={styles.badgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.triggerButton}
+            onPress={() => navigation?.navigate(routes.NOTIFICATIONS)}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="bell-outline" size={22} color={colors.white} />
+            {unreadCount > 0 && (
+              <View style={styles.badgeWrap}>
+                <View style={styles.unreadDot} />
+              </View>
+            )}
+          </TouchableOpacity>
       </View>
 
       <Modal
@@ -126,18 +126,27 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -5,
     right: -5,
-    minWidth: 18,
+    width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: colors.danger,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: 0,
   },
   badgeText: {
     fontSize: 10,
     color: colors.white,
     fontWeight: "700",
+  },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.danger,
+    shadowColor: colors.danger,
+    shadowOpacity: 0.6,
+    shadowRadius: 3,
   },
   backdropWrap: {
     flex: 1,

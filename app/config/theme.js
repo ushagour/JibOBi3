@@ -63,6 +63,10 @@ export const colors = {
   // Shadows
   shadowColor: "#00000015",  // Light shadow
   shadowColorStrong: "#00000025", // Strong shadow
+
+  gradientStart: "#FF7E5F", // Gradient start color (orange)
+  gradientEnd: "#FEB47B",   // Gradient end color (light orange)
+  
 };
 
 export const typography = {
