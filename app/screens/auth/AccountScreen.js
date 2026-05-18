@@ -55,6 +55,14 @@ const menuItems = [
 
   },
   {
+    title: "Conversation",
+    icon: {
+      name: "message-text",
+      backgroundColor: colors.primary,
+    },
+    targetScreen: routes.CONVERSATION,  
+  },
+  {
     title: "Wishlist",
     icon: { name: "heart", 
       backgroundColor: colors.secondary },

@@ -7,6 +7,7 @@ import ListingDetailsScreen from "../screens/Listings/ListingDetailsScreen";
 import ListingEditScreen from "../screens/Listings/ListingEditScreen";
 import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
+import ConversationScreen from "../screens/auth/ConversationScreen";
 import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
 
 const Stack = createStackNavigator();
@@ -73,6 +74,7 @@ const FeedNavigator = () => (
         headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
       })}
     />
+    <Stack.Screen name="Conversation" component={ConversationScreen} />
   </Stack.Navigator>
 );
 

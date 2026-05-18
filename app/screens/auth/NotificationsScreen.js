@@ -17,7 +17,6 @@ import ListItemCard from "../../components/cards/ListItemCard";
 import ListItemSeparator from "../../components/ListItemSeparator";
 import ListItemDeleteAction from "../../components/ListItemDeleteAction";
 import Avatar from "../../components/Avatar";   
-import useAuth from "../../auth/useAuth";
 import ordersApi from "../../api/orders";
 
 
@@ -39,7 +38,6 @@ function NotificationsScreen({ navigation }) {
 
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
-      console.log("Loaded notifications:", response.data.notifications);
 
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
@@ -70,7 +68,17 @@ function NotificationsScreen({ navigation }) {
     }
 
     setNotifications((current) =>
-      current.map((item) => (item.id === notification.id ? result.data : item))
+      current.map((item) => {
+        if (item.id !== notification.id) return item;
+        // Ensure relations (actor, listing) are preserved if backend response doesn't include them
+        const updated = result.data || {};
+        return {
+          ...item,
+          ...updated,
+          actor: updated.actor || item.actor,
+          listing: updated.listing || item.listing,
+        };
+      })
     );
     setUnreadCount((current) => (notification.is_read ? current + 1 : Math.max(current - 1, 0)));
   };
@@ -173,16 +181,28 @@ function NotificationsScreen({ navigation }) {
 
           return (
             <Pressable
-              onPress={async () => {
-                if (!item.is_read) {
-                  await handleToggleRead(item);
-                }
-                if (item.type === "order" && item.order_id) {
-                  navigation.navigate("OrderDetails", { order: { id: item.order_id } });
-                } else if (item.type === "review" && item.listing_id) {
-                  navigation.navigate("ListingDetails", { id: item.listing_id });
-                }
-              }}
+                onPress={async () => {
+                  if (!item.is_read) {
+                    await handleToggleRead(item);
+                  }
+
+                  // Open conversation for messages (user-to-user)
+                  if (item.type === "message") {
+                    const otherId = item?.actor?.id || item.actor_id;
+                    if (!otherId) {
+                      Alert.alert("Cannot open conversation", "Sender information is missing.");
+                      return;
+                    }
+                    navigation.navigate("Conversation", { otherUserId: otherId, otherUserName: item?.actor?.name });
+                    return;
+                  }
+
+                  if (item.type === "order" && item.order_id) {
+                    navigation.navigate("OrderDetails", { order: { id: item.order_id } });
+                  } else if (item.type === "review" && item.listing_id) {
+                    navigation.navigate("ListingDetails", { id: item.listing_id });
+                  }
+                }}
               style={[
                 styles.notificationCard,
                 { backgroundColor: themeColors.surface },
@@ -234,6 +254,8 @@ function NotificationsScreen({ navigation }) {
           );
         }}
       />
+
+      {/* Conversation navigation handled above for message notifications */}
     </Screen>
   );
 }
@@ -415,6 +437,56 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
     fontSize: 12,
+  },
+  modalOverlayCenter: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  replyModalCard: {
+    width: "100%",
+    maxWidth: 520,
+    borderRadius: 14,
+    padding: 16,
+  },
+  replyModalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  replyInput: {
+    minHeight: 100,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    textAlignVertical: "top",
+    marginBottom: 12,
+  },
+  replyActionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  replyCancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  replyCancelText: {
+    color: colors.textSecondary,
+    fontWeight: "700",
+  },
+  replySendButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  replySendText: {
+    color: colors.white,
+    fontWeight: "800",
   },
 });
 

@@ -144,33 +144,9 @@ const SellerCard = ({ seller, onContact }) => {
             </LinearGradient>
           </TouchableOpacity>
         </View>
+    
         
-        {isExpanded && (
-          <Animated.View style={styles.sellerExpanded}>
-            <View style={styles.sellerStats}>
-              <View style={styles.sellerStat}>
-                <Text style={styles.sellerStatNumber}>124</Text>
-                <Text style={styles.sellerStatLabel}>Products</Text>
-              </View>
-              <View style={styles.sellerStat}>
-                <Text style={styles.sellerStatNumber}>98%</Text>
-                <Text style={styles.sellerStatLabel}>Positive</Text>
-              </View>
-              <View style={styles.sellerStat}>
-                <Text style={styles.sellerStatNumber}>2.3k</Text>
-                <Text style={styles.sellerStatLabel}>Followers</Text>
-              </View>
-            </View>
-          </Animated.View>
-        )}
-        
-        <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} style={styles.expandButton}>
-          <MaterialCommunityIcons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={colors.textSecondary}
-          />
-        </TouchableOpacity>
+      
       </View>
     </AnimatedInfoCard>
   );
@@ -187,7 +163,7 @@ const ActionButtons = ({ onOrder, onContact, isOwner, isAuthenticated, isSold })
               colors={[colors.primaryDark, colors.primaryLight]}
               style={styles.orderButtonGradient}
             >
-              <MaterialCommunityIcons name="shopping-cart" size={22} color="#FFF" />
+              <MaterialCommunityIcons name="shopping" size={22} color="#FFF" />
               <Text style={styles.orderButtonText}>Order Now</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -423,7 +399,10 @@ function ListingDetailsScreen({ route, navigation }) {
 
     setSendingMessage(true);
     try {
-      const response = await notificationsApi.createNotification({
+
+      const response = await notificationsApi.createForUser({
+        userId: listing.owner.id,
+        actorId: user?.userId,
         type: "message",
         title: `New message about "${listing.title}" from ${user?.firstName || "a buyer"}`,
         content: quickMessage.trim(),

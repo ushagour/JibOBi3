@@ -76,7 +76,7 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwne
           </View>
         </View>
 
-        {(user.userId === review.user_id || user.userId === listingOwnerId) && (
+        {user.userId === review.user_id && (
           <AppButton
             icon={<MaterialCommunityIcons name="trash-can" size={20} color={colors.danger} />}
             onPress={() => handleDeleteReview(review.id)}

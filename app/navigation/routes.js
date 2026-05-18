@@ -19,4 +19,5 @@ export default Object.freeze({
   LISTINGS: "Listings",
   MY_LISTINGS: "MyListings",
   ALL_LISTINGS: "AllListings",
+  CONVERSATION: "Conversation",
 });

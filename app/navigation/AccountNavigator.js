@@ -13,6 +13,7 @@ import ViewImageScreen from "../screens/outhers/ViewImageScreen";
 import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import SettingsScreen from "../screens/auth/SettingsScreen";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
+import ConversationScreen from "../screens/auth/ConversationScreen";
 import OrdersScreen from "../screens/orders/OrdersScreen";
 import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
 import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
@@ -74,6 +75,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="UserEdit" component={UserScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
+    <Stack.Screen name="Conversation" component={ConversationScreen} />
     <Stack.Screen name="Orders" component={OrdersScreen} />
     <Stack.Screen name="OrderDetails" component={OrderDetailScreen} />
     <Stack.Screen name="OrderCheckout" component={OrderCheckoutScreen} />
@@ -88,6 +90,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} options={{ headerShown: false }} />
     <Stack.Screen name="ImageDetails" component={ViewImageScreen} />
+  
   </Stack.Navigator>
 );
 
