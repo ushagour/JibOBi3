@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../config/colors';
 
-const OrderItem = ({ order, onPress, onReport }) => {
+const OrderItem = ({ order, onPress, onReport, onReview }) => {
   // Safely extract data with fallbacks
   const listing = order?.Listing;
   const seller = order?.Listing?.owner;
@@ -11,13 +11,8 @@ const OrderItem = ({ order, onPress, onReport }) => {
   const quantity = order?.quantity || 1;
   const totalPrice = order?.total_price || order?.total || 0;
   const orderDate = order?.order_date || order?.createdAt || new Date().toISOString();
-
-  const handleReportPress = (e) => {
-    e.stopPropagation();
-    if (onReport) {
-      onReport(order, seller);
-    }
-  };
+  const normalizedStatus = String(order?.normalizedStatus ?? order?.status ?? order?.orderStatus ?? "").trim().toLowerCase();
+  
 
   return (
     <View>
@@ -40,13 +35,15 @@ const OrderItem = ({ order, onPress, onReport }) => {
         </View>
         <MaterialCommunityIcons name="chevron-right" size={24} color={colors.medium} />
       </TouchableOpacity>
-      {onReport && (
-        <TouchableOpacity style={styles.reportButtonRow} onPress={handleReportPress}>
-          <MaterialCommunityIcons name="flag-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.reportButtonText}>Report Seller</Text>
+      {onReview && order && normalizedStatus === "completed" && !order.hasReviewed && (
+        <TouchableOpacity style={styles.reviewButtonRow} onPress={() => onReview(order)}>
+          <MaterialCommunityIcons name="star-outline" size={16} color={colors.primary} />
+          <Text style={styles.reportButtonText}>Leave Review</Text>
         </TouchableOpacity>
       )}
     </View>
+
+    
   );
 };
 
@@ -104,6 +101,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.medium,
     fontWeight: '500',
+  },
+  reportButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  reviewButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
 });
 

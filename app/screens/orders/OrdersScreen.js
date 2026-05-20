@@ -8,6 +8,8 @@ import Text from "../../components/Text";
 import colors from "../../config/colors";
 import useAuth from "../../auth/useAuth";
 import ordersApi from "../../api/orders";
+import reviewsApi from "../../api/reviews";
+import { TextInput } from 'react-native';
 import routes from "../../navigation/routes";
 import OrderItem from "../../components/orders/OrderItem";
 
@@ -19,6 +21,9 @@ function OrdersScreen({ navigation }) {
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
   const userId = user?.userId;
   const isLoggedIn = Boolean(userId);
 
@@ -43,8 +48,35 @@ function OrdersScreen({ navigation }) {
       }
 
       const userOrders = response.data.filter((order) => String(order.buyer_id) === String(userId));
-      setOrders(userOrders);
-      
+      const normalizedOrders = userOrders.map((order) => ({
+        ...order,
+        normalizedStatus: String(order?.status ?? order?.orderStatus ?? "").trim().toLowerCase(),
+      }));
+
+      try {
+        const listingIds = Array.from(
+          new Set(normalizedOrders.map((o) => o.listing_id || (o.Listing && o.Listing.id)).filter(Boolean))
+        );
+
+        const reviewsResponses = await Promise.all(listingIds.map((id) => reviewsApi.getReviewsByListing(id)));
+
+        const reviewedMap = {};
+        for (let i = 0; i < listingIds.length; i++) {
+          const id = listingIds[i];
+          const res = reviewsResponses[i];
+          reviewedMap[id] = !!(res && res.ok && Array.isArray(res.data) && res.data.some((r) => String(r.user_id || r.User?.id) === String(userId)));
+        }
+
+        setOrders(
+          normalizedOrders.map((o) => ({
+            ...o,
+            hasReviewed: !!reviewedMap[o.listing_id || (o.Listing && o.Listing.id)],
+          }))
+        );
+      } catch (err) {
+        if (__DEV__) console.error("Failed to check reviews for orders", err);
+        setOrders(normalizedOrders);
+      }
     } catch (error) {
       if (__DEV__) console.error("Failed to load orders:", error);
       Alert.alert("Error", "Could not load orders.");
@@ -78,7 +110,6 @@ function OrdersScreen({ navigation }) {
 
   const closeReportModal = () => {
     setReportModalVisible(false);
-    setSelectedSeller(null);
     setSelectedOrder(null);
     setSelectedReportReason("behavior");
   };
@@ -123,74 +154,78 @@ function OrdersScreen({ navigation }) {
             order={item}
             onPress={() => navigation.navigate(routes.ORDER_DETAILS, { order: item })}
             onReport={handleReportSeller}
+            onReview={(order) => {
+              setSelectedOrder(order);
+              setReviewRating(5);
+              setReviewComment("");
+              setReviewModalVisible(true);
+            }}
           />
         )}
       />
 
-      {/* Report Modal */}
-      <Modal visible={reportModalVisible} transparent animationType="fade" onRequestClose={closeReportModal}>
+      {/* Review Modal */}
+      <Modal visible={reviewModalVisible} transparent animationType="fade" onRequestClose={() => setReviewModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={closeReportModal}>
+          <TouchableWithoutFeedback onPress={() => setReviewModalVisible(false)}>
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
-          
-          <Animated.View style={styles.reportModalCard}>
-            <LinearGradient colors={[colors.error, colors.error]} style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Seller</Text>
-              <TouchableOpacity onPress={closeReportModal} style={styles.modalCloseButton}>
-                <Ionicons name="close" size={24} color="#FFF" />
-              </TouchableOpacity>
+          <Animated.View style={[styles.reportModalCard, { maxWidth: 520 }]}>
+            <LinearGradient colors={[colors.primary, colors.primary]} style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Leave a Review</Text>
             </LinearGradient>
-            
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.reportModalContent}>
-              <Text style={styles.modalSubtitle}>Choose the reason that best matches the issue.</Text>
-              
-              <FlatList
-                data={reportReasons}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                contentContainerStyle={styles.reportReasonList}
-                renderItem={({ item }) => {
-                  const selected = item.id === selectedReportReason;
-                  return (
-                    <TouchableOpacity
-                      style={[styles.reportReasonItem, selected && styles.reportReasonItemSelected]}
-                      onPress={() => setSelectedReportReason(item.id)}
-                    >
-                      <MaterialCommunityIcons 
-                        name={item.icon} 
-                        size={22} 
-                        color={selected ? colors.error : colors.textSecondary} 
-                      />
-                      <View style={styles.reportReasonTextWrap}>
-                        <Text style={[styles.reportReasonLabel, selected && { color: colors.error }]}>
-                          {item.label}
-                        </Text>
-                      </View>
-                      <MaterialIcons
-                        name={selected ? "radio-button-checked" : "radio-button-unchecked"}
-                        size={22}
-                        color={selected ? colors.error : colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                  );
-                }}
+            <View style={styles.reportModalContent}>
+              <Text style={{ marginBottom: 8 }}>Rating</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                {[1,2,3,4,5].map((n) => (
+                  <TouchableOpacity key={n} onPress={() => setReviewRating(n)}>
+                    <MaterialCommunityIcons name={n <= reviewRating ? 'star' : 'star-outline'} size={30} color={n <= reviewRating ? colors.accent || '#FFD700' : colors.medium} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={{ marginBottom: 8 }}>Comment</Text>
+              <TextInput
+                multiline
+                placeholder="Write your review..."
+                value={reviewComment}
+                onChangeText={setReviewComment}
+                style={{ minHeight: 90, borderWidth: 1, borderColor: colors.border || '#DDD', padding: 10, borderRadius: 8, textAlignVertical: 'top' }}
               />
-            </ScrollView>
-            
+            </View>
             <View style={styles.reportModalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={closeReportModal}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setReviewModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.submitButton} onPress={submitReport}>
-                <LinearGradient colors={[colors.error, colors.error]} style={styles.submitButtonGradient}>
-                  <Text style={styles.submitButtonText}>Submit Report</Text>
+              <TouchableOpacity style={styles.submitButton} onPress={async () => {
+                if (!selectedOrder) return;
+                const payload = {
+                  content: reviewComment || "",
+                  rating: reviewRating,
+                  userId,
+                  listingId: selectedOrder.listing_id || (selectedOrder.Listing && selectedOrder.Listing.id),
+                };
+                try {
+                  const res = await reviewsApi.createReview(payload);
+                  if (!res.ok) throw new Error(res.problem || 'Failed');
+                  Alert.alert('Thank you', 'Your review was submitted.');
+                  setReviewModalVisible(false);
+                  // reload orders to reflect reviewed state if backend attaches it
+                  loadOrders();
+                } catch (err) {
+                  if (__DEV__) console.error('Review submit error', err);
+                  Alert.alert('Error', 'Failed to submit review.');
+                }
+              }}>
+                <LinearGradient colors={[colors.primary, colors.primary]} style={styles.submitButtonGradient}>
+                  <Text style={styles.submitButtonText}>Submit Review</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
           </Animated.View>
         </View>
       </Modal>
+
+  
     </Screen>
   );
 }

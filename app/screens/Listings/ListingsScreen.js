@@ -26,6 +26,7 @@ import ActivityIndicator from "../../components/ActivityIndicator";
 import useApi from "../../hooks/useApi";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
 import useAuth from "../../auth/useAuth";
+import useTheme from "../../hooks/useTheme";
 import { Alert } from "react-native";
 import useLocation from "../../hooks/useLocation";
 import colors from "../../config/colors";
@@ -165,6 +166,7 @@ const StatsWidget = ({ listings }) => {
 
 // Trending Categories Widget
 const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, onSeeAll }) => {
+  const { colors: themeColors } = useTheme();
   const scrollX = useRef(new Animated.Value(0)).current;
 
   return (
@@ -201,13 +203,14 @@ const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, on
             outputRange: [0.6, 1, 0.6],
             extrapolate: "clamp",
           });
+          const isSelected = selectedCategory === item.id;
 
           return (
             <Animated.View style={{ transform: [{ scale }], opacity }}>
               <TouchableOpacity
                 style={[
                   styles.categoryChip,
-                  selectedCategory === item.id && styles.categoryChipActive,
+                  { backgroundColor: isSelected ? colors.primary : themeColors.surface },
                 ]}
                 onPress={() => onSelectCategory(item.id)}
               >
@@ -215,7 +218,7 @@ const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, on
                 <Text
                   style={[
                     styles.categoryName,
-                    selectedCategory === item.id && styles.categoryNameActive,
+                    { color: isSelected ? "#FFF" : colors.textPrimary },
                   ]}
                 >
                   {item.name}
@@ -231,6 +234,7 @@ const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, on
 
 // Search Bar with Animation
 const AnimatedSearchBar = ({ searchQuery, onSearchChange, isFocused, onFocus, onBlur }) => {
+  const { colors: themeColors } = useTheme();
   const searchBarAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -249,7 +253,7 @@ const AnimatedSearchBar = ({ searchQuery, onSearchChange, isFocused, onFocus, on
 
   return (
     <Animated.View style={[styles.searchWrapper, { width: searchBarWidth }]}>
-      <View style={styles.searchBarContainer}>
+      <View style={[styles.searchBarContainer, { backgroundColor: themeColors.surface }]}>
         <Feather name="search" size={20} color={colors.textTertiary || colors.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
@@ -271,7 +275,8 @@ const AnimatedSearchBar = ({ searchQuery, onSearchChange, isFocused, onFocus, on
 };
 
 // Quick Filters Widget
-const QuickFilters = ({ onFilterPress }) => {
+const QuickFilters = ({ onFilterPress, activeFilter }) => {
+  const { colors: themeColors } = useTheme();
   const filters = [
     { icon: "💰", label: "Under $50", value: "under50" },
     { icon: "⭐", label: "Top Rated", value: "topRated" },
@@ -280,17 +285,28 @@ const QuickFilters = ({ onFilterPress }) => {
 
   return (
     <View style={styles.quickFiltersSection}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {filters.map((filter, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.quickFilterChip}
-            onPress={() => onFilterPress(filter.value)}
-          >
-            <Text style={styles.filterEmoji}>{filter.icon}</Text>
-            <Text style={styles.filterLabel}>{filter.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickFiltersScrollContent}>
+        {filters.map((filter, index) => {
+          const isActive = activeFilter === filter.value;
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.quickFilterChip,
+                { backgroundColor: isActive ? colors.primary : themeColors.surface },
+                isActive && styles.quickFilterChipActive
+              ]}
+              onPress={() => onFilterPress(filter.value)}
+            >
+              <Text style={styles.filterEmoji}>{filter.icon}</Text>
+              <Text style={[
+                styles.filterLabel,
+                { color: isActive ? "#FFF" : colors.textPrimary },
+                isActive && styles.filterLabelActive
+              ]}>{filter.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -324,6 +340,7 @@ function ListingsScreen({ navigation, route }) {
   const { user, isLoggedIn } = useAuth();
   const { location, getLocationName } = useLocation();
   const { city, country } = getLocationName();
+  const { colors: themeColors } = useTheme();
   const isGuest = !isLoggedIn();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -366,7 +383,7 @@ function ListingsScreen({ navigation, route }) {
       headerRight: () =>
         isGuest ? null : (
           <TouchableOpacity
-            style={styles.notificationButton}
+            style={[styles.notificationButton, { backgroundColor: themeColors.surface }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
           >
@@ -375,7 +392,7 @@ function ListingsScreen({ navigation, route }) {
           </TouchableOpacity>
         ),
     });
-  }, [navigation, user?.name, city, country, isGuest]);
+  }, [navigation, user?.name, city, country, isGuest, themeColors]);
 
   const loadFavorites = async () => {
     try {
@@ -577,7 +594,7 @@ function ListingsScreen({ navigation, route }) {
   }
 
   const renderListEmpty = () => (
-    <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
+    <View style={[styles.emptyContainer, { backgroundColor: themeColors.surface }]}>
       <View style={styles.emptyIconCircle}>
         <MaterialCommunityIcons name="package-variant-closed" size={40} color={colors.primary} />
       </View>
@@ -589,7 +606,7 @@ function ListingsScreen({ navigation, route }) {
   );
 
   return (
-    <Screen style={[styles.screen, { backgroundColor: colors.background }]} scrollable={false} paddingSize="md">
+    <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} scrollable={false} paddingSize="md">
       <ActivityIndicator visible={activeLoading} />
 
       <FlatList
@@ -603,6 +620,7 @@ function ListingsScreen({ navigation, route }) {
               isFocused={isSearchFocused}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
+
             />
             <QuickFilters onFilterPress={handleFilterPress} activeFilter={activeFilter} />
             {/* <StatsWidget listings={listings} /> */}
@@ -714,6 +732,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 20,
   },
+  quickFiltersScrollContent: {
+    paddingHorizontal: 8,
+  },
   quickFilterChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -742,6 +763,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
     fontWeight: "500",
+  },
+  filterLabelActive: {
+    color: "#FFF",
   },
   statsWidget: {
     marginHorizontal: 16,
@@ -821,9 +845,6 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  categoryChipActive: {
-    backgroundColor: colors.primary,
-  },
   categoryEmoji: {
     fontSize: 16,
     marginRight: 8,
@@ -832,9 +853,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
     fontWeight: "500",
-  },
-  categoryNameActive: {
-    color: "#FFF",
   },
   emptyContainer: {
     marginHorizontal: 16,

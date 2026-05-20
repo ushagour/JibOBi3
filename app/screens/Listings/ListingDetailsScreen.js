@@ -38,156 +38,10 @@ import useLocation from "../../hooks/useLocation";
 import { FontAwesome } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get("window");
-
-// Static Header Component
-const AnimatedHeader = ({ title, onBack, onShare }) => {
-  return (
-    <Animated.View
-      style={[
-        styles.animatedHeader,
-      ]}
-    >
-      <LinearGradient
-        colors={[colors.primaryDark, colors.primaryLight]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <BlurView intensity={80} tint="dark" style={styles.headerBlur}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={onBack} style={styles.headerButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {title}
-            </Text>
-            <TouchableOpacity onPress={onShare} style={styles.headerButton}>
-              <Feather name="share-2" size={22} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-        </BlurView>
-      </LinearGradient>
-    </Animated.View>
-  );
-};
-
-// Info Card Component with Animation
-const AnimatedInfoCard = ({ children, delay = 0 }) => {
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        damping: 15,
-        mass: 0.8,
-        stiffness: 120,
-        useNativeDriver: true,
-        delay,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-        delay,
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={[
-        styles.animatedInfoCard,
-        {
-          transform: [{ scale: scaleAnim }],
-          opacity: opacityAnim,
-        },
-      ]}
-    >
-      {children}
-    </Animated.View>
-  );
-};
-
-// Seller Card Component
-const SellerCard = ({ seller, onContact }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <AnimatedInfoCard delay={200}>
-      <View style={styles.sellerCard}>
-        <View style={styles.sellerHeader}>
-          <View style={styles.sellerAvatar}>
-            <LinearGradient
-              colors={[colors.primaryDark, colors.primaryLight]}
-              style={styles.avatarGradient}
-            >
-              <Text style={styles.avatarText}>
-                {seller?.name?.charAt(0) || "U"}
-              </Text>
-            </LinearGradient>
-          </View>
-          <View style={styles.sellerInfo}>
-            <Text style={styles.sellerName}>{seller?.name || "Unknown Seller"}</Text>
-            <View style={styles.sellerRating}>
-              <MaterialCommunityIcons name="shield-check" size={14} color={colors.secondary} />
-              <Text style={styles.sellerBadge}>Verified Member</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.contactButton} onPress={onContact}>
-            <LinearGradient
-              colors={[colors.primaryDark, colors.primaryLight]}
-              style={styles.contactButtonGradient}
-            >
-              <MaterialCommunityIcons name="chat-processing" size={20} color="#FFF" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-    
-        
-      
-      </View>
-    </AnimatedInfoCard>
-  );
-};
-
-// Action Buttons Component
-const ActionButtons = ({ onOrder, onContact, isOwner, isAuthenticated, isSold }) => {
-  return (
-    <AnimatedInfoCard delay={300}>
-      <View style={styles.actionButtonsContainer}>
-        {!isOwner && isAuthenticated && !isSold && (
-          <TouchableOpacity style={styles.orderButton} onPress={onOrder}>
-            <LinearGradient
-              colors={[colors.primaryDark, colors.primaryLight]}
-              style={styles.orderButtonGradient}
-            >
-              <MaterialCommunityIcons name="shopping" size={22} color="#FFF" />
-              <Text style={styles.orderButtonText}>Order Now</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-        
-        {!isOwner && isAuthenticated && (
-          <TouchableOpacity style={styles.messageButton} onPress={onContact}>
-            <View style={styles.messageButtonContent}>
-              <MaterialCommunityIcons name="chat-outline" size={22} color={colors.primary} />
-              <Text style={styles.messageButtonText}>Message Seller</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        
-        {isOwner && (
-          <TouchableOpacity style={styles.editButton} onPress={onOrder}>
-            <MaterialCommunityIcons name="pencil" size={22} color={colors.primary} />
-            <Text style={styles.editButtonText}>Edit Listing</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </AnimatedInfoCard>
-  );
-};
+import AnimatedHeader from "../../components/screens/ListingDetails/AnimatedHeader";
+import AnimatedInfoCard from "../../components/screens/ListingDetails/AnimatedInfoCard";
+import SellerCard from "../../components/screens/ListingDetails/SellerCard";
+import ActionButtons from "../../components/screens/ListingDetails/ActionButtons";
 
 // Main Component
 function ListingDetailsScreen({ route, navigation }) {
@@ -216,6 +70,9 @@ function ListingDetailsScreen({ route, navigation }) {
   const displayStatus = isSoldStatus(listing?.status) ? "Sold Out" : "Available";
   const isCarsCategory = listing?.Category?.name?.toLowerCase() === "cars";
   const isSold = isSoldStatus(listing?.status);
+  const listingLatitude = Number(listing?.location?.latitude ?? listing?.latitude);
+  const listingLongitude = Number(listing?.location?.longitude ?? listing?.longitude);
+  const hasCoordinates = Number.isFinite(listingLatitude) && Number.isFinite(listingLongitude);
 
   const fetchReviews = async () => {
     try {
@@ -297,6 +154,7 @@ function ListingDetailsScreen({ route, navigation }) {
     }
   };
 
+
   const handleDeleteReview = async (reviewId) => {
     Alert.alert(
       "Delete Review",
@@ -305,27 +163,29 @@ function ListingDetailsScreen({ route, navigation }) {
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
+          style: "destructive",
+
           onPress: async () => {
             try {
               setIsDeletingReview(true);
-              const response = await reviewsApi.deleteReview(reviewId);
+              const response = await reviewsApi.deleteReview(reviewId); 
               if (!response.ok) {
-                Alert.alert("Error", "Failed to delete review.");
+                Alert.alert("Failed", "Could not delete review. Please try again.");
                 return;
-              }
-              setReviews(reviews.filter(r => r.id !== reviewId));
-              Alert.alert("Success", "Review deleted successfully.");
+              } 
+              setReviews((prev) => prev.filter((r) => r.id !== reviewId));
             } catch (error) {
-              Alert.alert("Error", "Failed to delete review.");
+              Alert.alert("Error", "Failed to delete review. Please try again.");
             } finally {
               setIsDeletingReview(false);
             }
           },
-          style: "destructive",
         },
       ]
     );
   };
+  
+
 
   const openGpsNavigation = async (latitude, longitude) => {
     const nativeUrl = Platform.select({
@@ -513,7 +373,7 @@ function ListingDetailsScreen({ route, navigation }) {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <AnimatedHeader title={listing?.title} onBack={() => navigation.goBack()} onShare={handleShare} />
+      <AnimatedHeader title={listing?.title} onBack={() => navigation.goBack()} onShare={handleShare} styles={styles} />
       
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -571,20 +431,20 @@ function ListingDetailsScreen({ route, navigation }) {
                     <View style={styles.priceContainer}>
                       <Text style={styles.price}>{listing.price} MAD</Text>
                       {!isSold && (
-                        <View style={styles.availableBadge}>
-                          <MaterialCommunityIcons name="check-circle" size={14} color={colors.success} />
-                          <Text style={styles.availableText}>In Stock</Text>
+                        <View style={styles.locationInline}>
+                          <MaterialIcons name="place" size={14} color={colors.textSecondary} />
+                          <Text style={styles.locationInlineText}>{locationName}</Text>
                         </View>
                       )}
                     </View>
                   </AnimatedInfoCard>
 
                   {/* Seller Card */}
-                  <SellerCard seller={listing.owner} onContact={openContactModal} />
+                  <SellerCard seller={listing.owner} onContact={openContactModal} styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
 
                   {/* Description */}
                   <AnimatedInfoCard delay={250}>
-                    <View style={styles.sectionCard}>
+                    <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                       <View style={styles.sectionHeader}>
                         <MaterialIcons name="notes" size={20} color={colors.primary} />
                         <Text style={styles.sectionTitle}>Description</Text>
@@ -596,7 +456,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   {/* Car Details */}
                   {isCarsCategory && listing && (
                     <AnimatedInfoCard delay={300}>
-                      <View style={styles.sectionCard}>
+                      <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                         <View style={styles.sectionHeader}>
                           <MaterialCommunityIcons name="car-outline" size={20} color={colors.primary} />
                           <Text style={styles.sectionTitle}>Vehicle Details</Text>
@@ -619,24 +479,16 @@ function ListingDetailsScreen({ route, navigation }) {
                     </AnimatedInfoCard>
                   )}
 
-                  {/* Location */}
-                  <AnimatedInfoCard delay={350}>
-                    <View style={styles.sectionCard}>
-                      <View style={styles.sectionHeader}>
-                        <MaterialIcons name="location-on" size={20} color={colors.primary} />
-                        <Text style={styles.sectionTitle}>Location</Text>
-                      </View>
-                      <Text style={styles.locationText}>{locationName}</Text>
-                    </View>
-                  </AnimatedInfoCard>
+                  
 
                   {/* Action Buttons */}
                   <ActionButtons
                     onOrder={handleOrderNow}
-                    onContact={openContactModal}
+                    onEdit={() => navigation.navigate('ListingEdit', { listing })}
                     isOwner={isOwner(listing?.owner?.id)}
                     isAuthenticated={isAuthenticated}
                     isSold={isSold}
+                    styles={styles}
                   />
 
                   {/* Reviews Section */}
@@ -662,7 +514,7 @@ function ListingDetailsScreen({ route, navigation }) {
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
           
-          <Animated.View style={styles.contactModalCard}>
+          <Animated.View style={[styles.contactModalCard, { backgroundColor: themeColors.surface }]}>
             <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Contact Seller</Text>
               <TouchableOpacity onPress={closeContactModal} style={styles.modalCloseButton}>
@@ -699,7 +551,7 @@ function ListingDetailsScreen({ route, navigation }) {
               <View style={styles.quickMessageSection}>
                 <Text style={styles.quickMessageLabel}>Send a quick message</Text>
                 <TextInput
-                  style={[styles.quickMessageInput, { backgroundColor: colors.background, borderColor: colors.border }]}
+                  style={[styles.quickMessageInput, { backgroundColor: themeColors.surface, borderColor: colors.border }]}
                   placeholder="Ask the seller anything about this listing..."
                   placeholderTextColor={colors.textMuted}
                   value={quickMessage}
@@ -872,6 +724,16 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontWeight: "600",
   },
+  locationInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  locationInlineText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
   sellerCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -1025,12 +887,81 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
+  locationPreviewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: colors.background,
+  },
+  locationBubbleWrap: {
+    width: 72,
+    height: 72,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationBubbleOuter: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}14`,
+  },
+  locationBubbleMiddle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}1F`,
+  },
+  locationBubbleInner: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  locationInfoBlock: {
+    flex: 1,
+    gap: 4,
+  },
+  locationNameText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  locationCoordsText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  openMapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+  },
+  openMapButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFF",
+  },
   actionButtonsContainer: {
     gap: 12,
   },
   orderButton: {
     borderRadius: 12,
     overflow: "hidden",
+    paddingTop: 8,
   },
   orderButtonGradient: {
     flexDirection: "row",

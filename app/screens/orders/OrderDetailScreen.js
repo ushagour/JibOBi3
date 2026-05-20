@@ -8,9 +8,12 @@ import {
   Image,
   Modal,
   TouchableWithoutFeedback,
+  FlatList,
+  Animated,
 } from "react-native";
 import dayjs from "dayjs";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
@@ -29,6 +32,17 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const [order, setOrder] = useState(initialOrder);
   const [loading, setLoading] = useState(false);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState("behavior");
+  const [selectedSeller, setSelectedSeller] = useState(null);
+
+  const reportReasons = [
+    { id: "behavior", label: "Inappropriate seller behavior", icon: "block-helper" },
+    { id: "scam", label: "Suspicious or scam transaction", icon: "security" },
+    { id: "quality", label: "Poor quality or condition mismatch", icon: "alert-circle" },
+    { id: "nodelivery", label: "Non-delivery or incomplete order", icon: "package-x" },
+    { id: "other", label: "Other issue", icon: "help" },
+  ];
 
   useEffect(() => {
     if (initialOrder?.id) {
@@ -62,6 +76,30 @@ const OrderDetailScreen = ({ route, navigation }) => {
     closeReviewModal();
   };
 
+  const handleReportPress = () => {
+    const seller = order?.Listing?.User || order?.Listing?.owner || null;
+    setSelectedSeller(seller);
+    setSelectedReportReason("behavior");
+    setReportModalVisible(true);
+  };
+
+  const submitReport = () => {
+    const reason = reportReasons.find((item) => item.id === selectedReportReason);
+    setReportModalVisible(false);
+    Alert.alert(
+      "Report submitted",
+      `Thanks. We received your report for: ${reason?.label || selectedSeller?.name || "this seller"}. Our team will review it shortly.`
+    );
+    setSelectedSeller(null);
+    setSelectedReportReason("behavior");
+  };
+
+  const closeReportModal = () => {
+    setReportModalVisible(false);
+    setSelectedSeller(null);
+    setSelectedReportReason("behavior");
+  };
+
   if (!order) {
     return (
       <Screen style={styles.screen}>
@@ -72,8 +110,9 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
   const listing = order?.Listing;
   const buyer = order?.User;
+  const seller = listing?.User || listing?.owner;
   const createdAt = dayjs(order?.createdAt).format("MMM D, YYYY [at] h:mm A");
-  const imageUrl = listing?.images?.[0]?.url;
+  const imageUrl = listing?.images?.[0]?.url || listing?.Images?.[0]?.file_name || null;
 
 
   const getStatusColor = (status) => {
@@ -295,12 +334,29 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
         {/* Action Buttons */}
         <View style={styles.actionsSection}>
+          {order && order.status === "completed" && !order.hasReviewed && (
+
           <AppButton
             title="Leave Review"
             onPress={openReviewModal}
             variant="primary"
             size="md"
           />
+        )}
+        </View>
+
+        <View style={styles.actionsSection}>
+          {order.status === "completed" && (
+          <AppButton
+            title="Report Seller"
+            onPress={handleReportPress}
+            variant="outline"
+            size="md"
+          />
+          )}
+        </View>
+
+        <View style={styles.actionsSection}>
           <AppButton
             title="Back to Orders"
             onPress={() => navigation.goBack()}
@@ -344,6 +400,77 @@ const OrderDetailScreen = ({ route, navigation }) => {
               />
             )}
           </View>
+        </View>
+      </Modal>
+
+
+          {/* Report Modal */}
+          <Modal visible={reportModalVisible} transparent animationType="fade" onRequestClose={closeReportModal}>
+            <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={closeReportModal}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+          
+              <Animated.View style={[styles.reportModalCard, { backgroundColor: themeColors.surface }] }>
+                <LinearGradient colors={[colors.error, colors.error]} style={styles.reportModalHeader}>
+              <Text style={styles.modalTitle}>Report Seller</Text>
+              <TouchableOpacity onPress={closeReportModal} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color="#FFF" />
+              </TouchableOpacity>
+                </LinearGradient>
+            
+                <ScrollView showsVerticalScrollIndicator={false} style={styles.reportModalContent}>
+              <Text style={styles.modalSubtitle}>
+                Choose the reason that best matches the issue.
+              </Text>
+              <Text style={styles.reportSellerName}>
+                Seller: {selectedSeller?.name || seller?.name || "Unknown seller"}
+              </Text>
+              
+              <FlatList
+                data={reportReasons}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={styles.reportReasonList}
+                renderItem={({ item }) => {
+                  const selected = item.id === selectedReportReason;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.reportReasonItem, selected && styles.reportReasonItemSelected]}
+                      onPress={() => setSelectedReportReason(item.id)}
+                    >
+                      <MaterialCommunityIcons 
+                        name={item.icon} 
+                        size={22} 
+                        color={selected ? colors.error : colors.textSecondary} 
+                      />
+                      <View style={styles.reportReasonTextWrap}>
+                        <Text style={[styles.reportReasonLabel, selected && { color: colors.error }]}>
+                          {item.label}
+                        </Text>
+                      </View>
+                      <MaterialIcons
+                        name={selected ? "radio-button-checked" : "radio-button-unchecked"}
+                        size={22}
+                        color={selected ? colors.error : colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </ScrollView>
+            
+            <View style={styles.reportModalActions}>
+              <TouchableOpacity style={styles.cancelButton} onPress={closeReportModal}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.submitButton} onPress={submitReport}>
+                <LinearGradient colors={[colors.error, colors.error]} style={styles.submitButtonGradient}>
+                  <Text style={styles.submitButtonText}>Submit Report</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </View>
       </Modal>
     </Screen>
@@ -558,6 +685,103 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.medium,
     marginBottom: 20,
+  },
+  /* Report modal styles */
+  reportModalCard: {
+    width: '90%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    paddingBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  reportModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: colors.error,
+  },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  reportSellerName: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+  },
+  reportModalContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    maxHeight: 300,
+  },
+  reportReasonList: {
+    paddingVertical: 6,
+  },
+  reportReasonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+    marginBottom: 8,
+  },
+  reportReasonItemSelected: {
+    backgroundColor: `${colors.error}20`,
+  },
+  reportReasonTextWrap: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  reportReasonLabel: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  reportModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border || '#DDD',
+    backgroundColor: 'transparent',
+  },
+  cancelButtonText: {
+    color: colors.textSecondary || '#666',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  submitButton: {
+    flex: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  submitButtonGradient: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 
