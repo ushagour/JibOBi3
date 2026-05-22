@@ -233,7 +233,7 @@ function WelcomeScreen({ navigation }) {
           },
         ]}
       >
-        <Text style={styles.copyrightText}>© 2024 Jib w'Bie3. All rights reserved.</Text>
+        <Text style={styles.copyrightText}>© 2026 Jib w'Bie3. All rights reserved.</Text>
       </Animated.View>
     </ImageBackground>
   );
@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    width: 70,
-    height: 70,
+    width: 100,
+    height: 100,
     resizeMode: "contain",
   },
   appName: {

@@ -170,7 +170,6 @@ function RegisterScreen({ navigation }) {
                   <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
                 </LinearGradient>
                 <Text style={styles.title}>Create Account</Text>
-                <Text style={styles.subtitle}>Join our community today</Text>
               </Animated.View>
 
               {/* Animated Form Section */}
@@ -195,7 +194,6 @@ function RegisterScreen({ navigation }) {
                   
                   {/* Name Field */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Full Name</Text>
                     <FormField
                       autoCorrect={false}
                       icon="account"
@@ -207,7 +205,6 @@ function RegisterScreen({ navigation }) {
 
                   {/* Email Field */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Email Address</Text>
                     <FormField
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -222,7 +219,6 @@ function RegisterScreen({ navigation }) {
 
                   {/* Password Field */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Password</Text>
                     <View style={styles.passwordWrapper}>
                       <FormField
                         autoCapitalize="none"
@@ -352,8 +348,8 @@ const styles = StyleSheet.create({
     }),
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 100,
+    height: 100,
     resizeMode: "contain",
   },
   title: {

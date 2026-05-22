@@ -138,7 +138,6 @@ function LoginScreen({ navigation }) {
                   <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
                 </LinearGradient>
                 <Text style={styles.welcomeText}>Welcome Back!</Text>
-                <Text style={styles.subtitleText}>Sign in to continue</Text>
               </Animated.View>
 
               {/* Animated Form Section */}
@@ -166,7 +165,6 @@ function LoginScreen({ navigation }) {
                   
                   {/* Email Field */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Email Address</Text>
                     <FormField
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -182,7 +180,6 @@ function LoginScreen({ navigation }) {
 
                   {/* Password Field */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Password</Text>
                     <View style={styles.passwordWrapper}>
                       <FormField
                         autoCapitalize="none"
@@ -299,8 +296,8 @@ const styles = StyleSheet.create({
     }),
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 100,
+    height: 100,
     resizeMode: "contain",
   },
   welcomeText: {

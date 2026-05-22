@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   price: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "800",
     color: colors.primary,
   },
