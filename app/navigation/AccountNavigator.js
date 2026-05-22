@@ -60,7 +60,6 @@ const AccountNavigator = () => (
           rightAction={options.headerRight ? options.headerRight({ navigation: headerNavigation, route: headerRoute }) : null}
           showBackButton={Boolean(back)}
           onBackPress={() => headerNavigation.goBack()}
-          
         />
       ),
     })}

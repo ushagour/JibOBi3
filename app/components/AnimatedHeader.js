@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Animated, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -14,7 +15,6 @@ function AnimatedHeader({
   onBackPress,
   scrollY,
   gradientColors = [colors.primaryDark, colors.primaryLight],
-  style,
 }) {
   const insets = useSafeAreaInsets();
   const topPadding =
@@ -46,37 +46,34 @@ function AnimatedHeader({
       style={[
         styles.container,
         { opacity: animatedOpacity, transform: [{ translateY: animatedTranslateY }] },
-        style,
       ]}
     >
       <LinearGradient
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.gradient, { paddingTop: topPadding }]}
+        end={{ x: 1, y: 0 }}
+        style={styles.gradient}
       >
-        <View style={styles.row}>
-          <View style={styles.leftSide}>
-            {showBackButton ? (
-              <TouchableOpacity
-                onPress={onBackPress}
-                activeOpacity={0.8}
-                style={styles.backButton}
-              >
-                <MaterialCommunityIcons name="chevron-left" size={26} color={colors.white} />
-              </TouchableOpacity>
-            ) : null}
+        <BlurView intensity={80} tint="dark" style={[styles.headerBlur, { paddingTop: topPadding }]}>
+          <View style={styles.row}>
+            <View style={styles.leftSide}>
+              {showBackButton ? (
+                <TouchableOpacity onPress={onBackPress} activeOpacity={0.8} style={styles.headerButton}>
+                  <MaterialCommunityIcons name="chevron-left" size={24} color={colors.white} />
+                </TouchableOpacity>
+              ) : null}
 
-            <View style={styles.textWrap}>
-              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-              <Text numberOfLines={1} style={styles.title}>
-                {title}
-              </Text>
+              <View style={styles.textWrap}>
+                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+                <Text numberOfLines={1} style={styles.title}>
+                  {title}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          {rightAction ? <View style={styles.rightSide}>{rightAction}</View> : null}
-        </View>
+            {rightAction ? <View style={styles.rightSide}>{rightAction}</View> : null}
+          </View>
+        </BlurView>
       </LinearGradient>
     </Animated.View>
   );
@@ -88,8 +85,9 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 0,
     marginBottom: 12,
-    borderRadius: 24,
-    overflow: "hidden",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: Platform.OS === "ios" ? "hidden" : "visible",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -103,29 +101,33 @@ const styles = StyleSheet.create({
     }),
   },
   gradient: {
-    paddingHorizontal: Platform.OS === "ios" ? 18 : 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: "hidden",
+  },
+  headerBlur: {
     paddingVertical: Platform.OS === "ios" ? 16 : 14,
+    paddingHorizontal: 16,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
   },
   leftSide: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     minWidth: 0,
   },
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.18)",
+    marginRight: 12,
   },
   textWrap: {
     flex: 1,
@@ -140,8 +142,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.white,
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "600",
   },
   rightSide: {
     flexShrink: 0,
