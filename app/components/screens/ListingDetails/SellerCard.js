@@ -25,11 +25,13 @@ export default function SellerCard({ seller, onContact, styles: s = {} }) {
               <Text style={s.sellerBadge}>Verified Member</Text>
             </View>
           </View>
-          <TouchableOpacity style={s.contactButton} onPress={onContact}>
-            <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={s.contactButtonGradient}>
-              <MaterialCommunityIcons name="chat-processing" size={20} color="#FFF" />
-            </LinearGradient>
-          </TouchableOpacity>
+          {typeof onContact === "function" ? (
+            <TouchableOpacity style={s.contactButton} onPress={onContact}>
+              <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={s.contactButtonGradient}>
+                <MaterialCommunityIcons name="chat-processing" size={20} color="#FFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     </AnimatedInfoCard>

@@ -27,7 +27,7 @@ import { Linking } from "react-native";
 import AppButton from "../../components/Button";
 import listingsApi from "../../api/listings";
 import reviewsApi from "../../api/reviews";
-import notificationsApi from "../../api/notifications";
+import messagesApi from "../../api/messages";
 import useAuth from "../../auth/useAuth";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
@@ -146,7 +146,7 @@ function ListingDetailsScreen({ route, navigation }) {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this item: ${listing?.title}\nPrice: ${listing?.price} MAD`,
+        message: `Check out this item: ${listing?.title}\nPrice: ${listing?.price} DH`,
         title: listing?.title,
       });
     } catch (error) {
@@ -259,12 +259,8 @@ function ListingDetailsScreen({ route, navigation }) {
 
     setSendingMessage(true);
     try {
-
-      const response = await notificationsApi.createForUser({
-        userId: listing.owner.id,
-        actorId: user?.userId,
-        type: "message",
-        title: `New message about "${listing.title}" from ${user?.firstName || "a buyer"}`,
+      const response = await messagesApi.createMessage({
+        recipientId: listing.owner.id,
         content: quickMessage.trim(),
         listingId: listing.id,
       });
@@ -276,12 +272,12 @@ function ListingDetailsScreen({ route, navigation }) {
 
       Alert.alert(
         "Message sent",
-        "Your message has been sent to the seller. They will be notified."
+        "Your message has been sent to the seller."
       );
       setQuickMessage("");
       closeContactModal();
     } catch (error) {
-      Alert.alert("Error", "Failed to send message. Please try again.");
+      Alert.alert("Error", "Failed to send message. Please try again.",error.message);
     } finally {
       setSendingMessage(false);
     }
@@ -429,7 +425,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   {/* Price */}
                   <AnimatedInfoCard delay={100}>
                     <View style={styles.priceContainer}>
-                      <Text style={styles.price}>{listing.price} MAD</Text>
+                      <Text style={styles.price}>{listing.price} DH</Text>
                       {!isSold && (
                         <View style={styles.locationInline}>
                           <MaterialIcons name="place" size={14} color={colors.textSecondary} />
@@ -440,7 +436,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   </AnimatedInfoCard>
 
                   {/* Seller Card */}
-                  <SellerCard seller={listing.owner} onContact={openContactModal} styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
+                  <SellerCard seller={listing.owner} styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
 
                   {/* Description */}
                   <AnimatedInfoCard delay={250}>

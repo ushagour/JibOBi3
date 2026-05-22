@@ -677,7 +677,7 @@ function ListingAddScreen({ navigation }) {
                     keyboardType="numeric"
                     maxLength={8}
                     name="price"
-                    placeholder="Price (MAD)"
+                    placeholder="Price (DH)"
                     icon="cash"
                   />
                 </View>

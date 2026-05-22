@@ -3,6 +3,8 @@ import {
   StyleSheet,
   View,
   ScrollView,
+  Platform,
+  KeyboardAvoidingView,
   TouchableOpacity,
   Alert,
   Image,
@@ -223,9 +225,9 @@ const OrderDetailScreen = ({ route, navigation }) => {
             <View style={styles.itemPriceRow}>
               <View>
                 <Text style={styles.itemLabel}>Unit Price</Text>
-                <Text style={styles.itemPrice}>
-                  {listing?.price ? `${listing.price.toFixed(2)} MAD` : "N/A"}
-                </Text>
+                  <Text style={styles.itemPrice}>
+                    {listing?.price ? `${listing.price.toFixed(2)} DH` : "N/A"}
+                  </Text>
               </View>
               <View>
                 <Text style={styles.itemLabel}>Quantity</Text>
@@ -287,9 +289,9 @@ const OrderDetailScreen = ({ route, navigation }) => {
           <View style={[styles.priceCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Unit Price</Text>
-              <Text style={styles.priceValue}>
-                {listing?.price ? `${listing.price.toFixed(2)} MAD` : "N/A"}
-              </Text>
+                <Text style={styles.priceValue}>
+                  {listing?.price ? `${listing.price.toFixed(2)} DH` : "N/A"}
+                </Text>
             </View>
 
             <View style={[styles.priceRow, styles.borderTop]}>
@@ -300,7 +302,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
             <View style={[styles.priceRow, styles.borderTop]}>
               <Text style={styles.priceLabelBold}>Total</Text>
               <Text style={styles.priceTotalValue}>
-                {order?.total_price ? `${order.total_price.toFixed(2)} MAD` : "N/A"}
+                  {order?.total_price ? `${order.total_price.toFixed(2)} DH` : "N/A"}
               </Text>
             </View>
 
@@ -378,28 +380,38 @@ const OrderDetailScreen = ({ route, navigation }) => {
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.reviewModalCard, { backgroundColor: themeColors.surface }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Leave a Review</Text>
-              <TouchableOpacity onPress={closeReviewModal}>
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={colors.textPrimary}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.modalSubtitle}>
-              Share your rating and a quick note about this listing.
-            </Text>
+          <KeyboardAvoidingView
+            style={styles.reviewModalKeyboardWrap}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
+          >
+            <View style={[styles.reviewModalCard, { backgroundColor: themeColors.surface }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Leave a Review</Text>
+                <TouchableOpacity onPress={closeReviewModal}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={24}
+                    color={colors.textPrimary}
+                  />
+                </TouchableOpacity>
+              </View>
 
-            {order?.Listing && (
-              <AddReviewForm
-                listing={order.Listing}
-                onSuccess={handleReviewCreated}
-              />
-            )}
-          </View>
+              <ScrollView
+                style={styles.reviewModalScroll}
+                contentContainerStyle={styles.reviewModalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {order?.Listing && (
+                  <AddReviewForm
+                    listing={order.Listing}
+                    onSuccess={handleReviewCreated}
+                  />
+                )}
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -665,11 +677,23 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 20,
     width: "90%",
+    maxHeight: "85%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  reviewModalKeyboardWrap: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewModalScroll: {
+    maxHeight: 420,
+  },
+  reviewModalScrollContent: {
+    paddingBottom: 12,
   },
   modalHeader: {
     flexDirection: "row",

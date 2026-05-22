@@ -10,13 +10,13 @@ import reviewsApi from "../api/reviews";
 import useAuth from "../auth/useAuth";
 import { Form, FormField, SubmitButton } from "./forms";
 
+
 function RatingSelector() {
   const { values, setFieldValue } = useFormikContext();
   const selectedRating = values.rating || 0;
 
   return (
     <View style={styles.ratingBlock}>
-      <Text style={styles.ratingLabel}>Rating</Text>
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((rating) => {
           const selected = rating <= selectedRating;

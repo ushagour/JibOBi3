@@ -42,7 +42,7 @@ export const Product = ({
       <View style={styles.productContent}>
         <View style={styles.titlePriceRow}>
           <Text style={styles.productTitle} numberOfLines={1}>{title}</Text>
-          <Text style={styles.price}>{price} MAD</Text>
+          <Text style={styles.price}>{price} DH</Text>
         </View>
         {!!description && (
           <Text style={styles.description} numberOfLines={2}>{description}</Text>

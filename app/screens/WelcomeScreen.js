@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useAuth from "../auth/useAuth";
+import SplashContext from "../context/SplashContext";
 import listingsApi from "../api/listings";
 import colors from "../config/colors";
 
@@ -20,6 +21,7 @@ const { width, height } = Dimensions.get("window");
 
 function WelcomeScreen({ navigation }) {
   const auth = useAuth();
+  const { splashHidden } = useContext(SplashContext);
   const [totalListings, setTotalListings] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -137,7 +139,7 @@ function WelcomeScreen({ navigation }) {
           </LinearGradient>
         </View>
         
-        <Text style={styles.appName}>Jib w'Bie3</Text>
+        {splashHidden && <Text style={styles.appName}>Jib w'Bie3</Text>}
         <Text style={styles.tagline}>Sell What You Don't Need!</Text>
         
         {/* Animated Stats Badge */}

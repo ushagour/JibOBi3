@@ -248,7 +248,7 @@ const AnimatedSearchBar = ({ searchQuery, onSearchChange, isFocused, onFocus, on
 
   const searchBarWidth = searchBarAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [screenWidth - 16, screenWidth - 16],
+    outputRange: [screenWidth - 32, screenWidth - 32],
   });
 
   return (
@@ -313,27 +313,27 @@ const QuickFilters = ({ onFilterPress, activeFilter }) => {
 };
 
 // Featured Banner Widget
-// const FeaturedBanner = () => {
-//   return (
-//     <LinearGradient
-//       colors={["#FF6B6B", "#FF8E53"]}
-//       start={{ x: 0, y: 0 }}
-//       end={{ x: 1, y: 0 }}
-//       style={styles.featuredBanner}
-//     >
-//       <View style={styles.bannerContent}>
-//         <View>
-//           <Text style={styles.bannerTitle}>Limited Time Offer</Text>
-//           <Text style={styles.bannerSubtitle}>Up to 50% off on select items</Text>
-//           <TouchableOpacity style={styles.bannerButton}>
-//             <Text style={styles.bannerButtonText}>Shop Now →</Text>
-//           </TouchableOpacity>
-//         </View>
-//         <MaterialCommunityIcons name="sale" size={60} color="#FFF" style={styles.bannerIcon} />
-//       </View>
-//     </LinearGradient>
-//   );
-// };
+const FeaturedBanner = () => {
+  return (
+    <LinearGradient
+      colors={["#FF6B6B", "#FF8E53"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.featuredBanner}
+    >
+      <View style={styles.bannerContent}>
+        <View>
+          <Text style={styles.bannerTitle}>Limited Time Offer</Text>
+          <Text style={styles.bannerSubtitle}>Up to 50% off on select items</Text>
+          <TouchableOpacity style={styles.bannerButton}>
+            <Text style={styles.bannerButtonText}>Shop Now →</Text>
+          </TouchableOpacity>
+        </View>
+        <MaterialCommunityIcons name="sale" size={60} color="#FFF" style={styles.bannerIcon} />
+      </View>
+    </LinearGradient>
+  );
+};
 
 // Main Component
 function ListingsScreen({ navigation, route }) {
@@ -606,7 +606,7 @@ function ListingsScreen({ navigation, route }) {
   );
 
   return (
-    <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} scrollable={false} paddingSize="md">
+    <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} scrollable={false} paddingSize="xs">
       <ActivityIndicator visible={activeLoading} />
 
       <FlatList
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   searchWrapper: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
     marginBottom: 16,
   },
   searchBarContainer: {
@@ -729,11 +729,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   quickFiltersSection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     marginBottom: 20,
   },
   quickFiltersScrollContent: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
   },
   quickFilterChip: {
     flexDirection: "row",
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     marginBottom: 12,
   },
   sectionTitle: {
@@ -822,7 +822,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   categoriesContainer: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
     gap: 8,
   },
   categoryChip: {

@@ -133,7 +133,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         </Text>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Unit price</Text>
-          <Text style={styles.summaryValue}>{unitPrice.toFixed(2)} MAD</Text>
+          <Text style={styles.summaryValue}>{unitPrice.toFixed(2)} DH</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Quantity</Text>
@@ -155,7 +155,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Total</Text>
-          <Text style={styles.totalValue}>{total.toFixed(2)} MAD</Text>
+          <Text style={styles.totalValue}>{total.toFixed(2)} DH</Text>
         </View>
       </View>
 
