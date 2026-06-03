@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 import colors from "../../config/colors";
 import useTheme from "../../hooks/useTheme";
 import AwesomeAlert from "react-native-awesome-alerts";
@@ -109,6 +110,20 @@ function SettingsScreen() {
               trackColor={{ false: colors.lightGray, true: colors.primary }}
               thumbColor={darkMode ? colors.primary : colors.white}
             />
+          </View>
+        </View>
+
+        {/* Language Toggle */}
+        <View style={[styles.card, styles.cardSpacing, { backgroundColor: themeColors.surface }]}>
+          <View style={styles.row}>
+            <View style={styles.iconWrap}>
+              <MaterialCommunityIcons name="translate" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.textWrap}>
+              <Text style={styles.rowTitle}>Language</Text>
+              <Text style={styles.rowSubTitle}>Switch between English and French</Text>
+            </View>
+            <LanguageSwitcher />
           </View>
         </View>
 

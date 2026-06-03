@@ -11,7 +11,7 @@ import useAuth from "../auth/useAuth";
 import { Form, FormField, SubmitButton } from "./forms";
 
 
-function RatingSelector() {
+function RatingSelector({ targetLabel = "listing", targetName }) {
   const { values, setFieldValue } = useFormikContext();
   const selectedRating = values.rating || 0;
 
@@ -38,13 +38,13 @@ function RatingSelector() {
         })}
       </View>
       <Text style={styles.ratingHint}>
-        Tap a star to choose how you feel about the listing.
+        Tap a star to choose how you feel about the {targetLabel}{targetName ? ` ${targetName}` : ""}.
       </Text>
     </View>
   );
 }
 
-function AddReviewForm({ listing, onSuccess }) {
+function AddReviewForm({ listing, targetLabel = "listing", targetName, onSuccess }) {
   const { user } = useAuth();
 
   const handleSubmit = async ({ rating, content }, { resetForm }) => {
@@ -83,14 +83,14 @@ function AddReviewForm({ listing, onSuccess }) {
       onSubmit={handleSubmit}
       validationSchema={validationSchema}
     >
-      <RatingSelector />
+      <RatingSelector targetLabel={targetLabel} targetName={targetName} />
 
       <FormField
         maxLength={500}
         multiline
         name="content"
         numberOfLines={4}
-        placeholder="Write your review..."
+        placeholder={`Write your review about the ${targetLabel}${targetName ? ` ${targetName}` : ""}...`}
       />
 
       <SubmitButton title="Submit Review" />

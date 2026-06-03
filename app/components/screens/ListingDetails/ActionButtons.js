@@ -22,9 +22,8 @@ export default function ActionButtons({ onOrder, onContact, onEdit, isOwner, isA
         )}
 
         {isOwner && (
-          <TouchableOpacity style={[s.editButton, { backgroundColor: themeColors.surface }]} onPress={onEdit}>
-            <MaterialCommunityIcons name="pencil" size={22} color={colors.primary} />
-            <Text style={s.editButtonText}>Edit Listing</Text>
+          <TouchableOpacity style={[s.editButtonIcon, { backgroundColor: themeColors.surface }]} onPress={onEdit}>
+            <MaterialCommunityIcons name="pencil" size={18} color={colors.primary} />
           </TouchableOpacity>
         )}
       </View>

@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "Jibobi3",
-    "slug": "jibobi3",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon-v1.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain"
+      "image": "./assets/screen.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#f3efe6"
     },
     "ios": {
       "supportsTablet": true

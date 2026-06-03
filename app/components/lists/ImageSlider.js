@@ -6,22 +6,25 @@ const { width } = Dimensions.get('window');
 
 const ImageSlider = (props) => {
   const { images } = props;
+  const hasMultipleImages = Array.isArray(images) && images.length > 1;
+  const sliderWidth = width - 24;
+  const sliderHeight = 300;
 
   return (
     <Swiper
       style={styles.wrapper}
-      showsButtons={true}
+      showsButtons={hasMultipleImages}
       showsPagination={false}
       loop={true}
-      autoplay={true}
+      autoplay={hasMultipleImages}
       autoplayTimeout={3}
       nextButton={<Text style={styles.arrow}>▶</Text>}
       prevButton={<Text style={styles.arrow}>◀</Text>}
     >
-      {images.map((image, index) => (
+      {(images || []).map((image, index) => (
         <View key={index} style={styles.slide}>
           {/* Ensure the source prop is an object with a uri key */}
-          <Image source={{ uri: image.url }} style={styles.image} />
+          <Image source={{ uri: image.url }} style={[styles.image, { width: sliderWidth, height: sliderHeight }]} resizeMode="cover" />
         </View>
       ))}
     </Swiper>
@@ -30,17 +33,20 @@ const ImageSlider = (props) => {
 
 const styles = StyleSheet.create({
   wrapper: {
-    height: 200,
+    height: 320,
+  },
+  slide: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
-    width: width - 40,
-    height: 200,
-    borderRadius: 10,
-    margin: 20,
+    borderRadius: 14,
+    marginHorizontal: 12,
+    marginTop: 12,
   },
   arrow: {
     color: '#fff',
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: 'bold',
   },
 });

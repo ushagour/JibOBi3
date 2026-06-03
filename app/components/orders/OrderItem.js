@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TouchableWithou
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../../config/colors';
 
-const OrderItem = ({ order, onPress, onReport, onReview }) => {
+const OrderItem = ({ order, onPress, onReport, onReview, onClose }) => {
   // Safely extract data with fallbacks
   const listing = order?.Listing;
   const seller = order?.Listing?.owner;
@@ -14,7 +14,9 @@ const OrderItem = ({ order, onPress, onReport, onReview }) => {
   const normalizedStatus = String(order?.normalizedStatus ?? order?.status ?? order?.orderStatus ?? "").trim().toLowerCase();
   const imageUrl = listing?.images?.[0]?.url || listing?.Images?.[0]?.file_name || null;
   const [imageModalVisible, setImageModalVisible] = useState(false);
-  
+  const isSoldListing = order?.Listing?.status === "selled" || order?.Listing?.status === "sold out" || order?.Listing?.status === "sold";
+  const isSoldOrder = order?.status === "completed" || normalizedStatus === "selled" || normalizedStatus === "sold out" || normalizedStatus === "sold";
+  const isSold = isSoldListing || isSoldOrder;  
 
   return (
     <View>
@@ -49,6 +51,12 @@ const OrderItem = ({ order, onPress, onReport, onReview }) => {
           <Text style={styles.reportButtonText}>Leave Review</Text>
         </TouchableOpacity>
       )}
+        {isSold && (
+        <View style={styles.soldBadgeRow}>
+          <Text style={styles.soldBadgeText}>SOLD</Text>
+        </View>
+      )}
+
 
       {/* Image modal */}
       <Modal visible={imageModalVisible} transparent animationType="fade" onRequestClose={() => setImageModalVisible(false)}>
@@ -154,6 +162,34 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  closeButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  closeButtonText: {
+    color: colors.success,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  soldBadgeRow: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    backgroundColor: colors.light,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  soldBadgeText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
 

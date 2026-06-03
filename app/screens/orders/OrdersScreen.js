@@ -96,6 +96,42 @@ function OrdersScreen({ navigation }) {
     setReportModalVisible(true);
   };
 
+  const handleCloseOrder = (order) => {
+    Alert.alert(
+      "Close order",
+      "Mark this order as completed now that the item has been sold?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Close",
+          style: "default",
+          onPress: async () => {
+            try {
+              const response = await ordersApi.updateOrderStatus(order.id, "completed");
+              if (!response.ok) {
+                Alert.alert("Error", "Could not close the order.");
+                return;
+              }
+
+              setOrders((current) =>
+                current.map((item) =>
+                  String(item.id) === String(order.id)
+                    ? { ...item, status: "completed", normalizedStatus: "completed" }
+                    : item
+                )
+              );
+
+              Alert.alert("Success", "Order closed successfully.");
+            } catch (error) {
+              if (__DEV__) console.error("Failed to close order:", error);
+              Alert.alert("Error", "Could not close the order.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const submitReport = () => {
     const reason = reportReasons.find((item) => item.id === selectedReportReason);
     setReportModalVisible(false);
@@ -154,12 +190,14 @@ function OrdersScreen({ navigation }) {
             order={item}
             onPress={() => navigation.navigate(routes.ORDER_DETAILS, { order: item })}
             onReport={handleReportSeller}
+            onClose={handleCloseOrder}
             onReview={(order) => {
               setSelectedOrder(order);
               setReviewRating(5);
               setReviewComment("");
               setReviewModalVisible(true);
             }}
+            
           />
         )}
       />

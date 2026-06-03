@@ -82,15 +82,29 @@ function OrderCheckoutScreen({ route, navigation }) {
       }
 
       // Get the created order data
-      const createdOrder = response.data;
+      const createdOrderRaw = response.data;
+
+      // Normalize order object to ensure `id` exists (server may return different key names)
+      const createdOrder = {
+        ...createdOrderRaw,
+        id:
+          createdOrderRaw?.id ||
+          createdOrderRaw?.order_id ||
+          createdOrderRaw?.orderId ||
+          createdOrderRaw?.order?.id ||
+          null,
+      };
+
+      if (__DEV__) console.log("Created order response:", createdOrderRaw, createdOrder);
 
       Alert.alert("Order placed", "Your order has been created successfully.", [
         {
           text: "View Order Details",
           onPress: () => {
             // Navigate to order details screen with the created order
+            // If we don't have an id, still pass the raw payload so the details screen can fetch by other means
             navigation.replace(routes.ORDER_DETAILS, {
-              order: createdOrder,
+              order: createdOrder.id ? createdOrder : createdOrderRaw,
             });
           },
         },

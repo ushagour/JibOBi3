@@ -55,7 +55,7 @@ const menuItems = [
 
   },
   {
-    title: "Conversation",
+    title: "chat",
     icon: {
       name: "message-text",
       backgroundColor: colors.primary,

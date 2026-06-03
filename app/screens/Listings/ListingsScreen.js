@@ -125,44 +125,7 @@ const AnimatedProductCard = ({ item, index, onPress, onLikePress, isLiked, navig
   );
 };
 
-// Stats Widget Component
-const StatsWidget = ({ listings }) => {
-  const stats = useMemo(() => {
-    const total = listings?.length || 0;
-    const available = listings?.filter(item => isAvailableStatus(item?.status)).length || 0;
-    const categories = new Set(listings?.map(item => item?.Category?.name).filter(Boolean)).size;
-    return { total, available, categories };
-  }, [listings]);
 
-  return (
-    <LinearGradient
-      colors={[colors.primary, colors.primaryLight || colors.primary]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.statsWidget}
-    >
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <MaterialCommunityIcons name="package-variant" size={24} color="#FFF" />
-          <Text style={styles.statNumber}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total Items</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <MaterialCommunityIcons name="check-circle" size={24} color="#FFF" />
-          <Text style={styles.statNumber}>{stats.available}</Text>
-          <Text style={styles.statLabel}>Available</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <MaterialCommunityIcons name="tag-multiple" size={24} color="#FFF" />
-          <Text style={styles.statNumber}>{stats.categories}</Text>
-          <Text style={styles.statLabel}>Categories</Text>
-        </View>
-      </View>
-    </LinearGradient>
-  );
-};
 
 // Trending Categories Widget
 const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, onSeeAll }) => {
@@ -278,9 +241,9 @@ const AnimatedSearchBar = ({ searchQuery, onSearchChange, isFocused, onFocus, on
 const QuickFilters = ({ onFilterPress, activeFilter }) => {
   const { colors: themeColors } = useTheme();
   const filters = [
-    { icon: "💰", label: "Under $50", value: "under50" },
+    { icon: "📍", label: "Nearby", value: "nearby", isActive: true },
     { icon: "⭐", label: "Top Rated", value: "topRated" },
-    { icon: "📍", label: "Nearby", value: "nearby" },
+    { icon: "🆕", label: "New", value: "new" },
   ];
 
   return (

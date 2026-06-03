@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   StyleSheet,
+  Image,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -73,6 +74,14 @@ function ListingDetailsScreen({ route, navigation }) {
   const listingLatitude = Number(listing?.location?.latitude ?? listing?.latitude);
   const listingLongitude = Number(listing?.location?.longitude ?? listing?.longitude);
   const hasCoordinates = Number.isFinite(listingLatitude) && Number.isFinite(listingLongitude);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Normalize images array and current image URL to avoid runtime errors
+  const listingImages = Array.isArray(listing?.images)
+    ? listing.images.map((img) => (typeof img === "string" ? img : img?.url || img?.file_name || img?.path || ""))
+    : [];
+
+  const currentImageUrl = listingImages.length > 0 ? listingImages[currentImageIndex % listingImages.length] : null;
 
   const fetchReviews = async () => {
     try {
@@ -370,7 +379,7 @@ function ListingDetailsScreen({ route, navigation }) {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <AnimatedHeader title={listing?.title} onBack={() => navigation.goBack()} onShare={handleShare} styles={styles} />
-      
+
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <Animated.FlatList
@@ -383,14 +392,23 @@ function ListingDetailsScreen({ route, navigation }) {
               <>
                 {/* Image Section */}
                 <View style={styles.imageContainer}>
-                  <ImageSlider images={listing.images} style={styles.image} />
-                  <View style={styles.statusBadge}>
-                    <LinearGradient
-                      colors={isSold ? [colors.error, colors.error] : [colors.success, colors.success]}
-                      style={styles.statusGradient}
-                    >
-                      <Text style={styles.statusText}>{displayStatus}</Text>
-                    </LinearGradient>
+                  <ImageSlider images={listing.images} style={styles.imageFull} />
+
+                  <LinearGradient colors={["transparent", "rgba(0,0,0,0.35)"]} style={styles.imageGradient} />
+
+                  <View style={styles.headerOverlays} pointerEvents="none">
+                    <View style={styles.leftBadges}>
+                      <View style={styles.statusBadge}>
+                        <LinearGradient
+                          colors={isSold ? [colors.error, colors.error] : [colors.success, colors.success]}
+                          style={styles.statusGradient}
+                        >
+                          <Text style={styles.statusText}>{displayStatus}</Text>
+                        </LinearGradient>
+                      </View>
+                    </View>
+
+               
                   </View>
                 </View>
 
@@ -398,9 +416,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   {/* Category & Rating */}
                   <AnimatedInfoCard delay={0}>
                     <View style={styles.metaHeaderRow}>
-                      <View style={styles.categoryBadge}>
-                        <Text style={styles.categoryText}>{listing.Category?.name || "Uncategorized"}</Text>
-                      </View>
+                   
                       {listing.rating !== undefined && (
                         <View style={styles.ratingContainer}>
                           {[...Array(5)].map((_, i) => (
@@ -420,6 +436,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   {/* Title */}
                   <AnimatedInfoCard delay={50}>
                     <Text style={styles.title}>{listing.title}</Text>
+                    <Text style={styles.subtitleMuted}>{listing.Category?.name || ''} </Text>
                   </AnimatedInfoCard>
 
                   {/* Price */}
@@ -436,7 +453,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   </AnimatedInfoCard>
 
                   {/* Seller Card */}
-                  <SellerCard seller={listing.owner} styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
+                  <SellerCard seller={listing.owner} onContact={openContactModal} styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
 
                   {/* Description */}
                   <AnimatedInfoCard delay={250}>
@@ -475,9 +492,35 @@ function ListingDetailsScreen({ route, navigation }) {
                     </AnimatedInfoCard>
                   )}
 
+                  {/* Location preview + open-in-maps */}
+                  {/* {hasCoordinates && (
+                    <AnimatedInfoCard delay={350}>
+                      <View style={[styles.locationPreviewCard, { backgroundColor: themeColors.surface }]}>
+                        <View style={styles.locationBubbleWrap}>
+                          <View style={styles.locationBubbleOuter}>
+                            <View style={styles.locationBubbleMiddle}>
+                              <View style={styles.locationBubbleInner}>
+                                <MaterialIcons name="place" size={18} color={colors.primary} />
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+
+                        <View style={styles.locationInfoBlock}>
+                          <Text style={styles.locationNameText}>{locationName}</Text>
+                          <Text style={styles.locationCoordsText}>{listingLatitude.toFixed(6)}, {listingLongitude.toFixed(6)}</Text>
+                          <TouchableOpacity style={styles.openMapButton} onPress={() => openGpsNavigation(listingLatitude, listingLongitude)}>
+                            <Text style={styles.openMapButtonText}>Open in Maps</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </AnimatedInfoCard>
+                  )} */}
+
                   
 
                   {/* Action Buttons */}
+                  <View style={styles.actionButtonsSpacer} />
                   <ActionButtons
                     onOrder={handleOrderNow}
                     onEdit={() => navigation.navigate('ListingEdit', { listing })}
@@ -486,6 +529,34 @@ function ListingDetailsScreen({ route, navigation }) {
                     isSold={isSold}
                     styles={styles}
                   />
+
+                  {/* Suggestions / Similar Items */}
+                  <AnimatedInfoCard delay={400}>
+                    <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
+                      <View style={styles.sectionHeader}>
+                        <MaterialCommunityIcons name="lightbulb-on-outline" size={20} color={colors.primary} />
+                        <Text style={styles.sectionTitle}>Suggestions</Text>
+                      </View>
+                      <View style={styles.suggestionsContent}>
+                        <View style={styles.suggestionItem}>
+                          <MaterialCommunityIcons name="shield-check" size={18} color={colors.success} />
+                          <Text style={styles.suggestionText}>Verify the seller before making payment</Text>
+                        </View>
+                        <View style={styles.suggestionItem}>
+                          <MaterialCommunityIcons name="lock" size={18} color={colors.info} />
+                          <Text style={styles.suggestionText}>Use secure payment methods when possible</Text>
+                        </View>
+                        <View style={styles.suggestionItem}>
+                          <MaterialCommunityIcons name="camera" size={18} color={colors.warning} />
+                          <Text style={styles.suggestionText}>Request more photos or video before purchasing</Text>
+                        </View>
+                        <View style={styles.suggestionItem}>
+                          <MaterialCommunityIcons name="message-alert" size={18} color={colors.danger} />
+                          <Text style={styles.suggestionText}>Meet in a safe, public location</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </AnimatedInfoCard>
 
                   {/* Reviews Section */}
                   <AnimatedInfoCard delay={450}>
@@ -632,11 +703,51 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: "relative",
+    marginHorizontal: 0,
   },
-  image: {
+  imageFull: {
     width: "100%",
-    height: 400,
+    height: Math.round(width * 0.75),
   },
+  imageGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 110,
+  },
+  headerOverlays: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    top: 12,
+    bottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    pointerEvents: "none",
+  },
+  leftBadges: {
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  priceWrap: {
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+  },
+  priceChip: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    color: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  // image: {
+  //   width: "100%",
+  //   height: width, // Square aspect ratio
+  // },
   statusBadge: {
     position: "absolute",
     top: 16,
@@ -654,18 +765,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   detailsContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 14,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   animatedInfoCard: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   metaHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    gap: 10,
+    flexWrap: "wrap",
+    marginBottom: 10,
   },
   categoryBadge: {
     backgroundColor: `${colors.primary}15`,
@@ -689,22 +802,43 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginBottom: 8,
-    lineHeight: 32,
+    marginBottom: 6,
+    lineHeight: 30,
+  },
+  subtitleMuted: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 6,
   },
   priceContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   price: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "800",
     color: colors.primary,
+  },
+  itemImagePreviewWrap: {
+    width: "100%",
+    height: 180,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  itemImagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  placeholderImageAlt: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.lightGray,
   },
   availableBadge: {
     flexDirection: "row",
@@ -732,8 +866,8 @@ const styles = StyleSheet.create({
   },
   sellerCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 14,
     ...Platform.select({
       ios: {
         shadowColor: colors.shadowColor,
@@ -749,13 +883,13 @@ const styles = StyleSheet.create({
   sellerHeader: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10,
   },
   sellerAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     overflow: "hidden",
-    marginRight: 12,
   },
   avatarGradient: {
     flex: 1,
@@ -763,7 +897,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
     color: "#FFF",
   },
@@ -771,10 +905,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sellerName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   sellerRating: {
     flexDirection: "row",
@@ -787,9 +921,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   contactButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     overflow: "hidden",
   },
   contactButtonGradient: {
@@ -829,8 +963,9 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 6,
     ...Platform.select({
       ios: {
         shadowColor: colors.shadowColor,
@@ -847,16 +982,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: colors.textPrimary,
   },
   description: {
     fontSize: 14,
-    lineHeight: 22,
+    lineHeight: 21,
     color: colors.textSecondary,
   },
   carDetailsGrid: {
@@ -879,6 +1014,21 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: colors.textPrimary,
   },
+  suggestionsContent: {
+    gap: 12,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 8,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
   locationText: {
     fontSize: 14,
     color: colors.textSecondary,
@@ -886,39 +1036,40 @@ const styles = StyleSheet.create({
   locationPreviewCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 18,
+    padding: 12,
     backgroundColor: colors.background,
+    paddingTop : 16,
   },
   locationBubbleWrap: {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     alignItems: "center",
     justifyContent: "center",
   },
   locationBubbleOuter: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: `${colors.primary}14`,
   },
   locationBubbleMiddle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: `${colors.primary}1F`,
   },
   locationBubbleInner: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
@@ -928,7 +1079,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   locationNameText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.textPrimary,
   },
@@ -941,40 +1092,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 10,
     backgroundColor: colors.primary,
   },
   openMapButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
     color: "#FFF",
   },
   actionButtonsContainer: {
-    gap: 12,
+    gap: 10,
+  },
+  actionButtonsSpacer: {
+    height: 14,
   },
   orderButton: {
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
-    paddingTop: 8,
   },
   orderButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
+    paddingVertical: 13,
   },
   orderButtonText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
   },
   messageButton: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
@@ -991,14 +1144,27 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  editButtonIcon: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 2,
   },
   editButtonText: {
     color: colors.primary,
@@ -1010,7 +1176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalBackdrop: {
@@ -1021,7 +1187,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     maxHeight: height * 0.8,
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: "hidden",
   },
   modalHeader: {
@@ -1053,18 +1219,22 @@ const styles = StyleSheet.create({
   },
   contactMethods: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
   },
   contactMethod: {
     alignItems: "center",
     gap: 8,
+    width: 96,
+    paddingVertical: 4,
   },
   contactIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1074,20 +1244,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   quickMessageSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
   },
   quickMessageLabel: {
     fontSize: 14,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   quickMessageInput: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 11,
     fontSize: 14,
     color: colors.textPrimary,
     minHeight: 100,
@@ -1096,19 +1266,19 @@ const styles = StyleSheet.create({
   charCount: {
     fontSize: 11,
     color: colors.textMuted,
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 14,
     textAlign: "right",
   },
   sendButton: {
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
   },
   sendButtonDisabled: {
     opacity: 0.5,
   },
   sendButtonGradient: {
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: "center",
   },
   sendButtonText: {

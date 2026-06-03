@@ -142,6 +142,66 @@ function NotificationsScreen({ navigation }) {
     </View>
   );
 
+  const resolveNotificationTarget = (item) => {
+    // Try common places where related ids may exist (supporting different backend shapes)
+    const orderId =
+      item.order_id ||
+      item?.data?.order_id ||
+      item?.data?.order?.id ||
+      item?.order?.id ||
+      item?.meta?.order_id ||
+      item?.payload?.order_id ||
+      item?.payload?.order?.id ||
+      null;
+
+    const listingId =
+      item.listing_id ||
+      item?.data?.listing_id ||
+      item?.listing?.id ||
+      item?.meta?.listing_id ||
+      item?.payload?.listing_id ||
+      item?.payload?.listing?.id ||
+      null;
+
+    const conversationId =
+      item.conversation_id ||
+      item?.data?.conversation_id ||
+      item?.meta?.conversation_id ||
+      item?.payload?.conversation_id ||
+      null;
+
+    const otherUserId =
+      item?.actor?.id ||
+      item.actor_id ||
+      item?.data?.user_id ||
+      item?.payload?.user_id ||
+      item?.payload?.actor?.id ||
+      null;
+
+    // Messages -> open conversation (prefer conversationId if available)
+    if (item.type === "message") {
+      if (conversationId) return { route: "Conversation", params: { conversationId } };
+      if (otherUserId) return { route: "Conversation", params: { otherUserId, otherUserName: item?.actor?.name } };
+    }
+
+    // Orders -> order details
+    if (item.type === "order" && orderId) {
+      return { route: "OrderDetails", params: { order: { id: orderId } } };
+    }
+
+    // Listing-related notifications
+    if (listingId) {
+      return { route: "ListingDetails", params: { id: listingId } };
+    }
+
+    // Generic fallbacks
+    if (orderId) return { route: "OrderDetails", params: { order: { id: orderId } } };
+    if (conversationId) return { route: "Conversation", params: { conversationId } };
+    if (otherUserId) return { route: "Conversation", params: { otherUserId, otherUserName: item?.actor?.name } };
+
+    return null;
+  };
+
   return (
     <Screen scrollable={false} style={styles.screen} paddingSize="lg">
       <View style={styles.headerRow}>
@@ -186,22 +246,19 @@ function NotificationsScreen({ navigation }) {
                     await handleToggleRead(item);
                   }
 
-                  // Open conversation for messages (user-to-user)
-                  if (item.type === "message") {
-                    const otherId = item?.actor?.id || item.actor_id;
-                    if (!otherId) {
-                      Alert.alert("Cannot open conversation", "Sender information is missing.");
-                      return;
-                    }
-                    navigation.navigate("Conversation", { otherUserId: otherId, otherUserName: item?.actor?.name });
+                  const target = resolveNotificationTarget(item);
+                  if (target) {
+                    navigation.navigate(target.route, target.params);
                     return;
                   }
 
-                  if (item.type === "order" && item.order_id) {
-                    navigation.navigate("OrderDetails", { order: { id: item.order_id } });
-                  } else if (item.type === "review" && item.listing_id) {
-                    navigation.navigate("ListingDetails", { id: item.listing_id });
+                  // fallback: open orders list if it's an order-type without id
+                  if (item.type === "order") {
+                    navigation.navigate("Orders");
+                    return;
                   }
+
+                  Alert.alert("Open notification", "Unable to determine a destination for this notification.");
                 }}
               style={[
                 styles.notificationCard,

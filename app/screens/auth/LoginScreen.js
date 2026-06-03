@@ -135,7 +135,7 @@ function LoginScreen({ navigation }) {
                   colors={[colors.gradientStart, colors.gradientEnd]}
                   style={styles.logoGradient}
                 >
-                  <Image style={styles.logo} source={require("../../assets/logo-red.png")} />
+                  <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
                 </LinearGradient>
                 <Text style={styles.welcomeText}>Welcome Back!</Text>
               </Animated.View>
