@@ -131,15 +131,10 @@ function WelcomeScreen({ navigation }) {
         ]}
       >
         <View style={styles.logoWrapper}>
-          <LinearGradient
-            colors={[colors.gradientStart, colors.gradientEnd]}
-            style={styles.logoGradient}
-          >
+       
             <Image style={styles.logo} source={require("../assets/logo-primary.png")} />
-          </LinearGradient>
         </View>
         
-        {splashHidden && <Text style={styles.appName}>Jib w'Bie3</Text>}
         <Text style={styles.tagline}>Sell What You Don't Need!</Text>
         
         {/* Animated Stats Badge */}
@@ -257,18 +252,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   logoWrapper: {
-    width: 120,
-    height: 120,
+
     borderRadius: 60,
     overflow: "hidden",
     marginBottom: 20,
     ...Platform.select({
-      ios: {
-        shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-      },
+
       android: {
         elevation: 8,
       },
@@ -280,8 +269,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
     resizeMode: "contain",
   },
   appName: {

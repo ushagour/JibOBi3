@@ -163,12 +163,8 @@ function RegisterScreen({ navigation }) {
                   },
                 ]}
               >
-                <LinearGradient
-                  colors={[colors.gradientStart, colors.gradientEnd]}
-                  style={styles.logoGradient}
-                >
-                  <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
-                </LinearGradient>
+                <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
+
                 <Text style={styles.title}>Create Account</Text>
               </Animated.View>
 
@@ -329,27 +325,22 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logoGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
     ...Platform.select({
-      ios: {
-        shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-      },
+ 
       android: {
         elevation: 8,
       },
     }),
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
     resizeMode: "contain",
   },
   title: {
