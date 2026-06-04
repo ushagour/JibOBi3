@@ -12,7 +12,7 @@ import useTheme from "../../hooks/useTheme";
 import AppText from "../../components/Text";
 import { ProfileCard } from '../../components/cards/ProfileCard';
 import Avatar from '../../components/Avatar';
-
+import messagesApi from "../../api/messages";
 
 
 
@@ -22,19 +22,32 @@ function AccountScreen({ navigation }) {
   const { colors: themeColors, isDark } = useTheme();
   const loggedIn = isLoggedIn();
   const guestMode = isGuest();
+  const [unreadMessageCount, setUnreadMessageCount] = React.useState(0);
 
-  // Monitor avatar changes
+  // Monitor avatar changes and load unread messages
   useFocusEffect(
     React.useCallback(() => {
       console.log("👁️ AccountScreen focused");
       console.log("👤 Current user:", user);
       console.log("📸 Current avatar:", user?.avatar);
       console.log("✅ Verified status:", user?.is_verified);
+      loadUnreadMessages();
       return () => {
         console.log("👁️ AccountScreen unfocused");
       };
     }, [user])
   );
+
+  const loadUnreadMessages = async () => {
+    try {
+      const resp = await messagesApi.getThreads();
+      const contacts = resp && resp.data && (resp.data.data || resp.data) || [];
+      const unreadCount = contacts.filter((c) => c.unread).length;
+      setUnreadMessageCount(unreadCount);
+    } catch (error) {
+      console.error("Failed to load unread messages:", error);
+    }
+  };
 
 const menuItems = [
   {
@@ -60,7 +73,8 @@ const menuItems = [
       name: "message-text",
       backgroundColor: colors.primary,
     },
-    targetScreen: routes.CONVERSATION,  
+    targetScreen: routes.CONVERSATION,
+    badge: unreadMessageCount,
   },
   {
     title: "Wishlist",
@@ -156,7 +170,8 @@ is_quick={true}
                       backgroundColor={item.icon.backgroundColor}
                     />
                   }
-                                    onPress={() => {
+                  badge={item.badge}
+                  onPress={() => {
                     if (item.targetScreen === routes.LISTINGS) {
                       navigation.navigate(item.targetScreen, { myListings: true });
                     } else {
