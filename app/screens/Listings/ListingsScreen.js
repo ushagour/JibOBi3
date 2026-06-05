@@ -342,7 +342,7 @@ function ListingsScreen({ navigation, route }) {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: user?.name || "Explorer",
-      headerSubtitle: `Welcome back · ${city || country || "Nearby"}`,
+      headerSubtitle: `Welcome back · ${city || country || "📍"} `,
       headerRight: () =>
         isGuest ? null : (
           <TouchableOpacity
