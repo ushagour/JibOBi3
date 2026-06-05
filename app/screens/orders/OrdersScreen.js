@@ -17,7 +17,6 @@ function OrdersScreen({ navigation }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -27,13 +26,6 @@ function OrdersScreen({ navigation }) {
   const userId = user?.userId;
   const isLoggedIn = Boolean(userId);
 
-  const reportReasons = [
-    { id: "behavior", label: "Inappropriate seller behavior", icon: "block-helper" },
-    { id: "scam", label: "Suspicious or scam transaction", icon: "security" },
-    { id: "quality", label: "Poor quality or condition mismatch", icon: "alert-circle" },
-    { id: "nodelivery", label: "Non-delivery or incomplete order", icon: "package-x" },
-    { id: "other", label: "Other issue", icon: "help" },
-  ];
 
 
   const loadOrders = async () => {
@@ -89,12 +81,7 @@ function OrdersScreen({ navigation }) {
     loadOrders();
   }, [userId]);
 
-  const handleReportSeller = (order, seller) => {
-    setSelectedOrder(order);
-    setSelectedSeller(seller);
-    setSelectedReportReason("behavior");
-    setReportModalVisible(true);
-  };
+
 
   const handleCloseOrder = (order) => {
     Alert.alert(
@@ -132,23 +119,7 @@ function OrdersScreen({ navigation }) {
     );
   };
 
-  const submitReport = () => {
-    const reason = reportReasons.find((item) => item.id === selectedReportReason);
-    setReportModalVisible(false);
-    Alert.alert(
-      "Report submitted",
-      `Thanks. We received your report for: ${reason?.label || "this seller"}. Our team will review it shortly.`
-    );
-    setSelectedSeller(null);
-    setSelectedOrder(null);
-    setSelectedReportReason("behavior");
-  };
 
-  const closeReportModal = () => {
-    setReportModalVisible(false);
-    setSelectedOrder(null);
-    setSelectedReportReason("behavior");
-  };
 
   const totalCount = orders.length;
 
@@ -189,80 +160,14 @@ function OrdersScreen({ navigation }) {
           <OrderItem
             order={item}
             onPress={() => navigation.navigate(routes.ORDER_DETAILS, { order: item })}
-            onReport={handleReportSeller}
             onClose={handleCloseOrder}
-            onReview={(order) => {
-              setSelectedOrder(order);
-              setReviewRating(5);
-              setReviewComment("");
-              setReviewModalVisible(true);
-            }}
+    
             
           />
         )}
       />
 
-      {/* Review Modal */}
-      <Modal visible={reviewModalVisible} transparent animationType="fade" onRequestClose={() => setReviewModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={() => setReviewModalVisible(false)}>
-            <View style={styles.modalBackdrop} />
-          </TouchableWithoutFeedback>
-          <Animated.View style={[styles.reportModalCard, { maxWidth: 520 }]}>
-            <LinearGradient colors={[colors.primary, colors.primary]} style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Leave a Review</Text>
-            </LinearGradient>
-            <View style={styles.reportModalContent}>
-              <Text style={{ marginBottom: 8 }}>Rating</Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                {[1,2,3,4,5].map((n) => (
-                  <TouchableOpacity key={n} onPress={() => setReviewRating(n)}>
-                    <MaterialCommunityIcons name={n <= reviewRating ? 'star' : 'star-outline'} size={30} color={n <= reviewRating ? colors.accent || '#FFD700' : colors.medium} />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <Text style={{ marginBottom: 8 }}>Comment</Text>
-              <TextInput
-                multiline
-                placeholder="Write your review..."
-                value={reviewComment}
-                onChangeText={setReviewComment}
-                style={{ minHeight: 90, borderWidth: 1, borderColor: colors.border || '#DDD', padding: 10, borderRadius: 8, textAlignVertical: 'top' }}
-              />
-            </View>
-            <View style={styles.reportModalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setReviewModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.submitButton} onPress={async () => {
-                if (!selectedOrder) return;
-                const payload = {
-                  content: reviewComment || "",
-                  rating: reviewRating,
-                  userId,
-                  listingId: selectedOrder.listing_id || (selectedOrder.Listing && selectedOrder.Listing.id),
-                };
-                try {
-                  const res = await reviewsApi.createReview(payload);
-                  if (!res.ok) throw new Error(res.problem || 'Failed');
-                  Alert.alert('Thank you', 'Your review was submitted.');
-                  setReviewModalVisible(false);
-                  // reload orders to reflect reviewed state if backend attaches it
-                  loadOrders();
-                } catch (err) {
-                  if (__DEV__) console.error('Review submit error', err);
-                  Alert.alert('Error', 'Failed to submit review.');
-                }
-              }}>
-                <LinearGradient colors={[colors.primary, colors.primary]} style={styles.submitButtonGradient}>
-                  <Text style={styles.submitButtonText}>Submit Review</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
-
+ 
   
     </Screen>
   );

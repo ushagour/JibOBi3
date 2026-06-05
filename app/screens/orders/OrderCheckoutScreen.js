@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { Alert, StyleSheet, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 // import MapView, { Marker } from "react-native-maps";//todo it woeks on  developemt build 
@@ -24,6 +24,9 @@ function OrderCheckoutScreen({ route, navigation }) {
   const { colors: themeColors, isDark } = useTheme();
   const listing = route?.params?.listing;
   const location = listing?.location;
+  
+  // Ref to prevent duplicate submissions
+  const submissionInProgressRef = useRef(false);
 
   const unitPrice = useMemo(() => parsePrice(listing?.price), [listing?.price]);
 
@@ -37,6 +40,12 @@ function OrderCheckoutScreen({ route, navigation }) {
   const total = unitPrice * quantity;
 
   const handlePlaceOrder = async () => {
+    // Prevent duplicate submissions
+    if (submissionInProgressRef.current || loading) {
+      if (__DEV__) console.warn("Order submission already in progress");
+      return;
+    }
+
     if (!user?.userId) {
       Alert.alert("Sign in required", "Please sign in to place an order.");
       return;
@@ -62,7 +71,10 @@ function OrderCheckoutScreen({ route, navigation }) {
       return;
     }
 
+    // Mark submission as in progress
+    submissionInProgressRef.current = true;
     setLoading(true);
+
     try {
       const response = await ordersApi.createOrder({
         listing_id: listing.id,
@@ -78,6 +90,8 @@ function OrderCheckoutScreen({ route, navigation }) {
 
       if (!response.ok) {
         Alert.alert("Order failed", "Could not Confirm Request. Please try again.");
+        // Allow retry
+        submissionInProgressRef.current = false;
         return;
       }
 
@@ -102,16 +116,32 @@ function OrderCheckoutScreen({ route, navigation }) {
           text: "View Order Details",
           onPress: () => {
             // Navigate to order details screen with the created order
-            // If we don't have an id, still pass the raw payload so the details screen can fetch by other means
-            navigation.replace(routes.ORDER_DETAILS, {
-              order: createdOrder.id ? createdOrder : createdOrderRaw,
+            // Pass the order with all available data for the details screen to use
+            const orderToPass = {
+              ...createdOrderRaw,
+              id: createdOrder.id,
+            };
+            
+            if (__DEV__) console.log("Navigating to order details with:", orderToPass);
+            
+            navigation.navigate(routes.ORDER_DETAILS, {
+              order: orderToPass,
             });
+          },
+        },
+        {
+          text: "OK",
+          onPress: () => {
+            // Navigate to orders list
+            navigation.navigate(routes.ORDERS);
           },
         },
       ]);
     } catch (error) {
       if (__DEV__) console.error("Create order failed:", error);
       Alert.alert("Order failed", "Could not Confirm Request. Please try again.");
+      // Allow retry on error
+      submissionInProgressRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -154,16 +184,18 @@ function OrderCheckoutScreen({ route, navigation }) {
           <View style={styles.quantityControl}>
             <TouchableOpacity
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
-              style={styles.quantityBtn}
+              style={[styles.quantityBtn, loading && styles.disabledBtn]}
+              disabled={loading}
             >
-              <Ionicons name="remove" size={18} color={colors.primary} />
+              <Ionicons name="remove" size={18} color={loading ? colors.medium : colors.primary} />
             </TouchableOpacity>
             <Text style={styles.quantityValue}>{quantity}</Text>
             <TouchableOpacity
               onPress={() => setQuantity(quantity + 1)}
-              style={styles.quantityBtn}
+              style={[styles.quantityBtn, loading && styles.disabledBtn]}
+              disabled={loading}
             >
-              <Ionicons name="add" size={18} color={colors.primary} />
+              <Ionicons name="add" size={18} color={loading ? colors.medium : colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -190,6 +222,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         placeholder="City, street, apartment..."
         value={shippingAddress}
         onChangeText={setShippingAddress}
+        disabled={loading}
       />
 
       <AppTextInput
@@ -198,6 +231,7 @@ function OrderCheckoutScreen({ route, navigation }) {
         keyboardType="phone-pad"
         value={phone}
         onChangeText={setPhone}
+        disabled={loading}
       />
 
       <AppTextInput
@@ -206,12 +240,14 @@ function OrderCheckoutScreen({ route, navigation }) {
         value={notes}
         onChangeText={setNotes}
         multiline
+        disabled={loading}
       />
 
       <TouchableOpacity
         style={styles.termsContainer}
-        onPress={() => setAgreeToTerms(!agreeToTerms)}
+        onPress={() => !loading && setAgreeToTerms(!agreeToTerms)}
         activeOpacity={0.7}
+        disabled={loading}
       >
         <View style={styles.checkboxWrapper}>
           <Ionicons
@@ -361,6 +397,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     minWidth: 20,
     textAlign: "center",
+  },
+  disabledBtn: {
+    opacity: 0.5,
   },
 });
 

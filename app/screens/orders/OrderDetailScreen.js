@@ -26,6 +26,7 @@ import colors from "../../config/colors";
 import useTheme from "../../hooks/useTheme";
 import ordersApi from "../../api/orders";
 import useAuth from "../../auth/useAuth";
+import routes from "../../navigation/routes";
 
 const OrderDetailScreen = ({ route, navigation }) => {
   const { order: initialOrder } = route.params || {};
@@ -49,8 +50,11 @@ const OrderDetailScreen = ({ route, navigation }) => {
   useEffect(() => {
     if (initialOrder?.id) {
       fetchOrderDetail();
+    } else if (initialOrder) {
+      // If order data is passed but without id, use it directly (freshly created order)
+      setOrder(initialOrder);
     }
-  }, [initialOrder?.id]);
+  }, [initialOrder?.id, initialOrder]);
 
   const fetchOrderDetail = async () => {
     setLoading(true);
@@ -58,9 +62,13 @@ const OrderDetailScreen = ({ route, navigation }) => {
       const response = await ordersApi.getOrderById(initialOrder.id);
       if (response.ok && response.data) {
         setOrder(response.data);
+      } else {
+        if (__DEV__) console.error("Failed to fetch order:", response);
+        Alert.alert("Error", "Could not load order details. Please try again.");
       }
     } catch (error) {
       if (__DEV__) console.error("Failed to fetch order detail:", error);
+      Alert.alert("Error", "Failed to load order details. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -144,7 +152,24 @@ const OrderDetailScreen = ({ route, navigation }) => {
   if (!order) {
     return (
       <Screen style={styles.screen}>
-        <Text>Order not found</Text>
+        <View style={styles.emptyContainer}>
+          <MaterialCommunityIcons
+            name="package-outline"
+            size={64}
+            color={colors.medium}
+            style={{ marginBottom: 16 }}
+          />
+          <Text style={styles.emptyTitle}>Order not found</Text>
+          <Text style={styles.emptyText}>
+            The order details could not be loaded. Please try again or return to your orders.
+          </Text>
+          <AppButton
+            title="Back to Orders"
+            onPress={() => navigation.navigate(routes.ORDERS)}
+            variant="primary"
+            style={{ marginTop: 16 }}
+          />
+        </View>
       </Screen>
     );
   }
@@ -595,14 +620,14 @@ const OrderDetailScreen = ({ route, navigation }) => {
           
               <Animated.View style={[styles.reportModalCard, { backgroundColor: themeColors.surface }] }>
                 <LinearGradient colors={[colors.error, colors.error]} style={styles.reportModalHeader}>
-              <Text style={styles.modalTitle}>Report Seller</Text>
+              <Text style={[styles.modalTitle, { color: '#FFF', fontSize: 18, fontWeight: '700' }]}>Report Seller</Text>
               <TouchableOpacity onPress={closeReportModal} style={styles.modalCloseButton}>
                 <Ionicons name="close" size={24} color="#FFF" />
               </TouchableOpacity>
                 </LinearGradient>
             
                 <ScrollView showsVerticalScrollIndicator={false} style={styles.reportModalContent}>
-              <Text style={styles.modalSubtitle}>
+              <Text style={[styles.modalSubtitle, { marginBottom: 14, fontSize: 13, marginTop: 2 }]}>
                 Choose the reason that best matches the issue.
               </Text>
               <Text style={styles.reportSellerName}>
@@ -1062,10 +1087,10 @@ const styles = StyleSheet.create({
   },
   /* Report modal styles */
   reportModalCard: {
-    width: '90%',
-    borderRadius: 14,
+    width: '88%',
+    maxHeight: '80%',
+    borderRadius: 16,
     overflow: 'hidden',
-    paddingBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
@@ -1076,8 +1101,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     backgroundColor: colors.error,
   },
   modalCloseButton: {
@@ -1089,15 +1114,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
   reportSellerName: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginBottom: 12,
-    paddingHorizontal: 16,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 16,
+    paddingHorizontal: 18,
+    marginTop: 12,
   },
   reportModalContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    maxHeight: 300,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    maxHeight: 'auto',
   },
   reportReasonList: {
     paddingVertical: 6,
@@ -1105,57 +1132,84 @@ const styles = StyleSheet.create({
   reportReasonItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: 'transparent',
-    marginBottom: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.light,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   reportReasonItemSelected: {
-    backgroundColor: `${colors.error}20`,
+    backgroundColor: `${colors.error}15`,
+    borderColor: colors.error,
+    borderWidth: 2,
   },
   reportReasonTextWrap: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 12,
   },
   reportReasonLabel: {
     fontSize: 14,
+    fontWeight: '500',
     color: colors.textPrimary,
   },
   reportModalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.light,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border || '#DDD',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.textTertiary,
     backgroundColor: 'transparent',
   },
   cancelButtonText: {
-    color: colors.textSecondary || '#666',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '600',
   },
   submitButton: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   submitButtonGradient: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   submitButtonText: {
     color: '#FFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
   },
 });
 

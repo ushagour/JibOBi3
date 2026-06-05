@@ -62,6 +62,7 @@ function ListingDetailsScreen({ route, navigation }) {
   const [contactModalVisible, setContactModalVisible] = useState(false);
   const [quickMessage, setQuickMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [similarListings, setSimilarListings] = useState([]);
 
   const isSoldStatus = (status) => {
     const normalizedStatus = String(status || "").toLowerCase();
@@ -145,12 +146,29 @@ function ListingDetailsScreen({ route, navigation }) {
     };
 
     fetchListing();
+        fetchSimilarListings();
+
     fetchReviews();
 
     return () => {
       isMounted = false;
     };
   }, [id]);
+
+
+    const fetchSimilarListings = async () => {
+    try {
+      setLoadingSimilar(true);
+      const response = await listingsApi.getSimilarListings(id, listing?.Category?.id);
+      if (response.ok && response.data) {
+        setSimilarListings(response.data.slice(0, 10));
+      }
+    } catch (error) {
+      if (__DEV__) console.error("Error fetching similar listings:", error);
+    } finally {
+      setLoadingSimilar(false);
+    }
+  };
 
   const handleShare = async () => {
     try {
@@ -492,31 +510,6 @@ function ListingDetailsScreen({ route, navigation }) {
                     </AnimatedInfoCard>
                   )}
 
-                  {/* Location preview + open-in-maps */}
-                  {/* {hasCoordinates && (
-                    <AnimatedInfoCard delay={350}>
-                      <View style={[styles.locationPreviewCard, { backgroundColor: themeColors.surface }]}>
-                        <View style={styles.locationBubbleWrap}>
-                          <View style={styles.locationBubbleOuter}>
-                            <View style={styles.locationBubbleMiddle}>
-                              <View style={styles.locationBubbleInner}>
-                                <MaterialIcons name="place" size={18} color={colors.primary} />
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-
-                        <View style={styles.locationInfoBlock}>
-                          <Text style={styles.locationNameText}>{locationName}</Text>
-                          <Text style={styles.locationCoordsText}>{listingLatitude.toFixed(6)}, {listingLongitude.toFixed(6)}</Text>
-                          <TouchableOpacity style={styles.openMapButton} onPress={() => openGpsNavigation(listingLatitude, listingLongitude)}>
-                            <Text style={styles.openMapButtonText}>Open in Maps</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </AnimatedInfoCard>
-                  )} */}
-
                   
 
                   {/* Action Buttons */}
@@ -525,38 +518,40 @@ function ListingDetailsScreen({ route, navigation }) {
                     onOrder={handleOrderNow}
                     onEdit={() => navigation.navigate('ListingEdit', { listing })}
                     isOwner={isOwner(listing?.owner?.id)}
-                    isAuthenticated={isAuthenticated}
+                    isAuthenticated={isAuthenticated}   
                     isSold={isSold}
                     styles={styles}
                   />
 
+
                   {/* Suggestions / Similar Items */}
-                  <AnimatedInfoCard delay={400}>
-                    <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
-                      <View style={styles.sectionHeader}>
-                        <MaterialCommunityIcons name="lightbulb-on-outline" size={20} color={colors.primary} />
-                        <Text style={styles.sectionTitle}>Suggestions</Text>
-                      </View>
-                      <View style={styles.suggestionsContent}>
-                        <View style={styles.suggestionItem}>
-                          <MaterialCommunityIcons name="shield-check" size={18} color={colors.success} />
-                          <Text style={styles.suggestionText}>Verify the seller before making payment</Text>
-                        </View>
-                        <View style={styles.suggestionItem}>
-                          <MaterialCommunityIcons name="lock" size={18} color={colors.info} />
-                          <Text style={styles.suggestionText}>Use secure payment methods when possible</Text>
-                        </View>
-                        <View style={styles.suggestionItem}>
-                          <MaterialCommunityIcons name="camera" size={18} color={colors.warning} />
-                          <Text style={styles.suggestionText}>Request more photos or video before purchasing</Text>
-                        </View>
-                        <View style={styles.suggestionItem}>
-                          <MaterialCommunityIcons name="message-alert" size={18} color={colors.danger} />
-                          <Text style={styles.suggestionText}>Meet in a safe, public location</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </AnimatedInfoCard>
+<AnimatedInfoCard delay={430}>
+  <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
+    <View style={styles.sectionHeader}>
+      <MaterialCommunityIcons name="similar" size={20} color={colors.primary} />
+      <Text style={styles.sectionTitle}>Similar Listings</Text>
+    </View>
+    <FlatList
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      data={similarListings}
+      renderItem={({ item }) => (
+        <TouchableOpacity 
+          style={styles.similarItem}
+          onPress={() => navigation.push(routes.LISTING_DETAILS, item.id)}
+        >
+          <Image source={{ uri: item.images?.[0] }} style={styles.similarImage} />
+          <Text style={styles.similarPrice}>{item.price} DH</Text>
+          <Text style={styles.similarTitle} numberOfLines={1}>{item.title}</Text>
+        </TouchableOpacity>
+      )}
+      keyExtractor={(item) => item.id.toString()}
+      ListEmptyComponent={() => (
+        <Text style={styles.noSimilarText}>No similar listings found</Text>
+      )}
+    />
+  </View>
+</AnimatedInfoCard>
 
                   {/* Reviews Section */}
                   <AnimatedInfoCard delay={450}>
@@ -744,10 +739,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 16,
   },
-  // image: {
-  //   width: "100%",
-  //   height: width, // Square aspect ratio
-  // },
   statusBadge: {
     position: "absolute",
     top: 16,
@@ -1171,7 +1162,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-
+  closeButton: {
+    backgroundColor: colors.danger,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  closeButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",

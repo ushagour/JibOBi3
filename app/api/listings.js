@@ -135,6 +135,15 @@ if (listing.location) {
 const nearbyListings = (latitude, longitude) => {
   return client.get(`${endpoint}/nearby?latitude=${latitude}&longitude=${longitude}`);
 };
+// Add to listingsApi.js
+
+const closeListing = (id) => {
+  return client.put(`/listings/${id}/close`);
+};
+
+const reopenListing = (id) => {
+  return client.put(`/listings/${id}/reopen`);
+};
 
 
 export default {
@@ -147,5 +156,7 @@ export default {
   getTotalListings,
   deleteListing,
   updateListing,
-nearbyListings  
+  nearbyListings,
+  closeListing,
+  reopenListing
 };
