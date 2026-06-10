@@ -16,6 +16,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Ionicons, Feather } from "@expo/vector-icons";
 import * as Yup from "yup";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import Screen from "../../components/Screen";
 import {
@@ -30,6 +31,7 @@ import useTheme from "../../hooks/useTheme";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 import { useTranslation } from "react-i18next";
+import authStorage from "../../auth/storage";
 
 const { width, height } = Dimensions.get("window");
 
@@ -45,6 +47,8 @@ function LoginScreen({ navigation }) {
   const [loginFailed, setLoginFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [faceIdReady, setFaceIdReady] = useState(false);
+  const [faceIdLabel, setFaceIdLabel] = useState("Use Face ID");
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -90,6 +94,119 @@ function LoginScreen({ navigation }) {
     }).start();
   }, []);
 
+  useEffect(() => {
+    initializeBiometricLogin();
+  }, []);
+
+  const initializeBiometricLogin = async () => {
+    try {
+      const enabled = await authStorage.isBiometricLoginEnabled();
+      const creds = await authStorage.getBiometricCredentials();
+
+      if (!enabled || !creds?.email || !creds?.password) {
+        setFaceIdReady(false);
+        return;
+      }
+
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        setFaceIdReady(false);
+        return;
+      }
+
+      if (Platform.OS === "ios") {
+        const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+        const hasFaceId = types.includes(
+          LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+        );
+        setFaceIdLabel(hasFaceId ? "Use Face ID" : "Use Biometric Login");
+      } else {
+        setFaceIdLabel("Use Biometric Login");
+      }
+
+      setFaceIdReady(true);
+    } catch (error) {
+      console.error("Failed to initialize biometric login:", error);
+      setFaceIdReady(false);
+    }
+  };
+
+  const offerEnableFaceId = async ({ email, password }) => {
+    try {
+      const alreadyEnabled = await authStorage.isBiometricLoginEnabled();
+      if (alreadyEnabled) {
+        await authStorage.storeBiometricCredentials({ email, password });
+        setFaceIdReady(true);
+        return;
+      }
+
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) return;
+
+      Alert.alert(
+        "Enable Face ID",
+        "Use Face ID for faster login next time?",
+        [
+          { text: "Not now", style: "cancel" },
+          {
+            text: "Enable",
+            onPress: async () => {
+              await authStorage.storeBiometricCredentials({ email, password });
+              await authStorage.setBiometricLoginEnabled(true);
+              setFaceIdReady(true);
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Failed to enable Face ID login:", error);
+    }
+  };
+
+  const handleFaceIdLogin = async () => {
+    Keyboard.dismiss();
+    setLoading(true);
+
+    try {
+      const enabled = await authStorage.isBiometricLoginEnabled();
+      const creds = await authStorage.getBiometricCredentials();
+
+      if (!enabled || !creds?.email || !creds?.password) {
+        setFaceIdReady(false);
+        Alert.alert("Face ID not ready", "Please sign in with email and password first.");
+        return;
+      }
+
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: Platform.OS === "ios" ? "Log in with Face ID" : "Log in with biometrics",
+        fallbackLabel: "Use Passcode",
+        cancelLabel: "Cancel",
+      });
+
+      if (!authResult.success) {
+        return;
+      }
+
+      const result = await authApi.login(creds.email, creds.password);
+      if (!result.ok) {
+        const errorMessage = result?.data?.error || result?.error?.response?.data?.error;
+        Alert.alert("Face ID login failed", errorMessage || "Please sign in with email and password.");
+        return;
+      }
+
+      auth.logIn(result.data.token, result.data.user);
+      setLoginFailed(false);
+    } catch (error) {
+      console.error("Face ID login error:", error);
+      Alert.alert("Face ID login error", "Please sign in with email and password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async ({ email, password }) => {
     Keyboard.dismiss();
     setLoading(true);
@@ -121,6 +238,7 @@ function LoginScreen({ navigation }) {
       return;
     }
     auth.logIn(result.data.token, result.data.user);
+    await offerEnableFaceId({ email, password });
     setLoginFailed(false);
   };
 
@@ -220,6 +338,13 @@ function LoginScreen({ navigation }) {
                   <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
                     <Text style={styles.forgotPassword}>{t("auth.forgot_password")}</Text>
                   </TouchableOpacity>
+
+                  {faceIdReady ? (
+                    <TouchableOpacity style={styles.faceIdButton} onPress={handleFaceIdLogin}>
+                      <MaterialCommunityIcons name="face-recognition" size={18} color={colors.primary} />
+                      <Text style={styles.faceIdButtonText}>{faceIdLabel}</Text>
+                    </TouchableOpacity>
+                  ) : null}
 
                   {/* Submit Button */}
                   <SubmitButton title={t("auth_screens.sign_in")} />
@@ -352,6 +477,23 @@ const styles = StyleSheet.create({
   forgotPasswordContainer: {
     alignSelf: "flex-end",
     marginBottom: 10,
+  },
+  faceIdButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}12`,
+  },
+  faceIdButtonText: {
+    color: colors.primary,
+    fontWeight: "700",
+    fontSize: 14,
   },
   forgotPassword: {
     fontSize: 14,

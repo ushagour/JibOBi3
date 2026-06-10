@@ -11,7 +11,10 @@
       "backgroundColor": "#f3efe6"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to sign in quickly and securely."
+      }
     },
     "android": {
       "adaptiveIcon": {
