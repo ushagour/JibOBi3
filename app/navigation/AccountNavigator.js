@@ -18,6 +18,7 @@ import OrdersScreen from "../screens/orders/OrdersScreen";
 import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
 import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
 import HelpSupportScreen from "../screens/auth/HelpSupportScreen";
+import AssistantScreen from "../screens/auth/AssistantScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
 import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
@@ -34,6 +35,7 @@ const getHeaderTitle = (routeName) => {
     OrderDetails: "Order Details",
     OrderCheckout: "Checkout",
     HelpSupport: "Help & Support",
+    Assistant: "Assistant",
     PrivacySecurity: "Privacy & Security",
     ShippingAddresses: "Shipping Addresses",
     Favorites: "Favorites",
@@ -79,6 +81,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="OrderDetails" component={OrderDetailScreen} />
     <Stack.Screen name="OrderCheckout" component={OrderCheckoutScreen} />
     <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+    <Stack.Screen name="Assistant" component={AssistantScreen} />
     <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
     <Stack.Screen name="ShippingAddresses" component={ShippingAddressesScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />

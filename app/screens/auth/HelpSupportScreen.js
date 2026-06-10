@@ -7,6 +7,7 @@ import Text from "../../components/Text";
 import colors from "../../config/colors";
 import useTheme from "../../hooks/useTheme";
 import AppButton from "../../components/Button";
+import routes from "../../navigation/routes";
 
 const FAQs = [
   {
@@ -44,7 +45,7 @@ const FAQs = [
 const SUPPORT_EMAIL = "support@jibobi.com";
 const SUPPORT_PHONE = "+1234567890";
 
-function HelpSupportScreen() {
+function HelpSupportScreen({ navigation }) {
   const { colors: themeColors, isDark } = useTheme();
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [contactModalVisible, setContactModalVisible] = useState(false);
@@ -108,6 +109,28 @@ function HelpSupportScreen() {
       <Text style={styles.subtitle}>Find answers, contact support, and get help with your account.</Text>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="robot-outline" size={20} color={colors.secondary} />
+            <Text style={styles.sectionTitle}>Jibobi Assistant</Text>
+          </View>
+
+          <View style={[styles.assistantCard, { backgroundColor: themeColors.surface }]}>
+            <Text style={styles.contactDescription}>
+              Ask the assistant about orders, listings, payments, reporting, or account help.
+            </Text>
+
+            <AppButton
+              title="Open Assistant"
+              onPress={() => navigation.navigate(routes.ASSISTANT)}
+              variant="primary"
+              size="md"
+              icon={<MaterialCommunityIcons name="message-processing" size={18} color={colors.white} />}
+              style={styles.contactButton}
+            />
+          </View>
+        </View>
+
         {/* FAQs Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -357,6 +380,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lightGray,
   },
   contactCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    padding: 16,
+  },
+  assistantCard: {
     backgroundColor: colors.white,
     borderRadius: 12,
     borderWidth: 1,

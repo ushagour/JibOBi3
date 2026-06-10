@@ -16,6 +16,7 @@ export default Object.freeze({
   ORDER_CHECKOUT: "OrderCheckout",
   Favorites: "Favorites",
   HELP: "HelpSupport",
+  ASSISTANT: "Assistant",
   PRIVACY: "PrivacySecurity",
   SHIPPING_ADDRESSES: "ShippingAddresses",
   ACCOUNT: "Account",

@@ -12,6 +12,7 @@ import SplashContext from "./app/context/SplashContext";
 import authStorage from "./app/auth/storage";
 import { navigationRef } from "./app/navigation/rootNavigation";
 import GlobalAlertProvider from "./app/components/GlobalAlertProvider";
+import FloatingAIButton from "./app/components/chatboot/FloatingAIButton";
 import colors from "./app/config/colors";
 import './app/config/i18n'; // Initialize i18n
 import { I18nextProvider } from 'react-i18next';
@@ -76,6 +77,7 @@ export default function App() {
           <AuthContext.Provider  value={{ user, setUser }}>
             {user ? <AppNavigator /> : <AuthNavigator />}
           </AuthContext.Provider>
+          <FloatingAIButton user={user} />
           <GlobalAlertProvider />
         </NavigationContainer>
         </SplashContext.Provider>

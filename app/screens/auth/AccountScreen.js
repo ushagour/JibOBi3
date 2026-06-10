@@ -146,7 +146,6 @@ const settingsMenuItems = [
           avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"}
           isVerified={user?.is_verified || false}
           onPress={() => {
-            console.log("👤 Opening user edit screen. Current avatar:", user?.avatar);
             navigation.navigate(routes.USER_EDIT);
           }}
         />
