@@ -113,7 +113,7 @@ const AnimatedMessage = ({ item, isSender, index }) => {
             <MaterialCommunityIcons 
               name="check-all" 
               size={14} 
-              color={palette.textMuted} 
+              color={item.is_read ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)"} 
               style={styles.readReceipt}
             />
           )}
@@ -207,7 +207,7 @@ const CustomHeader = ({ title, onBack, onSearch, searchQuery, setSearchQuery }) 
 
   return (
     <LinearGradient
-      colors={[palette.gradientStart, palette.gradientEnd]}
+      colors={[palette.primaryLight, palette.primary]}
       style={styles.headerGradient}
     >
       <BlurView intensity={20} tint="light" style={styles.headerBlur}>
@@ -239,7 +239,7 @@ const CustomHeader = ({ title, onBack, onSearch, searchQuery, setSearchQuery }) 
                 setShowSearch(false);
                 setSearchQuery("");
               }} style={styles.headerButton}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Ionicons name="arrow-back" size={24} color="#FFF" />
               </TouchableOpacity>
             </>
           )}
@@ -271,6 +271,31 @@ function ConversationScreen({ route, navigation }) {
     }
   }, [otherUserId]);
 
+  const markConversationAsRead = async (conversationMessages) => {
+    const unreadIncomingMessages = (conversationMessages || []).filter(
+      (message) =>
+        String(message.recipient_id) === String(user?.userId) && !message.is_read
+    );
+
+    if (!unreadIncomingMessages.length) return;
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        unreadIncomingMessages.some((unreadMessage) => unreadMessage.id === message.id)
+          ? {
+              ...message,
+              is_read: true,
+              read_at: new Date().toISOString(),
+            }
+          : message
+      )
+    );
+
+    await Promise.allSettled(
+      unreadIncomingMessages.map((message) => messagesApi.markAsRead(message.id))
+    );
+  };
+
   const loadConversation = async () => {
     setLoading(true);
     try {
@@ -279,7 +304,9 @@ function ConversationScreen({ route, navigation }) {
         Alert.alert("Error", "Could not load conversation.");
         return;
       }
-      setMessages(resp.data.data || resp.data);
+      const conversationMessages = resp.data.data || resp.data;
+      setMessages(conversationMessages);
+      markConversationAsRead(conversationMessages);
       setTimeout(() => flatRef.current?.scrollToEnd?.({ animated: true }), 200);
     } catch (error) {
       if (__DEV__) console.error(error);
@@ -319,6 +346,8 @@ function ConversationScreen({ route, navigation }) {
       createdAt: new Date().toISOString(),
       sender_id: user?.userId,
       recipient_id: otherUserId,
+      is_read: false,
+      read_at: null,
       sender: { id: user?.userId, name: user?.firstName || user?.name, avatar: user?.avatar },
     };
     
@@ -367,7 +396,7 @@ function ConversationScreen({ route, navigation }) {
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
       <LinearGradient
-        colors={[palette.gradientStart + '15', palette.gradientEnd + '15']}
+        colors={["rgba(0, 77, 79, 0.08)", "rgba(26, 159, 161, 0.08)"]}
         style={styles.emptyIconCircle}
       >
         <MaterialCommunityIcons name="chat-outline" size={50} color={palette.primary} />
@@ -423,8 +452,8 @@ function ConversationScreen({ route, navigation }) {
       
       <KeyboardAvoidingView 
         style={styles.keyboardContainer} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
         <FlatList
           ref={flatRef}

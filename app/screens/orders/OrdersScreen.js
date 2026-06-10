@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Alert, FlatList, StyleSheet, View, Modal, TouchableWithoutFeedback, Animated, Platform, ScrollView, TouchableOpacity, Dimensions } from "react-native";
-import { MaterialCommunityIcons, MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { Alert, FlatList, StyleSheet, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
@@ -9,7 +8,6 @@ import colors from "../../config/colors";
 import useAuth from "../../auth/useAuth";
 import ordersApi from "../../api/orders";
 import reviewsApi from "../../api/reviews";
-import { TextInput } from 'react-native';
 import routes from "../../navigation/routes";
 import OrderItem from "../../components/orders/OrderItem";
 
@@ -17,12 +15,6 @@ function OrdersScreen({ navigation }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedReportReason, setSelectedReportReason] = useState("spam");
-  const [selectedSeller, setSelectedSeller] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [reviewModalVisible, setReviewModalVisible] = useState(false);
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
   const userId = user?.userId;
   const isLoggedIn = Boolean(userId);
 
@@ -160,9 +152,6 @@ function OrdersScreen({ navigation }) {
           <OrderItem
             order={item}
             onPress={() => navigation.navigate(routes.ORDER_DETAILS, { order: item })}
-            onClose={handleCloseOrder}
-    
-            
           />
         )}
       />
@@ -209,112 +198,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: colors.medium,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  reportModalCard: {
-    width: "100%",
-    maxWidth: 420,
-    backgroundColor: colors.background || "#FFF",
-    borderRadius: 20,
-    overflow: "hidden",
-    maxHeight: "80%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  modalCloseButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  reportModalContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary || "#666",
-    marginBottom: 12,
-  },
-  reportReasonList: {
-    paddingVertical: 8,
-  },
-  reportReasonItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border || "#DDD",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  reportReasonItemSelected: {
-    borderColor: colors.error,
-    backgroundColor: `${colors.error}15`,
-  },
-  reportReasonTextWrap: {
-    flex: 1,
-  },
-  reportReasonLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.textPrimary || "#000",
-  },
-  reportModalActions: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border || "#DDD",
-  },
-  cancelButtonText: {
-    color: colors.textSecondary || "#666",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  submitButton: {
-    flex: 1,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  submitButtonGradient: {
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
   },
 });
 

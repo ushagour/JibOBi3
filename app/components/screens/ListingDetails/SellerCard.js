@@ -14,9 +14,9 @@ export default function SellerCard({ seller, onContact, styles: s = {} }) {
       <View style={s.sellerCard}>
         <View style={s.sellerHeader}>
           <View style={s.sellerAvatar}>
-            <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={s.avatarGradient}>
+            <View style={[s.avatarGradient, { backgroundColor: colors.secondary }]}>
               <Text style={s.avatarText}>{seller?.name?.charAt(0) || "U"}</Text>
-            </LinearGradient>
+            </View>
           </View>
           <View style={s.sellerInfo}>
             <Text style={s.sellerName}>{seller?.name || "Unknown Seller"}</Text>
@@ -27,7 +27,7 @@ export default function SellerCard({ seller, onContact, styles: s = {} }) {
           </View>
           {typeof onContact === "function" ? (
             <TouchableOpacity style={s.contactButton} onPress={onContact}>
-              <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={s.contactButtonGradient}>
+              <LinearGradient colors={[colors.secondary, colors.secondaryDark]} style={s.contactButtonGradient}>
                 <MaterialCommunityIcons name="chat-processing" size={20} color="#FFF" />
               </LinearGradient>
             </TouchableOpacity>

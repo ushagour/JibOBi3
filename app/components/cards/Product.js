@@ -19,12 +19,26 @@ export const Product = ({
   onPress,
   onLikePress,
   isLiked = false,
+  isClosed = false,
   containerStyle,
 }) => {
   return (
-    <TouchableOpacity style={[styles.productCard, containerStyle]} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={[
+        styles.productCard,
+        isClosed && styles.closedCard,
+        containerStyle,
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       <View style={styles.imageWrapper}>
-        <Image source={{ uri: imageUri }} style={styles.productImage} />
+        <Image source={{ uri: imageUri }} style={[styles.productImage, isClosed && styles.closedImage]} />
+        {isClosed ? (
+          <View style={styles.closedBadge}>
+            <Text style={styles.closedBadgeText}>Closed</Text>
+          </View>
+        ) : null}
         {onLikePress ? (
           <TouchableOpacity
             style={styles.likeButton}
@@ -74,8 +88,30 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     marginBottom: 12,
   },
+  closedCard: {
+    opacity: 0.72,
+  },
   imageWrapper: { position: 'relative' },
   productImage: { width: '100%', height: 132, backgroundColor: '#F3F5F8' },
+  closedImage: {
+    tintColor: 'rgba(0,0,0,0.08)',
+  },
+  closedBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  closedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
   likeButton: {
     position: 'absolute',
     top: 10,

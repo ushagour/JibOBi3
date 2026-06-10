@@ -14,6 +14,15 @@ const resetPassword = (email, token, newPassword) =>
     newPassword,
   });
 
+const requestEmailVerification = (email) =>
+  client.post("/auth/request-email-verification", { email });
+
+const verifyEmail = (email, code) =>
+  client.post("/auth/verify-email", {
+    email,
+    code,
+  });
+
 
 const ChangePassword = (email, currentPassword, newPassword) =>
   client.put("/auth/change-password", {
@@ -28,5 +37,7 @@ export default {
   ChangePassword,
   requestPasswordReset,
   resetPassword,
+  requestEmailVerification,
+  verifyEmail,
 };
   

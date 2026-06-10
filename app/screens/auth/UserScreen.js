@@ -4,6 +4,7 @@ import {
   View,
   KeyboardAvoidingView,
   Keyboard,
+  TouchableOpacity,
   TouchableWithoutFeedback,
   ScrollView,
   Platform,
@@ -369,6 +370,19 @@ function UserScreen({ navigation }) {
                 </AppText>
               </View>
 
+              {!user?.is_email_verified && (
+                <TouchableOpacity
+                  style={styles.verifyEmailButton}
+                  onPress={() =>
+                    navigation.navigate("VerifyEmail", {
+                      email: user?.email || authUser?.email || "",
+                    })
+                  }
+                >
+                  <AppText style={styles.verifyEmailButtonText}>Verify Email</AppText>
+                </TouchableOpacity>
+              )}
+
               {/* Phone Verification */}
               <View style={styles.infoRow}>
                 <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
@@ -488,6 +502,19 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
     textAlign: "right",
+  },
+  verifyEmailButton: {
+    alignSelf: "flex-end",
+    marginTop: 10,
+    marginBottom: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: `${colors.primary}14`,
+  },
+  verifyEmailButtonText: {
+    color: colors.primary,
+    fontWeight: "700",
   },
 });
 

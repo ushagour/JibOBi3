@@ -14,7 +14,7 @@ function AnimatedHeader({
   showBackButton = false,
   onBackPress,
   scrollY,
-  gradientColors = [colors.primaryDark, colors.primaryLight],
+  gradientColors = [colors.primaryLight, colors.primary],
 }) {
   const insets = useSafeAreaInsets();
   const topPadding =

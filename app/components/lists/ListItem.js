@@ -13,6 +13,10 @@ function ListItem({
   onPress,
   badge,
 }) {
+  const badgeCount = Number(badge);
+  const showBadge = Number.isFinite(badgeCount) && badgeCount > 0;
+  const badgeLabel = badgeCount > 99 ? "99+" : String(badgeCount);
+
   return (
     <TouchableHighlight underlayColor={colors.light} onPress={onPress}>
       <View style={styles.container}>
@@ -28,11 +32,11 @@ function ListItem({
             </Text>
           )}
         </View>
-        {badge && badge > 0 && (
+        {showBadge ? (
           <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
+            <Text style={styles.badgeText}>{badgeLabel}</Text>
           </View>
-        )}
+        ) : null}
         <MaterialCommunityIcons
           color={colors.medium}
           name="chevron-right"

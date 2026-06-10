@@ -601,7 +601,7 @@ function ListingAddScreen({ navigation }) {
         subtitle="Create a new product listing"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
-        gradientColors={[colors.primary, colors.primaryDark]}
+        gradientColors={[colors.primaryLight, colors.primary]}
       />
 
       <KeyboardAvoidingView

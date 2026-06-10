@@ -29,6 +29,7 @@ import useAuth from '../../auth/useAuth';
 import useTheme from "../../hooks/useTheme";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
+import { useTranslation } from "react-i18next";
 
 const { width, height } = Dimensions.get("window");
 
@@ -39,6 +40,7 @@ const validationSchema = Yup.object().shape({
 
 function LoginScreen({ navigation }) {
   const auth = useAuth();
+  const { t } = useTranslation();
   const { colors: themeColors, isDark } = useTheme();
   const [loginFailed, setLoginFailed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -96,7 +98,7 @@ function LoginScreen({ navigation }) {
 
     if (!result.ok) {
       setLoginFailed(true);
-      Alert.alert("Login Failed", "Invalid email and/or password. Please try again.");
+      Alert.alert(t("auth_screens.login_failed_title"), t("auth.invalid_credentials"));
       return;
     }
     auth.logIn(result.data.token, result.data.user);
@@ -108,7 +110,7 @@ function LoginScreen({ navigation }) {
   };
 
   const handleSocialLogin = (platform) => {
-    Alert.alert("Coming Soon", `${platform} login will be available soon!`);
+    Alert.alert(t("auth_screens.coming_soon"), t("auth_screens.social_login_soon", { platform }));
   };
 
   return (
@@ -133,7 +135,6 @@ function LoginScreen({ navigation }) {
               >
                 <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
  
-                <Text style={styles.welcomeText}>Welcome Back!</Text>
               </Animated.View>
 
               {/* Animated Form Section */}
@@ -155,7 +156,7 @@ function LoginScreen({ navigation }) {
                   validationSchema={validationSchema}
                 >
                   <ErrorMessage
-                    error="Invalid email and/or password."
+                    error={t("auth.invalid_credentials")}
                     visible={loginFailed}
                   />
                   
@@ -167,7 +168,7 @@ function LoginScreen({ navigation }) {
                       icon="email"
                       keyboardType="email-address"
                       name="email"
-                      placeholder="Enter your email"
+                      placeholder={t("auth_screens.enter_email")}
                       showErrorOnSubmitOnly
                       textContentType="emailAddress"
                       containerStyle={styles.formFieldContainer}
@@ -182,7 +183,7 @@ function LoginScreen({ navigation }) {
                         autoCorrect={false}
                         icon="lock"
                         name="password"
-                        placeholder="Enter your password"
+                        placeholder={t("auth_screens.enter_password")}
                         showErrorOnSubmitOnly
                         secureTextEntry={!showPassword}
                         textContentType="password"
@@ -198,25 +199,25 @@ function LoginScreen({ navigation }) {
 
                   {/* Forgot Password */}
                   <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
-                    <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                    <Text style={styles.forgotPassword}>{t("auth.forgot_password")}</Text>
                   </TouchableOpacity>
 
                   {/* Submit Button */}
-                  <SubmitButton title="Sign In" />
+                  <SubmitButton title={t("auth_screens.sign_in")} />
                 </Form>
 
                 {/* Register Link */}
                 <View style={styles.registerContainer}>
-                  <Text style={styles.registerText}>Don't have an account? </Text>
+                  <Text style={styles.registerText}>{t("auth.new_user")} </Text>
                   <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-                    <Text style={styles.registerLink}>Sign Up</Text>
+                    <Text style={styles.registerLink}>{t("common.signup")}</Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* Divider */}
                 <View style={styles.divider}>
                   <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>Or continue with</Text>
+                  <Text style={styles.dividerText}>{t("auth_screens.or_continue_with")}</Text>
                   <View style={styles.dividerLine} />
                 </View>
 
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordContainer: {
     alignSelf: "flex-end",
-    marginBottom: 24,
+    marginBottom: 10,
   },
   forgotPassword: {
     fontSize: 14,

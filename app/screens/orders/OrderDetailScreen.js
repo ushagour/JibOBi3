@@ -34,6 +34,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const { colors: themeColors, isDark } = useTheme();
   const [order, setOrder] = useState(initialOrder);
   const [loading, setLoading] = useState(false);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportReason, setSelectedReportReason] = useState("behavior");
@@ -132,15 +133,49 @@ const OrderDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const submitReport = () => {
+  const submitReport = async () => {
+    if (!order?.id) {
+      Alert.alert("Error", "Order ID is missing. Please try again.");
+      return;
+    }
+
     const reason = reportReasons.find((item) => item.id === selectedReportReason);
-    setReportModalVisible(false);
-    Alert.alert(
-      "Report submitted",
-      `Thanks. We received your report for: ${reason?.label || selectedSeller?.name || "this seller"}. Our team will review it shortly.`
-    );
-    setSelectedSeller(null);
-    setSelectedReportReason("behavior");
+
+    setReportSubmitting(true);
+    try {
+      const response = await ordersApi.reportOrder(order.id, reason?.label || selectedReportReason);
+
+      if (response?.ok) {
+        setOrder((prev) => ({
+          ...(prev || {}),
+          hasReported: true,
+          reportReason: reason?.label || selectedReportReason,
+          ...(response?.data?.order || {}),
+        }));
+
+        setReportModalVisible(false);
+        Alert.alert(
+          "Report submitted",
+          `Thanks. We received your report for: ${reason?.label || selectedSeller?.name || "this seller"}. Our team will review it shortly.`
+        );
+      } else {
+        const statusCode = response?.error?.response?.status;
+        if (statusCode === 409) {
+          setOrder((prev) => ({ ...(prev || {}), hasReported: true }));
+          setReportModalVisible(false);
+          Alert.alert("Already reported", "You have already reported this order.");
+        } else {
+          Alert.alert("Error", "Could not submit your report. Please try again.");
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.error("Failed to report order:", error);
+      Alert.alert("Error", "Could not submit your report. Please try again.");
+    } finally {
+      setReportSubmitting(false);
+      setSelectedSeller(null);
+      setSelectedReportReason("behavior");
+    }
   };
 
   const closeReportModal = () => {
@@ -196,7 +231,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
     .filter(Boolean);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const currentImageUrl = listingImages[currentImageIndex] || null;
-  const canReportIssue = order && !isCancelledOrder;
+  const canReportIssue = order && !isCancelledOrder && !order?.hasReported;
   const canCloseOrder = user && seller && user.id === seller.id && isCompletedOrder && !isCancelledOrder;
 
 
@@ -536,27 +571,6 @@ const OrderDetailScreen = ({ route, navigation }) => {
                 style={styles.inlineButton}
               />
             )}
-
-            {order && isCompletedOrder && (
-              <AppButton
-                title="Report Seller"
-                onPress={handleReportPress}
-                variant="outline"
-                size="md"
-                style={styles.inlineButton}
-              />
-            )}
-
-            {user && seller && user.id === seller.id && isCompletedOrder && !isCancelledOrder && (
-              <AppButton
-                title={loading ? "Closing..." : "Close Sold Order"}
-                onPress={handleCloseOrder}
-                variant="danger"
-                size="md"
-                loading={loading}
-                style={styles.inlineButton}
-              />
-            )}
           </View>
         </View>
       </ScrollView>
@@ -671,9 +685,9 @@ const OrderDetailScreen = ({ route, navigation }) => {
               <TouchableOpacity style={styles.cancelButton} onPress={closeReportModal}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.submitButton} onPress={submitReport}>
+              <TouchableOpacity style={styles.submitButton} onPress={submitReport} disabled={reportSubmitting}>
                 <LinearGradient colors={[colors.error, colors.error]} style={styles.submitButtonGradient}>
-                  <Text style={styles.submitButtonText}>Submit Report</Text>
+                  <Text style={styles.submitButtonText}>{reportSubmitting ? "Submitting..." : "Submit Report"}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -988,23 +1002,22 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 10,
   },
   actionsLeft: {
-    flex: 1,
-    marginRight: 8,
+    width: '100%',
   },
   actionsRight: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     gap: 8,
   },
   inlineButton: {
-    marginLeft: 8,
+    marginLeft: 0,
   },
   reportButtonRow: {
     flexDirection: 'row',

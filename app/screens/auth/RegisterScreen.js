@@ -31,6 +31,7 @@ import useApi from "../../hooks/useApi";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
+import { useTranslation } from "react-i18next";
 
 const { width, height } = Dimensions.get("window");
 
@@ -41,6 +42,7 @@ const validationSchema = Yup.object().shape({
 });
 
 function RegisterScreen({ navigation }) {
+  const { t } = useTranslation();
   const registerApi = useApi(authApi.register);
   const auth = useAuth();
   const [error, setError] = useState();
@@ -97,8 +99,8 @@ function RegisterScreen({ navigation }) {
 
     if (!agreeTerms) {
       Alert.alert(
-        "Terms & Conditions",
-        "Please agree to the Terms & Conditions to continue."
+        t("orders_flow.terms_and_conditions"),
+        t("auth_screens.accept_terms_required")
       );
       return;
     }
@@ -107,14 +109,14 @@ function RegisterScreen({ navigation }) {
       const response = await registerApi.request(userInfo);
 
       if (!response) {
-        setError("No response from the server. Please try again later.");
+        setError(t("auth_screens.no_server_response"));
         return;
       }
 
       if (!response.ok) {
-        const errorMessage = response.data?.error || "An unexpected error occurred.";
+        const errorMessage = response.data?.error || t("errors.something_went_wrong");
         setError(errorMessage);
-        Alert.alert("Registration Failed", errorMessage);
+        Alert.alert(t("auth_screens.registration_failed"), errorMessage);
         return;
       }
 
@@ -123,21 +125,30 @@ function RegisterScreen({ navigation }) {
       if (token && user) {
         auth.signUp(token, user);
         Alert.alert(
-          "Welcome!",
-          "Your account has been created successfully.",
-          [{ text: "OK" }]
+          t("common.welcome"),
+          t("auth_screens.account_created"),
+          [
+            {
+              text: "Verify Email",
+              onPress: () =>
+                navigation.navigate("VerifyEmail", {
+                  email: user?.email || userInfo.email,
+                }),
+            },
+            { text: "Later" },
+          ]
         );
       } else {
-        setError(message || "An unexpected error occurred.");
+        setError(message || t("errors.something_went_wrong"));
       }
     } catch (error) {
-      setError("An error occurred during registration.");
-      Alert.alert("Error", "Please check your connection and try again.");
+      setError(t("auth_screens.registration_error"));
+      Alert.alert(t("common.error"), t("errors.network_error"));
     }
   };
 
   const handleSocialRegister = (platform) => {
-    Alert.alert("Coming Soon", `${platform} registration will be available soon!`);
+    Alert.alert(t("auth_screens.coming_soon"), t("auth_screens.social_register_soon", { platform }));
   };
 
   return (
@@ -165,7 +176,7 @@ function RegisterScreen({ navigation }) {
               >
                 <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
 
-                <Text style={styles.title}>Create Account</Text>
+                <Text style={styles.title}>{t("auth_screens.create_account")}</Text>
               </Animated.View>
 
               {/* Animated Form Section */}
@@ -194,7 +205,7 @@ function RegisterScreen({ navigation }) {
                       autoCorrect={false}
                       icon="account"
                       name="name"
-                      placeholder="Enter your full name"
+                      placeholder={t("auth_screens.enter_full_name")}
                       containerStyle={styles.formFieldContainer}
                     />
                   </View>
@@ -207,7 +218,7 @@ function RegisterScreen({ navigation }) {
                       icon="email"
                       keyboardType="email-address"
                       name="email"
-                      placeholder="Enter your email"
+                      placeholder={t("auth_screens.enter_email")}
                       textContentType="emailAddress"
                       containerStyle={styles.formFieldContainer}
                     />
@@ -221,7 +232,7 @@ function RegisterScreen({ navigation }) {
                         autoCorrect={false}
                         icon="lock"
                         name="password"
-                        placeholder="Create a password"
+                        placeholder={t("auth_screens.create_password")}
                         secureTextEntry={!showPassword}
                         textContentType="password"
                         containerStyle={styles.formFieldContainer}
@@ -233,7 +244,7 @@ function RegisterScreen({ navigation }) {
                       </TouchableOpacity>
                     </View>
                     <Text style={styles.hintText}>
-                      Password must be at least 6 characters
+                      {t("auth_screens.password_min_length")}
                     </Text>
                   </View>
 
@@ -247,19 +258,19 @@ function RegisterScreen({ navigation }) {
                       {agreeTerms && <MaterialCommunityIcons name="check" size={12} color="#FFF" />}
                     </View>
                     <Text style={styles.termsText}>
-                      I agree to the <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-                      <Text style={styles.termsLink}>Privacy Policy</Text>
+                      {t("auth_screens.i_agree_to")} <Text style={styles.termsLink}>{t("auth_screens.terms_of_service")}</Text> {t("auth_screens.and")} {' '}
+                      <Text style={styles.termsLink}>{t("auth_screens.privacy_policy")}</Text>
                     </Text>
                   </TouchableOpacity>
 
                   {/* Submit Button */}
-                  <SubmitButton title="Create Account" />
+                  <SubmitButton title={t("auth_screens.create_account")} />
                 </Form>
 
                 {/* Divider */}
                 <View style={styles.divider}>
                   <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>Or sign up with</Text>
+                  <Text style={styles.dividerText}>{t("auth_screens.or_sign_up_with")}</Text>
                   <View style={styles.dividerLine} />
                 </View>
 
@@ -292,9 +303,9 @@ function RegisterScreen({ navigation }) {
 
                 {/* Navigate to Login */}
                 <View style={styles.loginContainer}>
-                  <Text style={styles.loginText}>Already have an account? </Text>
+                  <Text style={styles.loginText}>{t("auth.already_have_account")} </Text>
                   <TouchableOpacity onPress={() => navigation.replace(routes.LOGIN)}>
-                    <Text style={styles.loginLink}>Sign In</Text>
+                    <Text style={styles.loginLink}>{t("auth_screens.sign_in")}</Text>
                   </TouchableOpacity>
                 </View>
               </Animated.View>

@@ -72,6 +72,11 @@ function ListingEditScreen({ route, navigation }) {
   const [progress, setProgress] = useState(0);
   const [uploadVisible, setUploadVisible] = useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
+  const listingImages = Array.isArray(listing?.images)
+    ? listing.images
+        .map((image) => (typeof image === "string" ? image : image?.url || image?.uri || image?.file_name || image?.path || ""))
+        .filter(Boolean)
+    : [];
 
   useEffect(() => {
     // console.log("Listing data:", listing); // Debug log
@@ -185,7 +190,7 @@ function ListingEditScreen({ route, navigation }) {
           carColor: listing.carColor || "",
           carModel: listing.carModel || "",
           carYear: listing.carYear ? listing.carYear.toString() : "",
-          images: listing.images.map((image) => image.url),
+          images: listingImages,
         }}
         onSubmit={handleSubmit}
         validationSchema={validationSchema}

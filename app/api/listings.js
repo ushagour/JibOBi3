@@ -10,6 +10,8 @@ const getDetailListing = (id) => client.get(`${endpoint}/detail/${id}`);
 const getTopListings = () => client.get(`${endpoint}/top`);
 
 const getMyListings = (userId) => client.get(`${endpoint}/my_listings?userId=${userId}`);
+const getArchivedListings = () => client.get(`${endpoint}/archived`);
+const getSoldListings = () => client.get(`${endpoint}/sold`);
  
 
 
@@ -18,7 +20,7 @@ const getTotalListings = () => client.get(`${endpoint}/total_listings`);
 
 
 /**
- * Sends a POST request to the server to add a newh listing.
+ * Sends a POST request to the server to add a new listing.
  *
  * @param {object} listing - The listing to be added. It should contain the following fields:
  * - title {string}
@@ -79,7 +81,7 @@ if (listing.location) {
       "Content-Type": "multipart/form-data",
     },
     onUploadProgress: (progress) =>
-      onUploadProgress(progress.loaded / progress.total),//TODO:take a look on this satatement .
+      onUploadProgress(progress.loaded / progress.total),
   })
   }
   
@@ -145,6 +147,10 @@ const reopenListing = (id) => {
   return client.put(`/listings/${id}/reopen`);
 };
 
+const getSimilarListings = (listingId) => {
+  return client.get(`${endpoint}/${listingId}/similar`);
+};
+
 
 export default {
   addListing,
@@ -152,7 +158,10 @@ export default {
   getTopListings,
   getListings,
   getListingsByCategory,
+  getSimilarListings,
   getMyListings,
+  getArchivedListings,
+  getSoldListings,
   getTotalListings,
   deleteListing,
   updateListing,

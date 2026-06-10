@@ -69,8 +69,13 @@ const isAvailableStatus = (status) => {
   return normalized.includes("available");
 };
 
+const isClosedListing = (item) => {
+  const normalizedStatus = String(item?.status || "").toLowerCase().trim();
+  return Boolean(item?.archived) || !isAvailableStatus(normalizedStatus);
+};
+
 // Animated Product Card Component with Entrance Animation
-const AnimatedProductCard = ({ item, index, onPress, onLikePress, isLiked, navigation }) => {
+const AnimatedProductCard = ({ item, index, onPress, onLikePress, isLiked, isClosed, navigation }) => {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(50)).current;
@@ -115,6 +120,7 @@ const AnimatedProductCard = ({ item, index, onPress, onLikePress, isLiked, navig
         onPress={onPress}
         onLikePress={onLikePress}
         isLiked={isLiked}
+        isClosed={isClosed}
         price={item.price}
         seller={item.owner?.name}
         description={item.description}
@@ -395,6 +401,7 @@ function ListingsScreen({ navigation, route }) {
       ).values()
     );
 
+    
     return [{ id: "all", name: "All", icon: "🧭" }, ...derivedCategories];
   }, [categoriesData, listings]);
 
@@ -409,7 +416,6 @@ function ListingsScreen({ navigation, route }) {
   const filteredListings = useMemo(() => {
     let query = searchQuery.trim().toLowerCase();
     let filtered = (listingsSource || []).filter((item) => {
-      if (!isAvailableStatus(item?.status)) return false;
       if (isGuest && selectedCategory !== "all") {
         const categoryId = String(item?.Category?.id ?? "");
         if (categoryId !== String(selectedCategory)) return false;
@@ -421,12 +427,13 @@ function ListingsScreen({ navigation, route }) {
     });
 
     // Apply quick filters
-    if (activeFilter === "under50") {
-      filtered = filtered.filter(item => item.price < 50);
+    if (activeFilter === "nearby") {
+      // Nearby API includes `distance`; when using nearby feed this keeps only geolocated items.
+      filtered = filtered.filter((item) => Number.isFinite(Number(item?.distance)));
     } else if (activeFilter === "topRated") {
-      filtered = filtered.filter(item => item.rating >= 4.5);
+      filtered = filtered.filter((item) => Number(item?.rating || 0) >= 4.5);
     } else if (activeFilter === "new") {
-      filtered = filtered.filter(item => dayjs().diff(dayjs(item.createdAt), 'day') <= 7);
+      filtered = filtered.filter((item) => dayjs().diff(dayjs(item.createdAt), "day") <= 7);
     }
 
     return filtered;
@@ -537,8 +544,20 @@ function ListingsScreen({ navigation, route }) {
     }
   };
 
-  const handleFilterPress = (filter) => {
-    setActiveFilter(activeFilter === filter ? null : filter);
+  const handleFilterPress = async (filter) => {
+    const nextFilter = activeFilter === filter ? null : filter;
+    setActiveFilter(nextFilter);
+
+    // Nearby filter should always use the nearby feed.
+    if (nextFilter === "nearby") {
+      setShowAllListings(false);
+      setSelectedCategory("all");
+      if (location?.latitude && location?.longitude) {
+        await fetchNearbyListings(location.latitude, location.longitude);
+      } else {
+        await fetchNearbyListings();
+      }
+    }
   };
 
   if (activeError && !activeLoading) {
@@ -585,15 +604,15 @@ function ListingsScreen({ navigation, route }) {
               onBlur={() => setIsSearchFocused(false)}
 
             />
-            <QuickFilters onFilterPress={handleFilterPress} activeFilter={activeFilter} />
-            {/* <StatsWidget listings={listings} /> */}
-            {/* <FeaturedBanner /> */}
-            <TrendingCategories
+                <TrendingCategories
               categories={categories}
               selectedCategory={selectedCategory}
               onSelectCategory={handleSelectCategory}
               onSeeAll={handleSeeAll}
             />
+            <QuickFilters onFilterPress={handleFilterPress} activeFilter={activeFilter} />
+  
+        
           </View>
         }
         ListEmptyComponent={renderListEmpty}
@@ -614,6 +633,7 @@ function ListingsScreen({ navigation, route }) {
             onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
             onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
             isLiked={favoriteIds.includes(item.id)}
+            isClosed={isClosedListing(item)}
             navigation={navigation}
           />
         )}

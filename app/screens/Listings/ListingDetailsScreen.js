@@ -63,6 +63,7 @@ function ListingDetailsScreen({ route, navigation }) {
   const [quickMessage, setQuickMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [similarListings, setSimilarListings] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   const isSoldStatus = (status) => {
     const normalizedStatus = String(status || "").toLowerCase();
@@ -77,9 +78,10 @@ function ListingDetailsScreen({ route, navigation }) {
   const hasCoordinates = Number.isFinite(listingLatitude) && Number.isFinite(listingLongitude);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Normalize images array and current image URL to avoid runtime errors
   const listingImages = Array.isArray(listing?.images)
-    ? listing.images.map((img) => (typeof img === "string" ? img : img?.url || img?.file_name || img?.path || ""))
+    ? listing.images
+        .map((img) => (typeof img === "string" ? img : img?.url || img?.uri || img?.file_name || img?.path || ""))
+        .filter(Boolean)
     : [];
 
   const currentImageUrl = listingImages.length > 0 ? listingImages[currentImageIndex % listingImages.length] : null;
@@ -146,7 +148,7 @@ function ListingDetailsScreen({ route, navigation }) {
     };
 
     fetchListing();
-        fetchSimilarListings();
+    fetchSimilarListings();
 
     fetchReviews();
 
@@ -156,17 +158,73 @@ function ListingDetailsScreen({ route, navigation }) {
   }, [id]);
 
 
-    const fetchSimilarListings = async () => {
+  const fetchSimilarListings = async () => {
     try {
       setLoadingSimilar(true);
-      const response = await listingsApi.getSimilarListings(id, listing?.Category?.id);
+      const response = await listingsApi.getSimilarListings(id);
       if (response.ok && response.data) {
-        setSimilarListings(response.data.slice(0, 10));
+        const listingsArray = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setSimilarListings(listingsArray.slice(0, 10));
+      } else {
+        setSimilarListings([]);
       }
     } catch (error) {
       if (__DEV__) console.error("Error fetching similar listings:", error);
+      setSimilarListings([]);
     } finally {
       setLoadingSimilar(false);
+    }
+  };
+
+  const handleCloseListing = async () => {
+    if (!listing?.id) return;
+
+    try {
+      const response = await listingsApi.closeListing(listing.id);
+      if (!response.ok) {
+        Alert.alert("Failed", "Could not close listing. Please try again.");
+        return;
+      }
+
+      setListing((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Sold out",
+              archived: true,
+            }
+          : prev
+      );
+
+      Alert.alert("Closed", "Listing moved to archive and hidden from feed.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to close listing. Please try again.");
+    }
+  };
+
+  const handleReopenListing = async () => {
+    if (!listing?.id) return;
+
+    try {
+      const response = await listingsApi.reopenListing(listing.id);
+      if (!response.ok) {
+        Alert.alert("Failed", "Could not reopen listing. Please try again.");
+        return;
+      }
+
+      setListing((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Available",
+              archived: false,
+            }
+          : prev
+      );
+
+      Alert.alert("Reopened", "Listing is visible in feed again.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to reopen listing. Please try again.");
     }
   };
 
@@ -418,7 +476,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     <View style={styles.leftBadges}>
                       <View style={styles.statusBadge}>
                         <LinearGradient
-                          colors={isSold ? [colors.error, colors.error] : [colors.success, colors.success]}
+                          colors={isSold ? [colors.danger, colors.danger] : [colors.success, colors.success]}
                           style={styles.statusGradient}
                         >
                           <Text style={styles.statusText}>{displayStatus}</Text>
@@ -516,10 +574,14 @@ function ListingDetailsScreen({ route, navigation }) {
                   <View style={styles.actionButtonsSpacer} />
                   <ActionButtons
                     onOrder={handleOrderNow}
+                    onContact={openContactModal}
                     onEdit={() => navigation.navigate('ListingEdit', { listing })}
+                    onClose={handleCloseListing}
+                    onReopen={handleReopenListing}
                     isOwner={isOwner(listing?.owner?.id)}
                     isAuthenticated={isAuthenticated}   
                     isSold={isSold}
+                    isClosed={Boolean(listing?.archived)}
                     styles={styles}
                   />
 
@@ -528,9 +590,12 @@ function ListingDetailsScreen({ route, navigation }) {
 <AnimatedInfoCard delay={430}>
   <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
     <View style={styles.sectionHeader}>
-      <MaterialCommunityIcons name="similar" size={20} color={colors.primary} />
+      <MaterialCommunityIcons name="view-grid-outline" size={20} color={colors.primary} />
       <Text style={styles.sectionTitle}>Similar Listings</Text>
     </View>
+      {loadingSimilar ? (
+        <ActivityIndicator visible />
+      ) : null}
     <FlatList
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -540,7 +605,7 @@ function ListingDetailsScreen({ route, navigation }) {
           style={styles.similarItem}
           onPress={() => navigation.push(routes.LISTING_DETAILS, item.id)}
         >
-          <Image source={{ uri: item.images?.[0] }} style={styles.similarImage} />
+          <Image source={{ uri: item.imageUrl || item.images?.[0]?.url || item.images?.[0] }} style={styles.similarImage} />
           <Text style={styles.similarPrice}>{item.price} DH</Text>
           <Text style={styles.similarTitle} numberOfLines={1}>{item.title}</Text>
         </TouchableOpacity>
@@ -1163,7 +1228,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   closeButton: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.secondary,
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: "center",
@@ -1175,6 +1240,81 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  reopenButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reopenButtonText: {
+    color: colors.success,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  soldOutContainer: {
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  soldOutText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  contactSellerButton: {
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+  },
+  contactSellerText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  similarItem: {
+    width: 140,
+    marginRight: 12,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: colors.surface,
+  },
+  similarImage: {
+    width: "100%",
+    height: 100,
+    backgroundColor: colors.lightGray,
+  },
+  similarPrice: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "700",
+    paddingHorizontal: 10,
+    paddingTop: 8,
+  },
+  similarTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "500",
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    paddingTop: 2,
+  },
+  noSimilarText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    paddingVertical: 8,
   },
   modalOverlay: {
     flex: 1,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { ListItem, ListItemSeparator } from "../../components/lists";
@@ -11,7 +11,6 @@ import useAuth from "../../auth/useAuth";
 import useTheme from "../../hooks/useTheme";
 import AppText from "../../components/Text";
 import { ProfileCard } from '../../components/cards/ProfileCard';
-import Avatar from '../../components/Avatar';
 import messagesApi from "../../api/messages";
 
 
@@ -19,7 +18,7 @@ import messagesApi from "../../api/messages";
 
 function AccountScreen({ navigation }) {
   const { user, logOut, isLoggedIn, isGuest } = useAuth();
-  const { colors: themeColors, isDark } = useTheme();
+  const { colors: themeColors } = useTheme();
   const loggedIn = isLoggedIn();
   const guestMode = isGuest();
   const [unreadMessageCount, setUnreadMessageCount] = React.useState(0);
@@ -27,10 +26,7 @@ function AccountScreen({ navigation }) {
   // Monitor avatar changes and load unread messages
   useFocusEffect(
     React.useCallback(() => {
-      console.log("👁️ AccountScreen focused");
-      console.log("👤 Current user:", user);
-      console.log("📸 Current avatar:", user?.avatar);
-      console.log("✅ Verified status:", user?.is_verified);
+ 
       loadUnreadMessages();
       return () => {
         console.log("👁️ AccountScreen unfocused");
@@ -79,13 +75,13 @@ const menuItems = [
   {
     title: "Wishlist",
     icon: { name: "heart", 
-      backgroundColor: colors.secondary },
+      backgroundColor: colors.primary },
     targetScreen: routes.Favorites,
   },
   {
     title: "Shipping Addresses",
     icon: { name: "map-marker", 
-      backgroundColor: colors.secondary },
+      backgroundColor: colors.primary },
     targetScreen: routes.SHIPPING_ADDRESSES,
   },
 
@@ -96,7 +92,7 @@ const settingsMenuItems = [
     title: "Preferences",
     icon: {
       name: "cog",
-      backgroundColor: colors.primary,
+      backgroundColor: colors.secondary,
     },
     targetScreen: routes.SETTINGS,
   },
@@ -113,7 +109,7 @@ const settingsMenuItems = [
   }
   ,{
     title: "logout",
-    icon: { name: "logout", backgroundColor: "#ffe66d" },
+    icon: { name: "logout", backgroundColor: "red" },
     onPress: () => {
       Alert.alert("Log Out", "Are you sure you want to Log out?", [
         { text: "Yes", onPress: () => logOut() },
@@ -145,17 +141,15 @@ const settingsMenuItems = [
 
         <>
 
-        <ProfileCard 
-  // name={user?.name || ""} 
-name={user.name}
-is_quick={true}
-  avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"} 
-  isVerified={user?.is_verified || false}
+        <ProfileCard
+          name={user?.name || ""}
+          avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"}
+          isVerified={user?.is_verified || false}
           onPress={() => {
             console.log("👤 Opening user edit screen. Current avatar:", user?.avatar);
             navigation.navigate(routes.USER_EDIT);
           }}
-/>
+        />
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
             Quick Actions
           </AppText>
@@ -179,7 +173,7 @@ is_quick={true}
                     }
                   }}
                 />
-                {index < menuItems.length - 1 && <ListItemSeparator />}
+                {index < menuItems.length - 1 ? <ListItemSeparator /> : null}
               </View>
             ))}
           </View>
@@ -201,7 +195,7 @@ is_quick={true}
                   }
                   onPress={item.onPress ? item.onPress : () => navigation.navigate(item.targetScreen)}
                 />
-                {index < settingsMenuItems.length - 1 && <ListItemSeparator />}
+                {index < settingsMenuItems.length - 1 ? <ListItemSeparator /> : null}
               </View>
             ))}
           </View>

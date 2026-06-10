@@ -32,7 +32,7 @@ export default function ActionButtons({
         <AnimatedInfoCard delay={300} styles={s}>
           <View style={s.actionButtonsContainer}>
             <View style={[s.soldOutContainer, { backgroundColor: themeColors.surface }]}>
-              <MaterialCommunityIcons name="sale" size={24} color={colors.error} />
+              <MaterialCommunityIcons name="sale" size={24} color={colors.danger} />
               <Text style={s.soldOutText}>This item is no longer available</Text>
               {onContact && (
                 <TouchableOpacity style={s.contactSellerButton} onPress={onContact}>
@@ -62,32 +62,17 @@ export default function ActionButtons({
 
           {/* Contact Seller Button */}
           {onContact && (
-            <TouchableOpacity style={s.contactButton} onPress={onContact}>
+            <TouchableOpacity style={s.messageButton} onPress={onContact}>
+              <View style={s.messageButtonContent}>
               <MaterialCommunityIcons name="chat-outline" size={22} color={colors.primary} />
-              <Text style={s.contactButtonText}>Message Seller</Text>
+              <Text style={s.messageButtonText}>Message Seller</Text>
+              </View>
             </TouchableOpacity>
           )}
         </View>
       </AnimatedInfoCard>
     );
   }
-
-
-  // Add to ActionButtons component
-{!isOwner && isAuthenticated && !isSold && (
-  <TouchableOpacity style={styles.negotiateButton} onPress={handleNegotiate}>
-    <MaterialCommunityIcons name="currency-usd" size={20} color={colors.warning} />
-    <Text style={styles.negotiateButtonText}>Make Offer</Text>
-  </TouchableOpacity>
-)}
-
-const handleNegotiate = () => {
-  navigation.navigate('MakeOffer', { 
-    listingId: listing.id, 
-    currentPrice: listing.price,
-    sellerId: listing.owner.id 
-  });
-};
 
   // For Owners (isOwner = true)
   return (
@@ -119,7 +104,7 @@ const handleNegotiate = () => {
               );
             }}
           >
-            <MaterialCommunityIcons name="close-circle" size={20} color={colors.error} />
+            <MaterialCommunityIcons name="close" size={20} color={colors.white} />
             <Text style={s.closeButtonText}>Close Listing</Text>
           </TouchableOpacity>
         ) : (

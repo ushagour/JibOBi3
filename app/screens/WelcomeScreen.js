@@ -16,11 +16,13 @@ import useAuth from "../auth/useAuth";
 import SplashContext from "../context/SplashContext";
 import listingsApi from "../api/listings";
 import colors from "../config/colors";
+import { useTranslation } from "react-i18next";
 
 const { width, height } = Dimensions.get("window");
 
 function WelcomeScreen({ navigation }) {
   const auth = useAuth();
+  const { t } = useTranslation();
   const { splashHidden } = useContext(SplashContext);
   const [totalListings, setTotalListings] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,7 @@ function WelcomeScreen({ navigation }) {
             <Image style={styles.logo} source={require("../assets/logo-primary.png")} />
         </View>
         
-        <Text style={styles.tagline}>Sell What You Don't Need!</Text>
+        <Text style={styles.tagline}>{t("welcome_screen.tagline")}</Text>
         
         {/* Animated Stats Badge */}
         <Animated.View
@@ -149,7 +151,9 @@ function WelcomeScreen({ navigation }) {
         >
           <MaterialCommunityIcons name="storefront" size={16} color={colors.primary} />
           <Text style={styles.statsText}>
-            {loading ? "Loading..." : `${totalListings.toLocaleString()}+ Active Listings`}
+            {loading
+              ? t("common.loading")
+              : t("welcome_screen.active_listings", { count: totalListings.toLocaleString() })}
           </Text>
         </Animated.View>
       </Animated.View>
@@ -175,7 +179,7 @@ function WelcomeScreen({ navigation }) {
               style={styles.loginGradient}
             >
               <MaterialCommunityIcons name="login" size={20} color="#FFF" />
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={styles.loginButtonText}>{t("common.login")}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -195,7 +199,7 @@ function WelcomeScreen({ navigation }) {
             activeOpacity={0.9}
           >
             <MaterialCommunityIcons name="account-plus" size={20} color={colors.primary} />
-            <Text style={styles.registerButtonText}>Register</Text>
+            <Text style={styles.registerButtonText}>{t("common.signup")}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -214,7 +218,7 @@ function WelcomeScreen({ navigation }) {
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons name="account-arrow-right" size={18} color="#FFF" />
-            <Text style={styles.guestButtonText}>Continue as Guest</Text>
+            <Text style={styles.guestButtonText}>{t("welcome_screen.continue_as_guest")}</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -228,7 +232,7 @@ function WelcomeScreen({ navigation }) {
           },
         ]}
       >
-        <Text style={styles.copyrightText}>© 2026 Jib w'Bie3. All rights reserved.</Text>
+        <Text style={styles.copyrightText}>{t("welcome_screen.copyright")}</Text>
       </Animated.View>
     </ImageBackground>
   );
