@@ -97,11 +97,6 @@ const settingsMenuItems = [
     targetScreen: routes.SETTINGS,
   },
   {
-    title: "Privacy & Security",
-    icon: { name: "shield", backgroundColor: colors.secondary },
-    targetScreen: routes.PRIVACY,
-  },
-  {
     title: "Help & Support",
     icon: { name: "help-circle", backgroundColor: colors.secondary },
     targetScreen: routes.HELP,
@@ -143,7 +138,7 @@ const settingsMenuItems = [
 
         <ProfileCard
           name={user?.name || ""}
-          avatarUri={user?.avatar ? user.avatar : "https://gravatar.com/avatar/HASH"}
+          avatarUri={user?.avatar || null}
           isVerified={user?.is_verified || false}
           onPress={() => {
             navigation.navigate(routes.USER_EDIT);

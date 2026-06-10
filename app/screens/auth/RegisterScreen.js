@@ -20,7 +20,6 @@ import * as Yup from "yup";
 
 import Screen from "../../components/Screen";
 import authApi from "../../api/auth";
-import useAuth from "../../auth/useAuth";
 import {
   ErrorMessage,
   Form,
@@ -44,7 +43,6 @@ const validationSchema = Yup.object().shape({
 function RegisterScreen({ navigation }) {
   const { t } = useTranslation();
   const registerApi = useApi(authApi.register);
-  const auth = useAuth();
   const [error, setError] = useState();
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -120,13 +118,17 @@ function RegisterScreen({ navigation }) {
         return;
       }
 
-      const { message, token, user } = response.data;
+      const { message, user, requiresEmailVerification } = response.data;
 
-      if (token && user) {
-        auth.signUp(token, user);
+      if (!user) {
+        setError(message || t("errors.something_went_wrong"));
+        return;
+      }
+
+      if (requiresEmailVerification !== false) {
         Alert.alert(
           t("common.welcome"),
-          t("auth_screens.account_created"),
+          "Your account was created. Please verify your email before logging in.",
           [
             {
               text: "Verify Email",
@@ -135,12 +137,16 @@ function RegisterScreen({ navigation }) {
                   email: user?.email || userInfo.email,
                 }),
             },
-            { text: "Later" },
+            {
+              text: "Back to Login",
+              onPress: () => navigation.navigate("Login"),
+            },
           ]
         );
-      } else {
-        setError(message || t("errors.something_went_wrong"));
+        return;
       }
+
+      setError(message || t("errors.something_went_wrong"));
     } catch (error) {
       setError(t("auth_screens.registration_error"));
       Alert.alert(t("common.error"), t("errors.network_error"));

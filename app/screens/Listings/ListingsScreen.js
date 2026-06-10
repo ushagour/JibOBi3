@@ -673,7 +673,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.danger || colors.error || "#FF5252",
     zIndex: 1,
   },
   listHeader: {

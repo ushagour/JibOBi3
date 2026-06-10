@@ -6,6 +6,10 @@ import colors from '../../config/colors';
 
 export default function FloatingAIButton({ user }) {
   const [visible, setVisible] = useState(false);
+
+  if (!user?.userId) {
+    return null;
+  }
   
   return (
     <>

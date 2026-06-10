@@ -97,6 +97,25 @@ function LoginScreen({ navigation }) {
     setLoading(false);
 
     if (!result.ok) {
+      const errorCode = result?.data?.code || result?.error?.response?.data?.code;
+      const errorMessage = result?.data?.error || result?.error?.response?.data?.error;
+
+      if (errorCode === "EMAIL_NOT_VERIFIED") {
+        Alert.alert(
+          "Email verification required",
+          errorMessage || "Please verify your email before logging in.",
+          [
+            {
+              text: "Verify Email",
+              onPress: () => navigation.navigate("VerifyEmail", { email }),
+            },
+            { text: "Cancel", style: "cancel" },
+          ]
+        );
+        setLoginFailed(false);
+        return;
+      }
+
       setLoginFailed(true);
       Alert.alert(t("auth_screens.login_failed_title"), t("auth.invalid_credentials"));
       return;

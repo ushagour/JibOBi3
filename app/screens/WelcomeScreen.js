@@ -137,25 +137,8 @@ function WelcomeScreen({ navigation }) {
             <Image style={styles.logo} source={require("../assets/logo-primary.png")} />
         </View>
         
-        <Text style={styles.tagline}>{t("welcome_screen.tagline")}</Text>
         
-        {/* Animated Stats Badge */}
-        <Animated.View
-          style={[
-            styles.statsBadge,
-            {
-              transform: [{ scale: statsAnim }],
-              opacity: statsAnim,
-            },
-          ]}
-        >
-          <MaterialCommunityIcons name="storefront" size={16} color={colors.primary} />
-          <Text style={styles.statsText}>
-            {loading
-              ? t("common.loading")
-              : t("welcome_screen.active_listings", { count: totalListings.toLocaleString() })}
-          </Text>
-        </Animated.View>
+
       </Animated.View>
 
       {/* Animated Buttons Section */}
@@ -175,7 +158,7 @@ function WelcomeScreen({ navigation }) {
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={[colors.secondary, colors.secondaryDark]}
+              colors={[colors.primary, colors.secondaryDark]}
               style={styles.loginGradient}
             >
               <MaterialCommunityIcons name="login" size={20} color="#FFF" />
@@ -273,8 +256,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 300,
+    height: 300,
     resizeMode: "contain",
   },
   appName: {
@@ -387,6 +370,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   guestButtonText: {
     color: "#FFFFFF",

@@ -529,7 +529,7 @@ function ListingDetailsScreen({ route, navigation }) {
                   </AnimatedInfoCard>
 
                   {/* Seller Card */}
-                  <SellerCard seller={listing.owner} onContact={openContactModal} styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
+                  <SellerCard seller={listing.owner}  styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
 
                   {/* Description */}
                   <AnimatedInfoCard delay={250}>
@@ -1228,10 +1228,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   closeButton: {
-    backgroundColor: colors.secondary,
+    backgroundColor: `${colors.primary}`,
     borderRadius: 14,
     paddingVertical: 12,
-    alignItems: "center",
+    alignItems: "center", 
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,

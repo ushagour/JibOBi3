@@ -22,6 +22,7 @@ import AssistantScreen from "../screens/auth/AssistantScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
 import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
+import VerifyEmailScreen from "../screens/auth/VerifyEmailScreen";
 
 const Stack = createStackNavigator();
 
@@ -37,6 +38,7 @@ const getHeaderTitle = (routeName) => {
     HelpSupport: "Help & Support",
     Assistant: "Assistant",
     PrivacySecurity: "Privacy & Security",
+    VerifyEmail: "Verify Email",
     ShippingAddresses: "Shipping Addresses",
     Favorites: "Favorites",
     Listings: "Listings",
@@ -73,7 +75,7 @@ const AccountNavigator = () => (
         headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
       })}
     />
-    <Stack.Screen name="UserEdit" component={UserScreen} />
+    <Stack.Screen name="UserEdit" component={UserScreen} options={{ headerShown: false }}  />
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Conversation" component={ConversationScreen} />
@@ -83,6 +85,7 @@ const AccountNavigator = () => (
     <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
     <Stack.Screen name="Assistant" component={AssistantScreen} />
     <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+    <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
     <Stack.Screen name="ShippingAddresses" component={ShippingAddressesScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />
     <Stack.Screen name="Listings" component={ListingsScreen} />

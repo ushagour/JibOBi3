@@ -45,7 +45,7 @@ const AIPopup = ({ visible, onClose, user, onNavigate }) => {
         setMessages([{
           id: 'welcome',
           role: 'assistant',
-          text: `👋 Hi ${user?.name || 'there'}! I'm your AI assistant. Ask me about orders, listings, payments, or anything about your marketplace!`,
+          text: `Hi ${user?.name || 'there'}! I can now answer using your real Jibobi account activity. Ask about your orders, unread messages, listings, wishlist, or notifications.`,
           timestamp: new Date(),
         }]);
       }
@@ -96,6 +96,8 @@ const AIPopup = ({ visible, onClose, user, onNavigate }) => {
       const response = await assistantApi.chat(conversationHistory, {
         userName: user?.name,
         userId: user?.id,
+        currentScreen: 'Assistant',
+        entryPoint: 'AIPopup',
       });
       
       const assistantMessage = {
@@ -122,10 +124,10 @@ const AIPopup = ({ visible, onClose, user, onNavigate }) => {
   };
 
   const quickActions = [
-    { label: 'My Orders', icon: 'cart-outline', prompt: 'Show me my recent orders' },
-    { label: 'Create Listing', icon: 'plus-circle-outline', prompt: 'How do I create a new listing?' },
-    { label: 'Payment Help', icon: 'credit-card', prompt: 'Help with payment methods' },
-    { label: 'Sell Tips', icon: 'trending-up', prompt: 'Tips for selling faster' },
+    { label: 'Orders', icon: 'cart-outline', prompt: 'Summarize my recent orders and tell me if any need attention.' },
+    { label: 'Messages', icon: 'message-text-outline', prompt: 'Do I have unread messages or new conversations to reply to?' },
+    { label: 'Listings', icon: 'view-grid-outline', prompt: 'Review my latest listings and tell me which ones may need action.' },
+    { label: 'Notifications', icon: 'bell-outline', prompt: 'What are my latest notifications and which ones are still unread?' },
   ];
 
   const animatedStyle = {
@@ -163,7 +165,7 @@ const AIPopup = ({ visible, onClose, user, onNavigate }) => {
               </View>
               <View>
                 <Text style={styles.title}>AI Assistant</Text>
-                <Text style={styles.subtitle}>Powered by DeepSeek</Text>
+                <Text style={styles.subtitle}>Powered by Gemini</Text>
               </View>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>

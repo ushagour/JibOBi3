@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 import Screen from "../../components/Screen";
@@ -98,7 +99,7 @@ function ForgotPasswordScreen({ navigation }) {
 
                 {resetToken ? (
                   <View style={styles.tokenBox}>
-                    <Text style={styles.tokenLabel}>Reset token</Text>
+                    <Text style={styles.tokenLabel}>Reset</Text>
                     <Text selectable style={styles.tokenValue}>
                       {resetToken}
                     </Text>
@@ -116,9 +117,7 @@ function ForgotPasswordScreen({ navigation }) {
                   <Text style={styles.backLinkText}>Back to Login</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate("VerifyEmail")} style={styles.verifyLink}>
-                  <Text style={styles.verifyLinkText}>Need to verify your email instead?</Text>
-                </TouchableOpacity>
+      
               </AuthFlowCard>
             </ScrollView>
           </TouchableWithoutFeedback>

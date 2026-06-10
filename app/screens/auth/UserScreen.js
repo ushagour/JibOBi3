@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
+  Image,
+  Alert,
   KeyboardAvoidingView,
   Keyboard,
   TouchableOpacity,
@@ -9,24 +11,32 @@ import {
   ScrollView,
   Platform,
   RefreshControl,
+  Animated,
+  Dimensions,
 } from "react-native";
 import * as Yup from "yup";
+import * as ImagePicker from "expo-image-picker";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from 'expo-linear-gradient';
+
 import {
   ErrorMessage,
   Form,
   FormField,
   SubmitButton,
 } from "../../components/forms";
-import ImageInput from "../../components/ImageInput";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
 import colors from "../../config/colors";
 import useTheme from "../../hooks/useTheme";
 import AwesomeAlert from "react-native-awesome-alerts";
+import routes from "../../navigation/routes";
 
 import usersApi from "../../api/users";
 import UploadScreen from "../outhers/UploadScreen";
+
+const { width } = Dimensions.get('window');
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required().label("Name"),
@@ -35,16 +45,22 @@ const validationSchema = Yup.object().shape({
   address: Yup.string().label("Address"),
 });
 
-function UserScreen({ navigation }) {
+function EditProfileScreen({ navigation }) {
   const [error, setError] = useState();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { user: authUser, updateUser, logOut } = useAuth(); // Access user and setUser from the auth context
+  const { user: authUser, updateUser, logOut } = useAuth();
   const { colors: themeColors, isDark } = useTheme();
-  const [avatar, setAvatar] = useState(authUser.avatar); // State to handle avatar upload
+  const [avatar, setAvatar] = useState(authUser?.avatar);
   const [progress, setProgress] = useState(0);
   const [uploadVisible, setUploadVisible] = useState(false);
-  const [user, setUser] = useState(null); // Full user data from API
+  const [user, setUser] = useState(null);
+  
+  // Animation values - FIXED: removed .start() from creation
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  
   const [sweetAlert, setSweetAlert] = useState({
     show: false,
     title: "",
@@ -53,6 +69,28 @@ function UserScreen({ navigation }) {
     showCancel: false,
     onConfirm: null,
   });
+
+  // Animate on mount - FIXED: properly start animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const closeSweetAlert = () => {
     setSweetAlert((prev) => ({
@@ -84,65 +122,100 @@ function UserScreen({ navigation }) {
     loadUserProfile();
   }, []);
 
-  const loadUserProfile = async () => {
+  const loadUserProfile = async ({ showLoader = true } = {}) => {
     try {
-      setLoading(true);
-      const response = await usersApi.getUserInfo(authUser.userId);
+      if (showLoader) setLoading(true);
+      const response = await usersApi.getUserInfo(authUser?.userId);
       if (response.ok) {
         setUser(response.data);
-        
+        return response.data;
       }      
+      return null;
     } catch (error) {
       console.error("Error loading user profile:", error);
+      return null;
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadUserProfile();
+    await loadUserProfile({ showLoader: false });
     setRefreshing(false);
   };
 
-  const handleSubmit = async (userInfo) => {
-    console.log("📝 handleSubmit called with:", userInfo);
-    console.log("📸 Current avatar state:", avatar);
-    console.log("👤 authUser.avatar:", authUser.avatar);
+  const pickAvatarImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+      if (!permissionResult.granted) {
+        Alert.alert("Permission required", "Photo library permission is required to choose an image.");
+        return;
+      }
+
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.9,
+      });
+
+      if (!pickerResult.canceled && pickerResult.assets?.length) {
+        setAvatar(pickerResult.assets[0].uri);
+      }
+    } catch (pickerError) {
+      console.error("Error picking avatar image:", pickerError);
+      Alert.alert("Error", "Unable to select image right now.");
+    }
+  };
+
+  const handleAvatarAction = () => {
+    Alert.alert("Profile Photo", "Choose how you want to update your photo", [
+      {
+        text: "🖼️ Choose from Gallery",
+        onPress: () => pickAvatarImage(),
+      },
+      ...(avatar
+        ? [
+            {
+              text: "🗑️ Remove Photo",
+              style: "destructive",
+              onPress: () => handleDeleteAvatar(),
+            },
+          ]
+        : []),
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
+  };
+
+  const handleSubmit = async (userInfo) => {
     setLoading(true);
     setError(null);
     setProgress(0);
     setUploadVisible(true);
 
     try {
-      // Prepare the form data for the API
       const formData = new FormData();
-
       formData.append("name", userInfo.name);
       formData.append("email", userInfo.email);
       formData.append("phone", userInfo.phone);
       formData.append("address", userInfo.address);
 
-      // If the avatar is updated, append it to the form data
-      if (avatar && avatar !== authUser.avatar) {
-        console.log("🖼️ New avatar detected, preparing upload...");
+      if (avatar && avatar !== authUser?.avatar) {
         const uriParts = avatar.split(".");
         const fileType = uriParts[uriParts.length - 1];
-
-        // Use "avatar" as the field name to match your backend multer config
         formData.append("avatar", {
           uri: avatar,
-          name: `avatar_${authUser.userId}.${fileType}`,
+          name: `avatar_${authUser?.userId}.${fileType}`,
           type: `image/${fileType}`,
         });
-        console.log("✅ Avatar appended to FormData");
-      } else {
-        console.log("ℹ️ No new avatar or avatar unchanged");
       }
 
       const response = await usersApi.updateUserInfo(
-        authUser.userId,
+        authUser?.userId,
         formData,
         (progress) => setProgress(progress)
       );
@@ -155,68 +228,49 @@ function UserScreen({ navigation }) {
         return;
       }
 
-      console.log("✅ Avatar update response:", response.data);
-      console.log("📸 New avatar URI:", response.data.avatar);
-      console.log("✅ Verified status:", response.data.is_verified);
+      const latestProfile = await loadUserProfile({ showLoader: false });
+      const syncedProfile = latestProfile || response.data;
 
-      // Update the user in the auth context
-      updateUser((prevUser) => {
-        const updatedUser = {
-          ...prevUser,
-          name: response.data.name,
-          email: response.data.email,
-          phone: response.data.phone,
-          address: response.data.address,
-          avatar: response.data.avatar,
-          is_verified: response.data.is_verified,
-        };
-        console.log("🔄 Updating auth context with:", updatedUser);
-        return updatedUser;
-      });
+      updateUser((prevUser) => ({
+        ...prevUser,
+        name: syncedProfile.name,
+        email: syncedProfile.email,
+        phone: syncedProfile.phone,
+        address: syncedProfile.address,
+        avatar: syncedProfile.avatar,
+        is_verified: syncedProfile.is_verified,
+        is_email_verified: syncedProfile.is_email_verified,
+      }));
 
-      setUser((prev) => {
-        const updatedUser = {
-          ...prev,
-          name: response.data.name,
-          email: response.data.email,
-          phone: response.data.phone,
-          address: response.data.address,
-          avatar: response.data.avatar,
-          is_verified: response.data.is_verified,
-        };
-        console.log("🔄 Updating local user state with:", updatedUser);
-        return updatedUser;
-      });
-      setAvatar(response.data.avatar);
-      console.log("✅ Avatar state updated to:", response.data.avatar);
+      setUser((prev) => ({
+        ...prev,
+        ...syncedProfile,
+      }));
+      setAvatar(syncedProfile.avatar || null);
 
       showSweetAlert({
-        title: "Success",
+        title: "✨ Success!",
         message: "Your profile has been updated successfully.",
         type: "success",
       });
     } catch (err) {
       console.error("Error during request:", err);
       showSweetAlert({
-        title: "Error",
+        title: "❌ Error",
         message: "Network error, please try again.",
         type: "danger",
       });
     } finally {
       setUploadVisible(false);
       setLoading(false);
-      setAvatar((prev) => prev ?? authUser.avatar); // Keep picked avatar if backend returned same URI
+      setAvatar((prev) => (prev === undefined ? authUser?.avatar : prev));
     }
   };
 
   const handleDeleteAvatar = async () => {
     try {
-      await usersApi.deleteUserAvatar(authUser.userId);
-
-      updateUser((prevUser) => ({
-        ...prevUser,
-        avatar: null,
-      }));
+      await usersApi.deleteUserAvatar(authUser?.userId);
+      updateUser((prevUser) => ({ ...prevUser, avatar: null }));
       setAvatar(null);
       showSweetAlert({
         title: "Success",
@@ -233,7 +287,14 @@ function UserScreen({ navigation }) {
     }
   };
 
-  // Use `user` (from API) instead of `authUser` (from context)
+  // Stats cards data
+  const statsData = [
+    { label: "Listings", value: user?.listings_count || 0, icon: "format-list-bulleted", color: "#4CAF50" },
+    { label: "Sales", value: user?.sales_count || 0, icon: "cash-multiple", color: "#2196F3" },
+    { label: "Rating", value: user?.rating || "4.8", icon: "star", color: "#FFC107" },
+    { label: "Member Since", value: user?.member_since || "2024", icon: "calendar", color: "#9C27B0" },
+  ];
+
   return (
     <>
       <ActivityIndicator visible={loading} />
@@ -244,10 +305,11 @@ function UserScreen({ navigation }) {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
-            contentContainerStyle={styles.container}
+            contentContainerStyle={[styles.container, { backgroundColor: themeColors?.background || colors.background }]}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
+            showsVerticalScrollIndicator={false}
           >
             <UploadScreen
               visible={uploadVisible}
@@ -255,175 +317,245 @@ function UserScreen({ navigation }) {
               onDone={() => setUploadVisible(false)}
             />
 
-           
-
-    
-            <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
-            <Form
-              initialValues={{
-                name: user?.name || authUser?.name || "",
-                email: user?.email || authUser?.email || "",
-                phone: user?.phone || "",
-                address: user?.address || "",
-                avatar: user?.avatar || authUser?.avatar 
-              }}
-              key={`profile-${user?.id || authUser?.userId || "user"}-${user?.email || authUser?.email || ""}`}
-              onSubmit={handleSubmit}
-              validationSchema={validationSchema}
+            {/* Header with Gradient */}
+            <LinearGradient
+              colors={isDark ? ['#1a1a2e', '#16213e'] : [themeColors?.primary || '#667eea', themeColors?.secondary || '#764ba2']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.headerGradient}
             >
-              <ErrorMessage error={error} visible={!!error} />
+              <Animated.View style={[
+                styles.headerContent,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }]
+                }
+              ]}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => navigation.goBack()}
+                >
+                  <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
+                </TouchableOpacity>
+                <AppText style={styles.headerTitle}>Edit Profile</AppText>
+                <View style={{ width: 40 }} />
+              </Animated.View>
+            </LinearGradient>
 
-              {/* Avatar Input */}
-              <View style={styles.imageWrapper}>
-                <ImageInput
-                  imageUri={avatar}
-                  onChangeImage={(uri) => setAvatar(uri)}
-                  onDeleteImage={avatar ? handleDeleteAvatar : null}
+            {/* Avatar Section - Modern Design */}
+            <Animated.View style={[
+              styles.avatarSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}>
+              <TouchableOpacity
+                style={styles.avatarContainer}
+                activeOpacity={0.85}
+                onPress={handleAvatarAction}
+              >
+                {avatar ? (
+                  <Image source={{ uri: avatar }} style={styles.avatarImage} />
+                ) : (
+                  <LinearGradient
+                    colors={[themeColors?.primary || '#667eea', themeColors?.secondary || '#764ba2']}
+                    style={styles.avatarPlaceholder}
+                  >
+                    <MaterialCommunityIcons name="account" size={60} color="#FFF" />
+                  </LinearGradient>
+                )}
+                <LinearGradient
+                  colors={[themeColors?.primary || '#667eea', themeColors?.secondary || '#764ba2']}
+                  style={styles.avatarEditBadge}
+                >
+                  <MaterialCommunityIcons name="camera" size={18} color="#FFF" />
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <AppText style={styles.userName}>
+                {user?.name || authUser?.name || "User"}
+              </AppText>
+              <View style={styles.verificationBadge}>
+                <MaterialCommunityIcons 
+                  name={user?.is_verified ? "check-circle" : "clock-outline"} 
+                  size={16} 
+                  color={user?.is_verified ? "#4CAF50" : "#FFC107"} 
                 />
+                <AppText style={styles.verificationText}>
+                  {user?.is_verified ? "Verified Account" : "Pending Verification"}
+                </AppText>
               </View>
+            </Animated.View>
 
-              {/* Name Field */}
-              <FormField
-                autoCorrect={false}
-                icon="account"
-                name="name"
-                placeholder="Name"
-              />
+            {/* Stats Cards */}
+            <Animated.View style={[
+              styles.statsContainer,
+              { opacity: fadeAnim }
+            ]}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {statsData.map((stat, index) => (
+                  <View key={index} style={[styles.statCard, { backgroundColor: themeColors?.surface || colors.white }]}>
+                    <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
+                      <MaterialCommunityIcons name={stat.icon} size={24} color={stat.color} />
+                    </View>
+                    <AppText style={styles.statValue}>{stat.value}</AppText>
+                    <AppText style={styles.statLabel}>{stat.label}</AppText>
+                  </View>
+                ))}
+              </ScrollView>
+            </Animated.View>
 
-              {/* Email Field */}
-              <FormField
-                autoCapitalize="none"
-                autoCorrect={false}
-                icon="email"
-                keyboardType="email-address"
-                name="email"
-                placeholder="Email"
-                textContentType="emailAddress"
-              />
+            {/* Edit Form Section */}
+            <Animated.View style={[
+              styles.formSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}>
+              <View style={[styles.sectionCard, { backgroundColor: themeColors?.surface || colors.white }]}>
+                <View style={styles.sectionHeader}>
+                  <MaterialCommunityIcons name="account-edit" size={24} color={themeColors?.primary || colors.primary} />
+                  <AppText style={styles.sectionTitle}>Personal Information</AppText>
+                </View>
+                
+                <Form
+                  initialValues={{
+                    name: user?.name || authUser?.name || "",
+                    email: user?.email || authUser?.email || "",
+                    phone: user?.phone || "",
+                    address: user?.address || "",
+                  }}
+                  key={`profile-${user?.id || authUser?.userId || "user"}`}
+                  onSubmit={handleSubmit}
+                  validationSchema={validationSchema}
+                >
+                  <ErrorMessage error={error} visible={!!error} />
 
-              {/* Phone Field */}
-              <FormField
-                autoCapitalize="none"
-                autoCorrect={false}
-                icon="phone"
-                keyboardType="phone-pad"
-                name="phone"
-                placeholder="Phone Number"
-                textContentType="telephoneNumber"
-              />
+                  <FormField
+                    autoCorrect={false}
+                    icon="account"
+                    name="name"
+                    placeholder="Full Name"
+                  />
 
-              {/* Address Field */}
-              <FormField
-                autoCapitalize="none"
-                autoCorrect={true}
-                icon="map-marker"
-                name="address"
-                placeholder="Address"
-                textContentType="streetAddress"
-              />
+                  <FormField
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    icon="email"
+                    keyboardType="email-address"
+                    name="email"
+                    placeholder="Email Address"
+                    textContentType="emailAddress"
+                  />
 
-              {/* Submit Button */}
-              <SubmitButton title="Update Profile" />
-            </Form>
-            </View>
+                  <FormField
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    icon="phone"
+                    keyboardType="phone-pad"
+                    name="phone"
+                    placeholder="Phone Number"
+                    textContentType="telephoneNumber"
+                  />
+
+                  <FormField
+                    autoCapitalize="none"
+                    autoCorrect={true}
+                    icon="map-marker"
+                    name="address"
+                    placeholder="Address"
+                    textContentType="streetAddress"
+                  />
+
+                  <SubmitButton title="Save Changes" />
+                </Form>
+              </View>
+            </Animated.View>
 
             {/* Account Information Section */}
-            <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-              Account Information
-            </AppText>
-            <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
-              {/* Role */}
-              <View style={styles.infoRow}>
-                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
-                  Role
-                </AppText>
-                <AppText variant="body1" color="textPrimary" style={styles.infoValue}>
-                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : authUser?.role || "Customer"}
-                </AppText>
+            <Animated.View style={[
+              styles.accountSection,
+              { opacity: fadeAnim }
+            ]}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="security" size={22} color={themeColors?.primary || colors.primary} />
+                <AppText style={styles.sectionTitle}>Account & Security</AppText>
               </View>
-
-              {/* Account Status */}
-              <View style={styles.infoRow}>
-                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
-                  Status
-                </AppText>
-                <AppText 
-                  variant="body1" 
-                  color={user?.status === "active" ? "success" : user?.status === "inactive" ? "warning" : "danger"}
-                  style={styles.infoValue}
-                >
-                  {user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : "Active"}
-                </AppText>
-              </View>
-
-              {/* Verification Status */}
-              <View style={styles.infoRow}>
-                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
-                  Email Verified
-                </AppText>
-                <AppText 
-                  variant="body1" 
-                  color={user?.is_email_verified ? "success" : "warning"}
-                  style={styles.infoValue}
-                >
-                  {user?.is_email_verified ? "✓ Verified" : "✗ Not Verified"}
-                </AppText>
-              </View>
-
-              {!user?.is_email_verified && (
+              
+              <View style={[styles.sectionCard, { backgroundColor: themeColors?.surface || colors.white }]}>
                 <TouchableOpacity
-                  style={styles.verifyEmailButton}
-                  onPress={() =>
-                    navigation.navigate("VerifyEmail", {
-                      email: user?.email || authUser?.email || "",
-                    })
-                  }
+                  style={styles.accountRow}
+                  onPress={() => navigation.navigate(routes.PRIVACY)}
                 >
-                  <AppText style={styles.verifyEmailButtonText}>Verify Email</AppText>
+                  <View style={styles.rowLeft}>
+                    <MaterialCommunityIcons name="lock" size={22} color={colors.primary} />
+                    <AppText style={styles.rowLabel}>Change Password</AppText>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
                 </TouchableOpacity>
-              )}
 
-              {/* Phone Verification */}
-              <View style={styles.infoRow}>
-                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
-                  Phone Verified
-                </AppText>
-                <AppText 
-                  variant="body1" 
-                  color={user?.is_phone_verified ? "success" : "warning"}
-                  style={styles.infoValue}
+                <TouchableOpacity
+                  style={styles.accountRow}
+                  onPress={() => navigation.navigate(routes.PRIVACY)}
                 >
-                  {user?.is_phone_verified ? "✓ Verified" : "✗ Not Verified"}
-                </AppText>
+                  <View style={styles.rowLeft}>
+                    <MaterialCommunityIcons name="shield-account" size={22} color={colors.primary} />
+                    <AppText style={styles.rowLabel}>Security Settings</AppText>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
+                </TouchableOpacity>
+
+                {!user?.is_email_verified ? (
+                  <TouchableOpacity
+                    style={styles.accountRow}
+                    onPress={() =>
+                      navigation.navigate(routes.VERIFY_EMAIL, {
+                        email: user?.email || authUser?.email || "",
+                      })
+                    }
+                  >
+                    <View style={styles.rowLeft}>
+                      <MaterialCommunityIcons name="email-check-outline" size={22} color={colors.primary} />
+                      <AppText style={styles.rowLabel}>Verify Email</AppText>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
+                  </TouchableOpacity>
+                ) : null}
+
+                <TouchableOpacity style={styles.accountRow} onPress={() => navigation.navigate(routes.HELP)}>
+                  <View style={styles.rowLeft}>
+                    <MaterialCommunityIcons name="eye" size={22} color={colors.primary} />
+                    <AppText style={styles.rowLabel}>Privacy & Support</AppText>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
+                </TouchableOpacity>
               </View>
+            </Animated.View>
 
-              {/* Overall Verification */}
-              <View style={styles.infoRow}>
-                <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
-                  Account Verified
-                </AppText>
-                <AppText 
-                  variant="body1" 
-                  color={user?.is_verified ? "success" : "warning"}
-                  style={styles.infoValue}
-                >
-                  {user?.is_verified ? "✓ Verified" : "✗ Not Verified"}
-                </AppText>
-              </View>
-
-              {/* Quick Responder Badge */}
-              {user?.is_quick_responder && (
-                <View style={styles.infoRow}>
-                  <AppText variant="body2" color="textTertiary" style={styles.infoLabel}>
-                    Quick Responder
-                  </AppText>
-                  <AppText variant="body1" color="success" style={styles.infoValue}>
-                    ⭐ Enabled
-                  </AppText>
-                </View>
-              )}
-            </View>
-
+            {/* Danger Zone - Logout */}
+            <Animated.View style={[
+              styles.dangerSection,
+              { opacity: fadeAnim }
+            ]}>
+              <TouchableOpacity 
+                style={styles.logoutButton}
+                onPress={() => {
+                  Alert.alert(
+                    "Logout",
+                    "Are you sure you want to logout?",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Logout", onPress: () => logOut(), style: "destructive" }
+                    ]
+                  );
+                }}
+              >
+                <MaterialCommunityIcons name="logout" size={22} color={colors.danger} />
+                <AppText style={styles.logoutText}>Logout</AppText>
+              </TouchableOpacity>
+            </Animated.View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -460,62 +592,192 @@ function UserScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    paddingBottom: 30,
-    backgroundColor: colors.background,
+    flexGrow: 1,
   },
-  screenTitle: {
-    marginBottom: 10,
+  headerGradient: {
+    height: 200,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  sectionTitle: {
-    marginTop: 12,
-    marginBottom: 8,
-    letterSpacing: 1,
-  },
-  sectionCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  imageWrapper: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  infoRow: {
+  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    paddingHorizontal: 20,
+    paddingTop: 50,
   },
-  infoLabel: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+  avatarSection: {
+    alignItems: "center",
+    marginTop: -60,
+    marginBottom: 20,
+  },
+  avatarContainer: {
+    position: "relative",
+  },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: "#FFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  avatarPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 4,
+    borderColor: "#FFF",
+  },
+  avatarEditBadge: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#FFF",
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 12,
+    color: "#000",
+  },
+  verificationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: 20,
+  },
+  verificationText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  statsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  statCard: {
+    width: 100,
+    padding: 12,
+    borderRadius: 16,
+    marginRight: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  statLabel: {
+    fontSize: 11,
+    color: "#999",
+    marginTop: 4,
+  },
+  formSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  accountSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  dangerSection: {
+    paddingHorizontal: 16,
+    marginBottom: 40,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: "600",
-    flex: 1,
+    color: "#000",
   },
-  infoValue: {
-    fontWeight: "500",
-    flex: 1,
-    textAlign: "right",
+  sectionCard: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  verifyEmailButton: {
-    alignSelf: "flex-end",
-    marginTop: 10,
-    marginBottom: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: `${colors.primary}14`,
+  accountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
   },
-  verifyEmailButtonText: {
-    color: colors.primary,
-    fontWeight: "700",
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  rowLabel: {
+    fontSize: 15,
+    color: "#000",
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: "#FFE5E5",
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.danger,
   },
 });
 
-export default UserScreen;
+export default EditProfileScreen;

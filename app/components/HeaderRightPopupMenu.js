@@ -12,7 +12,7 @@ function HeaderRightPopupMenu({ navigation }) {
   const { isLoggedIn } = useAuth();
   const loggedIn = isLoggedIn();
   const [visible, setVisible] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const menuItems = useMemo(
@@ -41,7 +41,7 @@ function HeaderRightPopupMenu({ navigation }) {
         return;
       }
 
-      setUnreadCount(response.data.unreadCount || 0);
+      setNotificationCount((response.data.notifications || []).length);
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
       Alert.alert("Error", "Could not load notifications.");
@@ -71,7 +71,7 @@ function HeaderRightPopupMenu({ navigation }) {
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="bell-outline" size={22} color={colors.white} />
-            {unreadCount > 0 && (
+            {notificationCount > 0 && (
               <View style={styles.badgeWrap}>
                 <View style={styles.unreadDot} />
               </View>

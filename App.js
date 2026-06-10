@@ -33,6 +33,7 @@ export default function App() {
   const [user, setUser] = useState();
   const [isReady, setIsReady] = useState(false);
   const [splashHidden, setSplashHidden] = useState(false);
+  const isAuthenticated = Boolean(user?.userId);
 
   const restoreUser = async () => {
     const user = await authStorage.getUser();
@@ -77,7 +78,7 @@ export default function App() {
           <AuthContext.Provider  value={{ user, setUser }}>
             {user ? <AppNavigator /> : <AuthNavigator />}
           </AuthContext.Provider>
-          <FloatingAIButton user={user} />
+          {isAuthenticated ? <FloatingAIButton user={user} /> : null}
           <GlobalAlertProvider />
         </NavigationContainer>
         </SplashContext.Provider>
