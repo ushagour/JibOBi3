@@ -291,7 +291,6 @@ function EditProfileScreen({ navigation }) {
   const statsData = [
     { label: "Listings", value: user?.listings_count || 0, icon: "format-list-bulleted", color: "#4CAF50" },
     { label: "Sales", value: user?.sales_count || 0, icon: "cash-multiple", color: "#2196F3" },
-    { label: "Rating", value: user?.rating || "4.8", icon: "star", color: "#FFC107" },
     { label: "Member Since", value: user?.member_since || "2024", icon: "calendar", color: "#9C27B0" },
   ];
 
@@ -319,7 +318,7 @@ function EditProfileScreen({ navigation }) {
 
             {/* Header with Gradient */}
             <LinearGradient
-              colors={isDark ? ['#1a1a2e', '#16213e'] : [themeColors?.primary || '#667eea', themeColors?.secondary || '#764ba2']}
+              colors={isDark ? ['#1a1a2e', '#16213e'] : [themeColors?.primary , themeColors?.primary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.headerGradient}
@@ -355,18 +354,18 @@ function EditProfileScreen({ navigation }) {
                 activeOpacity={0.85}
                 onPress={handleAvatarAction}
               >
-                {avatar ? (
+                {avatar !== null ? (
                   <Image source={{ uri: avatar }} style={styles.avatarImage} />
                 ) : (
                   <LinearGradient
-                    colors={[themeColors?.primary || '#667eea', themeColors?.secondary || '#764ba2']}
+                    colors={[themeColors?.secondary, themeColors?.secondary]}
                     style={styles.avatarPlaceholder}
                   >
                     <MaterialCommunityIcons name="account" size={60} color="#FFF" />
                   </LinearGradient>
                 )}
                 <LinearGradient
-                  colors={[themeColors?.primary || '#667eea', themeColors?.secondary || '#764ba2']}
+                  colors={[themeColors?.primary, themeColors?.secondary]}
                   style={styles.avatarEditBadge}
                 >
                   <MaterialCommunityIcons name="camera" size={18} color="#FFF" />
@@ -485,17 +484,6 @@ function EditProfileScreen({ navigation }) {
               </View>
               
               <View style={[styles.sectionCard, { backgroundColor: themeColors?.surface || colors.white }]}>
-                <TouchableOpacity
-                  style={styles.accountRow}
-                  onPress={() => navigation.navigate(routes.PRIVACY)}
-                >
-                  <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="lock" size={22} color={colors.primary} />
-                    <AppText style={styles.rowLabel}>Change Password</AppText>
-                  </View>
-                  <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
-                </TouchableOpacity>
-
                 <TouchableOpacity
                   style={styles.accountRow}
                   onPress={() => navigation.navigate(routes.PRIVACY)}

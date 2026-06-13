@@ -14,7 +14,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useAuth from "../auth/useAuth";
 import SplashContext from "../context/SplashContext";
-import listingsApi from "../api/listings";
 import colors from "../config/colors";
 import { useTranslation } from "react-i18next";
 
@@ -24,8 +23,6 @@ function WelcomeScreen({ navigation }) {
   const auth = useAuth();
   const { t } = useTranslation();
   const { splashHidden } = useContext(SplashContext);
-  const [totalListings, setTotalListings] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -97,20 +94,7 @@ function WelcomeScreen({ navigation }) {
       delay: 200,
     }).start();
 
-    // Fetch total listings
-    const fetchListings = async () => {
-      setLoading(true);
-      const response = await listingsApi.getTotalListings();
-      if (!response.ok) {
-        console.log("Error fetching listings:", response.problem);
-        setLoading(false);
-      } else {
-        setTotalListings(response.data.totalListings);
-        setLoading(false);
-      }
-    };
 
-    fetchListings();
   }, []);
 
   return (
@@ -133,8 +117,13 @@ function WelcomeScreen({ navigation }) {
         ]}
       >
         <View style={styles.logoWrapper}>
-       
+            <LinearGradient
+            colors={[colors.white, colors.white]}
+            style={styles.logoGradient}
+          >
+
             <Image style={styles.logo} source={require("../assets/logo-primary.png")} />
+          </LinearGradient>
         </View>
         
         
@@ -158,7 +147,7 @@ function WelcomeScreen({ navigation }) {
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={[colors.primary, colors.secondaryDark]}
+              colors={[colors.primary, colors.primaryDark]}
               style={styles.loginGradient}
             >
               <MaterialCommunityIcons name="login" size={20} color="#FFF" />
@@ -244,6 +233,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 20,
     ...Platform.select({
+      ios: {
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+
 
       android: {
         elevation: 8,
@@ -256,8 +252,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    width: 300,
-    height: 300,
+    width: 200,
+    height: 200,
     resizeMode: "contain",
   },
   appName: {

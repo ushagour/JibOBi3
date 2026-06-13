@@ -4,8 +4,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import useTheme from "../hooks/useTheme";
 import colors from "../config/colors";
+
+
 
 function AnimatedHeader({
   title,
@@ -14,9 +16,10 @@ function AnimatedHeader({
   showBackButton = false,
   onBackPress,
   scrollY,
-  gradientColors = [colors.primaryLight, colors.primary],
+  gradientColors = [colors?.primaryLight, colors?.primary],
 }) {
   const insets = useSafeAreaInsets();
+  const { colors: themeColors, isDark } = useTheme();
   const topPadding =
     Platform.OS === "android"
       ? (StatusBar.currentHeight || 0) + 8
@@ -49,12 +52,12 @@ function AnimatedHeader({
       ]}
     >
       <LinearGradient
-        colors={gradientColors}
+        colors={isDark ? ['#1a1a2e', '#16213e'] : [themeColors?.primaryDark , themeColors?.primaryDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.gradient}
       >
-        <BlurView intensity={80} tint="dark" style={[styles.headerBlur, { paddingTop: topPadding }]}>
+        <BlurView   intensity={20} tint="light"  style={[styles.headerBlur, { paddingTop: topPadding }]}>
           <View style={styles.row}>
             <View style={styles.leftSide}>
               {showBackButton ? (
@@ -92,7 +95,6 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.16,
         shadowRadius: 20,
       },
       android: {

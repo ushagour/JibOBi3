@@ -4,6 +4,8 @@ import client from "./client";
 const endpoint = "/orders";
 
 const getOrders = () => client.get(endpoint);
+const getMyOrders = () => client.get(`${endpoint}/my`);
+
 const getRecentOrders = () => client.get(`${endpoint}/recent`);
 const getOrderById = (orderId) => client.get(`${endpoint}/${orderId}`);
 
@@ -26,6 +28,7 @@ const deleteOrder = (orderId) => client.delete(`${endpoint}/${orderId}`);
 
 export default {
   getOrders,
+  getMyOrders,
   getRecentOrders,
   getOrderById,
   createOrder,

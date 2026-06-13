@@ -14,13 +14,12 @@ import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import SettingsScreen from "../screens/auth/SettingsScreen";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
 import ConversationScreen from "../screens/auth/ConversationScreen";
-import OrdersScreen from "../screens/orders/OrdersScreen";
+import UnifiedOrdersScreen from "../screens/orders/UnifiedOrdersScreen";
 import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
 import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
 import HelpSupportScreen from "../screens/auth/HelpSupportScreen";
 import AssistantScreen from "../screens/auth/AssistantScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
-import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
 import VerifyEmailScreen from "../screens/auth/VerifyEmailScreen";
 
@@ -39,7 +38,6 @@ const getHeaderTitle = (routeName) => {
     Assistant: "Assistant",
     PrivacySecurity: "Privacy & Security",
     VerifyEmail: "Verify Email",
-    ShippingAddresses: "Shipping Addresses",
     Favorites: "Favorites",
     Listings: "Listings",
     MyListings: "My Listings",
@@ -64,6 +62,7 @@ const AccountNavigator = () => (
           rightAction={options.headerRight ? options.headerRight({ navigation: headerNavigation, route: headerRoute }) : null}
           showBackButton={Boolean(back)}
           onBackPress={() => headerNavigation.goBack()}
+          
         />
       ),
     })}
@@ -79,14 +78,13 @@ const AccountNavigator = () => (
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Conversation" component={ConversationScreen} />
-    <Stack.Screen name="Orders" component={OrdersScreen} />
+    <Stack.Screen name="Orders" component={UnifiedOrdersScreen} />
     <Stack.Screen name="OrderDetails" component={OrderDetailScreen} />
     <Stack.Screen name="OrderCheckout" component={OrderCheckoutScreen} />
     <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
     <Stack.Screen name="Assistant" component={AssistantScreen} />
     <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
     <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
-    <Stack.Screen name="ShippingAddresses" component={ShippingAddressesScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />
     <Stack.Screen name="Listings" component={ListingsScreen} />
     <Stack.Screen name="MyListings" component={MyListingsScreen} />

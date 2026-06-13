@@ -207,7 +207,7 @@ const CustomHeader = ({ title, onBack, onSearch, searchQuery, setSearchQuery }) 
 
   return (
     <LinearGradient
-      colors={[palette.primaryLight, palette.primary]}
+      colors={[palette.primaryDark, palette.primaryDark]}
       style={styles.headerGradient}
     >
       <BlurView intensity={20} tint="light" style={styles.headerBlur}>

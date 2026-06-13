@@ -140,17 +140,20 @@ const nearbyListings = (latitude, longitude) => {
 // Add to listingsApi.js
 
 const closeListing = (id) => {
-  return client.put(`/listings/${id}/close`);
+  return client.put(`${endpoint}/${id}/close`);
 };
 
 const reopenListing = (id) => {
-  return client.put(`/listings/${id}/reopen`);
+  return client.put(`${endpoint}/${id}/reopen`);
 };
 
 const getSimilarListings = (listingId) => {
   return client.get(`${endpoint}/${listingId}/similar`);
 };
 
+const getNewestListings = () => {
+  return client.get(`${endpoint}/newest`);
+};
 
 export default {
   addListing,
@@ -163,6 +166,7 @@ export default {
   getArchivedListings,
   getSoldListings,
   getTotalListings,
+  getNewestListings,
   deleteListing,
   updateListing,
   nearbyListings,

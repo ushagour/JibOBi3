@@ -64,9 +64,9 @@ const menuItems = [
 
   },
   {
-    title: "chat",
+    title: "Messages",
     icon: {
-      name: "message-text",
+      name: "message-text", 
       backgroundColor: colors.primary,
     },
     targetScreen: routes.CONVERSATION,
@@ -76,13 +76,7 @@ const menuItems = [
     title: "Wishlist",
     icon: { name: "heart", 
       backgroundColor: colors.primary },
-    targetScreen: routes.Favorites,
-  },
-  {
-    title: "Shipping Addresses",
-    icon: { name: "map-marker", 
-      backgroundColor: colors.primary },
-    targetScreen: routes.SHIPPING_ADDRESSES,
+    targetScreen: routes.FAVORITES,
   },
 
 ];
