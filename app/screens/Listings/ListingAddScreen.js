@@ -24,6 +24,7 @@ import AnimatedHeader from "../../components/AnimatedHeader";
 import routes from "../../navigation/routes";
 import colors from "../../config/colors";
 import useTheme from "../../hooks/useTheme";
+import CategoriesGridSelector from "../../components/forms/CategoriesGridSelector";
 
 import {
   Form,
@@ -205,149 +206,7 @@ function FraudDetectionResult({ result, onPublish, isLoading }) {
   );
 }
 
-// Categories ListBox Component
-function CategoriesListBox({ categories }) {
-  const { values, setFieldValue } = useFormikContext();
-  const { colors: themeColors } = useTheme();
-  const [isExpanded, setIsExpanded] = useState(true);
-  const animationValue = useRef(new Animated.Value(1)).current;
 
-  const selectedCategory = categories.find(c => c.id === values.category);
-
-  const toggleExpand = () => {
-    Animated.timing(animationValue, {
-      toValue: isExpanded ? 0.3 : 1,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-    setIsExpanded(!isExpanded);
-  };
-
-  const handleSelect = (categoryId) => {
-    setFieldValue("category", categoryId);
-    Animated.sequence([
-      Animated.timing(animationValue, {
-        toValue: 0.8,
-        duration: 150,
-        useNativeDriver: false,
-      }),
-      Animated.timing(animationValue, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: false,
-      }),
-    ]).start();
-    setIsExpanded(false);
-  };
-
-  const heightInterpolation = animationValue.interpolate({
-    inputRange: [0.3, 1],
-    outputRange: [0, 300],
-  });
-
-  const opacityInterpolation = animationValue.interpolate({
-    inputRange: [0.3, 0.8, 1],
-    outputRange: [0, 0.5, 1],
-  });
-
-  return (
-    <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
-      {/* Header */}
-      <TouchableOpacity
-        style={styles.categoryListHeaderToggle}
-        onPress={toggleExpand}
-        activeOpacity={0.7}
-      >
-        <View style={styles.categoryListHeaderContent}>
-          <MaterialCommunityIcons name="tag" size={18} color={colors.primary} />
-          <Text style={styles.categoryListLabel}>Category</Text>
-          {selectedCategory && (
-            <View style={styles.selectedCategoryBadge}>
-              <Text style={styles.selectedCategoryText}>{selectedCategory.name}</Text>
-              <MaterialCommunityIcons name="check-circle" size={14} color={colors.primary} />
-            </View>
-          )}
-        </View>
-        <Animated.View
-          style={{
-            transform: [
-              {
-                rotate: animationValue.interpolate({
-                  inputRange: [0.3, 1],
-                  outputRange: ["0deg", "180deg"],
-                }),
-              },
-            ],
-          }}
-        >
-          <MaterialCommunityIcons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={colors.textSecondary}
-          />
-        </Animated.View>
-      </TouchableOpacity>
-
-      {/* List Items */}
-      <Animated.View
-        style={[
-          styles.categoryListAnimatedContainer,
-          {
-            maxHeight: heightInterpolation,
-            opacity: opacityInterpolation,
-          },
-        ]}
-      >
-        <FlatList
-          data={categories}
-          keyExtractor={(item) => item.id.toString()}
-          scrollEnabled={false}
-          contentContainerStyle={styles.categoryListContainer}
-          renderItem={({ item, index }) => (
-            <TouchableOpacity
-              style={[
-                styles.categoryListBoxItem,
-                values.category === item.id && styles.categoryListBoxItemSelected,
-                index !== categories.length - 1 && styles.categoryListBoxItemBorder,
-              ]}
-              onPress={() => handleSelect(item.id)}
-              activeOpacity={0.6}
-            >
-              <Animated.View
-                style={{
-                  opacity: values.category === item.id ? animationValue : 1,
-                }}
-              >
-                <Text style={[
-                  styles.categoryListBoxItemText,
-                  values.category === item.id && styles.categoryListBoxItemTextSelected,
-                ]}>
-                  {item.name}
-                </Text>
-              </Animated.View>
-              {values.category === item.id && (
-                <Animated.View
-                  style={{
-                    transform: [
-                      {
-                        scale: animationValue.interpolate({
-                          inputRange: [0.8, 1],
-                          outputRange: [0.5, 1],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <MaterialCommunityIcons name="check-circle-outline" size={18} color={colors.primary} />
-                </Animated.View>
-              )}
-            </TouchableOpacity>
-          )}
-        />
-      </Animated.View>
-    </View>
-  );
-}
 
 // Description Section Component
 function DescriptionSection() {
@@ -683,7 +542,7 @@ function ListingAddScreen({ navigation }) {
                 </View>
 
                 {/* Category Section */}
-                <CategoriesListBox categories={categories} />
+                <CategoriesGridSelector categories={categories} />
 
                 {/* Description Section */}
                 <DescriptionSection />
