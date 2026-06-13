@@ -1,11 +1,14 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Alert, ScrollView, TextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Alert, ScrollView, TextInput, Switch, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Yup from "yup";
+import * as LocalAuthentication from "expo-local-authentication";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import AppButton from "../../components/Button";
 import {
   ErrorMessage,
@@ -46,13 +49,24 @@ const changePasswordValidationSchema = Yup.object().shape({
     .required("Please confirm your new password"),
 });
 
+// Storage keys
+const BIOMETRIC_ENABLED_KEY = "@biometric_enabled";
+
 function PrivacySecurityScreen() {
   const { user, logOut } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [deletionStep, setDeletionStep] = useState(0);
   const [deletionReason, setDeletionReason] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
+  
+  // Face ID / Biometric states
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState(null);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  
   const [sweetAlert, setSweetAlert] = useState({
     show: false,
     title: "",
@@ -61,6 +75,141 @@ function PrivacySecurityScreen() {
     showCancel: false,
     onConfirm: null,
   });
+
+  // Check biometric availability on mount
+  useEffect(() => {
+    checkBiometricAvailability();
+    loadBiometricPreference();
+  }, []);
+
+  // Check if device supports biometric authentication
+  const checkBiometricAvailability = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      
+      if (hasHardware && isEnrolled) {
+        setIsBiometricAvailable(true);
+        
+        // Determine biometric type
+        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+          setBiometricType("face-id");
+        } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+          setBiometricType("touch-id");
+        } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.Iris)) {
+          setBiometricType("iris");
+        }
+      } else {
+        setIsBiometricAvailable(false);
+      }
+    } catch (error) {
+      console.error("Biometric availability check failed:", error);
+      setIsBiometricAvailable(false);
+    }
+  };
+
+  // Load saved biometric preference
+  const loadBiometricPreference = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
+      setIsBiometricEnabled(saved === "true");
+    } catch (error) {
+      console.error("Failed to load biometric preference:", error);
+    }
+  };
+
+  // Save biometric preference
+  const saveBiometricPreference = async (enabled) => {
+    try {
+      await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, enabled.toString());
+      setIsBiometricEnabled(enabled);
+    } catch (error) {
+      console.error("Failed to save biometric preference:", error);
+    }
+  };
+
+  // Handle biometric authentication
+  const authenticateWithBiometrics = async () => {
+    if (!isBiometricAvailable) {
+      showSweetAlert({
+        title: "Not Available",
+        message: "Biometric authentication is not available on this device or not set up.",
+        type: "warning",
+      });
+      return false;
+    }
+
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: `Authenticate to ${isBiometricEnabled ? 'disable' : 'enable'} biometric login`,
+        fallbackLabel: "Use password instead",
+        cancelLabel: "Cancel",
+        disableDeviceFallback: false,
+      });
+
+      if (result.success) {
+        const newState = !isBiometricEnabled;
+        await saveBiometricPreference(newState);
+        
+        showSweetAlert({
+          title: newState ? "✓ Face ID Enabled" : "✓ Face ID Disabled",
+          message: newState 
+            ? "You can now log in using Face ID / biometric authentication."
+            : "Biometric login has been disabled. You'll use your password to log in.",
+          type: "success",
+        });
+        return true;
+      } else {
+        showSweetAlert({
+          title: "Authentication Failed",
+          message: "Could not verify your identity. Please try again.",
+          type: "danger",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Biometric authentication error:", error);
+      showSweetAlert({
+        title: "Error",
+        message: "Failed to authenticate. Please try again.",
+        type: "danger",
+      });
+      return false;
+    }
+  };
+
+  // Toggle biometric login
+  const handleToggleBiometric = async () => {
+    if (!isBiometricAvailable) {
+      showSweetAlert({
+        title: "Biometric Not Available",
+        message: "Your device doesn't support Face ID / Touch ID or it's not set up. Please go to device settings to enable it.",
+        type: "warning",
+      });
+      return;
+    }
+
+    setBiometricLoading(true);
+    await authenticateWithBiometrics();
+    setBiometricLoading(false);
+  };
+
+  // Get biometric icon and label
+  const getBiometricInfo = () => {
+    switch (biometricType) {
+      case "face-id":
+        return { icon: "face-recognition", label: "Face ID", description: "Use Face ID to quickly log in to your account" };
+      case "touch-id":
+        return { icon: "fingerprint", label: "Touch ID", description: "Use your fingerprint to quickly log in to your account" };
+      case "iris":
+        return { icon: "eye", label: "Iris Scan", description: "Use iris scan to quickly log in to your account" };
+      default:
+        return { icon: "shield-account", label: "Biometric", description: "Use biometric authentication to quickly log in" };
+    }
+  };
+
+  const biometricInfo = getBiometricInfo();
 
   const closeSweetAlert = () => {
     setSweetAlert((prev) => ({
@@ -93,7 +242,6 @@ function PrivacySecurityScreen() {
       setLoading(true);
       setError(null);
 
-      // Validate strong password before sending
       if (!isStrongPassword(userInfo.newPassword)) {
         setError(getPasswordStrengthMessage());
         return;
@@ -104,18 +252,17 @@ function PrivacySecurityScreen() {
         userInfo.currentPassword,
         userInfo.newPassword
       );
-if (response.ok) {
-  
-  // Show success alert and reset form
-  showSweetAlert({
-    title: "✓ Password Updated",
-    message: "Your password has been changed successfully. Please use your new password on next login.",
-    type: "success",
-    onConfirm: () => {
-      resetForm();
-    },
-  });
-}
+      
+      if (response.ok) {
+        showSweetAlert({
+          title: "✓ Password Updated",
+          message: "Your password has been changed successfully. Please use your new password on next login.",
+          type: "success",
+          onConfirm: () => {
+            resetForm();
+          },
+        });
+      }
     } catch (requestError) {
       console.error("Error changing password:", requestError);
       setError("Network error, please try again.");
@@ -139,7 +286,6 @@ if (response.ok) {
       type: "warning",
       showCancel: true,
       onConfirm: () => {
-        // Move to reason collection step
         setDeletionStep(2);
         closeSweetAlert();
       },
@@ -152,7 +298,6 @@ if (response.ok) {
       return;
     }
 
-    // Move to email verification step
     setDeletionStep(3);
     showSweetAlert({
       title: "Verify Your Email",
@@ -186,6 +331,9 @@ if (response.ok) {
         return;
       }
 
+      // Clear biometric preference on account deletion
+      await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
+
       showSweetAlert({
         title: "✓ Account Deleted",
         message: "Your account has been permanently deleted. Thank you for using our service.",
@@ -208,16 +356,58 @@ if (response.ok) {
 
   return (
     <>
-      <ActivityIndicator visible={loading} />
+      <ActivityIndicator visible={loading || biometricLoading} />
 
       <Screen style={styles.screen} paddingSize="lg">
-        <Text style={styles.title}>Privacy & Security</Text>
         <Text style={styles.subtitle}>
           Manage your password, privacy preferences, and account safety.
         </Text>
 
+        {/* Face ID / Biometric Section */}
+        <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
+          <View style={styles.row}>
+            <View style={styles.iconWrapBiometric}>
+              <MaterialCommunityIcons 
+                name={biometricInfo.icon} 
+                size={18} 
+                color={colors.primary} 
+              />
+            </View>
+            <View style={styles.textWrap}>
+              <Text style={styles.rowTitle}>{biometricInfo.label} Login</Text>
+              <Text style={styles.rowSubTitle}>{biometricInfo.description}</Text>
+            </View>
+            <Switch
+              value={isBiometricEnabled}
+              onValueChange={handleToggleBiometric}
+              disabled={!isBiometricAvailable || biometricLoading}
+              trackColor={{ false: colors.lightGray, true: colors.primary + "80" }}
+              thumbColor={isBiometricEnabled ? colors.primary : colors.white}
+              ios_backgroundColor={colors.lightGray}
+            />
+          </View>
+          
+          {!isBiometricAvailable && (
+            <View style={styles.biometricWarning}>
+              <MaterialCommunityIcons name="alert-circle" size={16} color={colors.warning} />
+              <Text style={styles.biometricWarningText}>
+                Face ID / Touch ID not available. Please set up biometric authentication in your device settings.
+              </Text>
+            </View>
+          )}
+          
+          {isBiometricEnabled && (
+            <View style={styles.biometricInfo}>
+              <MaterialCommunityIcons name="information" size={14} color={colors.textSecondary} />
+              <Text style={styles.biometricInfoText}>
+                You can now log in using {biometricInfo.label} instead of your password.
+              </Text>
+            </View>
+          )}
+        </View>
+
         {/* Password Section */}
-        <View style={[styles.card, styles.passwordCard]}>
+        <View style={[styles.card, styles.passwordCard, { backgroundColor: themeColors.surface }]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="shield-lock-outline" size={18} color={colors.primary} />
@@ -277,8 +467,9 @@ if (response.ok) {
           </Form>
         </View>
 
+        {/* Danger Zone */}
         <View style={styles.cardSpacing}>
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
             <View style={styles.row}>
               <View style={styles.iconWrapDanger}>
                 <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.danger} />
@@ -463,6 +654,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.infoLight,
     marginRight: 10,
   },
+  iconWrapBiometric: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primaryLight || `${colors.primary}20`,
+    marginRight: 10,
+  },
   iconWrapDanger: {
     width: 32,
     height: 32,
@@ -492,6 +692,36 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
     fontStyle: "italic",
+  },
+  biometricWarning: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${colors.warning}15`,
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 8,
+    marginBottom: 4,
+    gap: 8,
+  },
+  biometricWarningText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.warning,
+  },
+  biometricInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${colors.primary}10`,
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 8,
+    marginBottom: 4,
+    gap: 8,
+  },
+  biometricInfoText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   deletionForm: {
     marginTop: 12,

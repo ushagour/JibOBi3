@@ -11,7 +11,12 @@ function ListItem({
   image,
   IconComponent,
   onPress,
+  badge,
 }) {
+  const badgeCount = Number(badge);
+  const showBadge = Number.isFinite(badgeCount) && badgeCount > 0;
+  const badgeLabel = badgeCount > 99 ? "99+" : String(badgeCount);
+
   return (
     <TouchableHighlight underlayColor={colors.light} onPress={onPress}>
       <View style={styles.container}>
@@ -27,6 +32,11 @@ function ListItem({
             </Text>
           )}
         </View>
+        {showBadge ? (
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>{badgeLabel}</Text>
+          </View>
+        ) : null}
         <MaterialCommunityIcons
           color={colors.medium}
           name="chevron-right"
@@ -59,6 +69,21 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: "500",
+  },
+  badgeContainer: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    marginRight: 8,
+  },
+  badgeText: {
+    color: colors.white,
+    fontWeight: "700",
+    fontSize: 12,
   },
 });
 

@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import { StyleSheet, SafeAreaView, View, ScrollView } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import theme from "../config/theme";
+import useTheme from "../hooks/useTheme";
 
 /**
  * Screen component that handles safe area and consistent padding
@@ -15,16 +16,18 @@ import theme from "../config/theme";
 function AppScreen({
   children,
   scrollable = true,
-  backgroundColor = theme.colors.background,
+  backgroundColor,
   paddingSize = "md",
   style,
 }) {
+  const { colors: themeColors } = useTheme();
+  const resolvedBackgroundColor = backgroundColor || themeColors.background;
   const padding = theme.spacing[paddingSize] || theme.spacing.md;
 
   const containerStyle = [
     styles.container,
     {
-      backgroundColor,
+      backgroundColor: resolvedBackgroundColor,
       paddingHorizontal: padding,
       paddingVertical: padding,
     },
@@ -37,7 +40,7 @@ function AppScreen({
 
   if (scrollable) {
     return (
-      <GestureHandlerRootView style={[styles.screen, { backgroundColor }]}>
+      <GestureHandlerRootView style={[styles.screen, { backgroundColor: resolvedBackgroundColor }]}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ flexGrow: 1 }}
@@ -51,7 +54,7 @@ function AppScreen({
   }
 
   return (
-    <GestureHandlerRootView style={[styles.screen, { backgroundColor }]}>
+    <GestureHandlerRootView style={[styles.screen, { backgroundColor: resolvedBackgroundColor }]}>
       {content}
     </GestureHandlerRootView>
   );

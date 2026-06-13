@@ -1,7 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
+import AnimatedHeader from "../components/AnimatedHeader";
+import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 
 import AccountScreen from "../screens/auth/AccountScreen";
 import FavoritesScreen from "../screens/Listings/FavoritesScreen";
@@ -13,60 +13,87 @@ import ViewImageScreen from "../screens/outhers/ViewImageScreen";
 import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import SettingsScreen from "../screens/auth/SettingsScreen";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
-import OrdersScreen from "../screens/orders/OrdersScreen";
+import ConversationScreen from "../screens/auth/ConversationScreen";
+import UnifiedOrdersScreen from "../screens/orders/UnifiedOrdersScreen";
 import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
 import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
 import HelpSupportScreen from "../screens/auth/HelpSupportScreen";
+import AssistantScreen from "../screens/auth/AssistantScreen";
 import PrivacySecurityScreen from "../screens/auth/PrivacySecurityScreen";
-import ShippingAddressesScreen from "../screens/auth/ShippingAddressesScreen";
-import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 import MyListingsScreen from "../screens/Listings/MyListingsScreen";
+import VerifyEmailScreen from "../screens/auth/VerifyEmailScreen";
 
 const Stack = createStackNavigator();
 
+const getHeaderTitle = (routeName) => {
+  const titles = {
+    AccountHome: "Account",
+    UserEdit: "Edit Profile",
+    Settings: "Settings",
+    Notifications: "Notifications",
+    Orders: "Orders",
+    OrderDetails: "Order Details",
+    OrderCheckout: "Checkout",
+    HelpSupport: "Help & Support",
+    Assistant: "Assistant",
+    PrivacySecurity: "Privacy & Security",
+    VerifyEmail: "Verify Email",
+    Favorites: "Favorites",
+    Listings: "Listings",
+    MyListings: "My Listings",
+    AllListings: "All Listings",
+    ListingAdd: "Add Listing",
+    ListingEdit: "Edit Listing",
+    ListingDetails: "Listing Details",
+    ImageDetails: "Image Details",
+  };
+
+  return titles[routeName] || routeName;
+};
+
 const AccountNavigator = () => (
   <Stack.Navigator
-    screenOptions={({ navigation }) => ({
+    screenOptions={({ navigation, route }) => ({
       headerShown: true,
-      headerTitle: "",
-      headerBackTitleVisible: false,
-      headerLeft: () => {
-        if (!navigation.canGoBack()) return null;
-
-        return (
-          <TouchableOpacity
-            style={{ marginLeft: 15 }}
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
-              color="black"
-            />
-          </TouchableOpacity>
-        );
-      },
-      headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
+      header: ({ navigation: headerNavigation, route: headerRoute, options, back }) => (
+        <AnimatedHeader
+          title={options.title || getHeaderTitle(route.name)}
+          subtitle={options.headerSubtitle}
+          rightAction={options.headerRight ? options.headerRight({ navigation: headerNavigation, route: headerRoute }) : null}
+          showBackButton={Boolean(back)}
+          onBackPress={() => headerNavigation.goBack()}
+          
+        />
+      ),
     })}
   >
-    <Stack.Screen name="AccountHome" component={AccountScreen} />
-    <Stack.Screen name="UserEdit" component={UserScreen} />
+    <Stack.Screen
+      name="AccountHome"
+      component={AccountScreen}
+      options={({ navigation }) => ({
+        headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
+      })}
+    />
+    <Stack.Screen name="UserEdit" component={UserScreen} options={{ headerShown: false }}  />
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
-    <Stack.Screen name="Orders" component={OrdersScreen} />
+    <Stack.Screen name="Conversation" component={ConversationScreen} />
+    <Stack.Screen name="Orders" component={UnifiedOrdersScreen} />
     <Stack.Screen name="OrderDetails" component={OrderDetailScreen} />
     <Stack.Screen name="OrderCheckout" component={OrderCheckoutScreen} />
     <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+    <Stack.Screen name="Assistant" component={AssistantScreen} />
     <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
-    <Stack.Screen name="ShippingAddresses" component={ShippingAddressesScreen} />
+    <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />
     <Stack.Screen name="Listings" component={ListingsScreen} />
     <Stack.Screen name="MyListings" component={MyListingsScreen} />
     <Stack.Screen name="AllListings" component={ListingsScreen} />
     <Stack.Screen name="ListingAdd" component={ListingAddScreen} />
     <Stack.Screen name="ListingEdit" component={ListingEditScreen} />
-    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
+    <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} options={{ headerShown: false }} />
     <Stack.Screen name="ImageDetails" component={ViewImageScreen} />
+  
   </Stack.Navigator>
 );
 

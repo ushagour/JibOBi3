@@ -9,7 +9,6 @@ import ListingAddScreen from "../screens/Listings/ListingAddScreen";
 import NewListingButton from "./NewListingButton";
 import Avatar from "../components/Avatar";
 import routes from "./routes";
-import navigation from "./rootNavigation";
 import useNotifications from "../hooks/useNotifications";
 import useAuth from "../auth/useAuth";
 import colors from "../config/colors";
@@ -28,12 +27,11 @@ const AppNavigator = () => {
 
   return (
     <Tab.Navigator
-    screenOptions={{
+        screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
-
-    }}
-    >
+        }}
+      >
       <Tab.Screen
         name="Feed"
         component={FeedNavigator}
@@ -47,8 +45,7 @@ const AppNavigator = () => {
         name="ListingAdd"
         component={ListingAddScreen}
         options={({ navigation }) => ({
-          headerShown: true,
-          headerTitle: "",
+          headerShown: false,
           tabBarButton: () => (isAuthenticated ? (
             <NewListingButton
               onPress={() => navigation.navigate(routes.LISTING_ADD)}

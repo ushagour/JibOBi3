@@ -17,6 +17,7 @@ const useAuth = () => {
       // Use provided userData or decode from token
       const user = userData || jwtDecode(token);
       authStorage.storeToken(token);
+      authStorage.storeUserProfile(user);
       setUser(user);
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -25,7 +26,12 @@ const useAuth = () => {
 
   const signUp = (authToken, user) => {
     try {
-      authStorage.storeToken(authToken);
+      if (authToken) {
+        authStorage.storeToken(authToken);
+      }
+      if (user) {
+        authStorage.storeUserProfile(user);
+      }
       setUser(user);
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -52,8 +58,13 @@ const useAuth = () => {
   // Support both value and function form for updateUser
   const updateUser = (updater) => {
     if (typeof updater === 'function') {
-      setUser((prevUser) => updater(prevUser));
+      setUser((prevUser) => {
+        const nextUser = updater(prevUser);
+        authStorage.storeUserProfile(nextUser);
+        return nextUser;
+      });
     } else {
+      authStorage.storeUserProfile(updater);
       setUser(updater);
     }
   };

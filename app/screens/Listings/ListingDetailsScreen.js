@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   StyleSheet,
+  Image,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -10,33 +11,47 @@ import {
   Alert,
   Modal,
   FlatList,
+  TextInput,
+  ScrollView,
+  Animated,
+  Dimensions,
+  Share,
 } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import Text from "../../components/Text";
 import routes from "../../navigation/routes";
 import ImageSlider from "../../components/lists/ImageSlider";
-import { Linking } from "react-native"; // Import the Linking API
+import { Linking } from "react-native";
 import AppButton from "../../components/Button";
-import listingsApi from "../../api/listings"; // Import the API client
-import reviewsApi from "../../api/reviews"; // Import the reviews API client
+import listingsApi from "../../api/listings";
+import reviewsApi from "../../api/reviews";
+import messagesApi from "../../api/messages";
 import useAuth from "../../auth/useAuth";
-
 import ActivityIndicator from "../../components/ActivityIndicator";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
 import AddReviewForm from "../../components/AddReviewForm";
-import ReviewsSection from "../../components/ReviewsSection"; // Import the reviews component
-import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons"; // Import icons
-import useLocation from "../../hooks/useLocation"; // Import location hook
-import { FontAwesome } from '@expo/vector-icons'; // Or 'react-native-vector-icons/FontAwesome'
+import ReviewsSection from "../../components/ReviewsSection";
+import { Ionicons, MaterialIcons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import useLocation from "../../hooks/useLocation";
+import { FontAwesome } from '@expo/vector-icons';
 
+const { width, height } = Dimensions.get("window");
+import AnimatedHeader from "../../components/screens/ListingDetails/AnimatedHeader";
+import AnimatedInfoCard from "../../components/screens/ListingDetails/AnimatedInfoCard";
+import SellerCard from "../../components/screens/ListingDetails/SellerCard";
+import ActionButtons from "../../components/screens/ListingDetails/ActionButtons";
 
+// Main Component
 function ListingDetailsScreen({ route, navigation }) {
   const routeParams = route.params;
   const id = routeParams?.listing?.id ?? routeParams?.id ?? routeParams;
   const { user, isOwner } = useAuth();
+  const { colors: themeColors, isDark } = useTheme();
   const { getLocationName } = useLocation();
   const isAuthenticated = Boolean(user?.userId);
-
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,29 +59,36 @@ function ListingDetailsScreen({ route, navigation }) {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
   const [locationName, setLocationName] = useState("Unknown location");
-  const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [selectedReportReason, setSelectedReportReason] = useState("spam");
   const [contactModalVisible, setContactModalVisible] = useState(false);
-
-  const reportReasons = [
-    { id: "spam", label: "Spam or misleading" },
-    { id: "scam", label: "Suspicious or scam listing" },
-    { id: "prohibited", label: "Prohibited item or service" },
-    { id: "duplicate", label: "Duplicate or irrelevant listing" },
-    { id: "other", label: "Other issue" },
-  ];
+  const [quickMessage, setQuickMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [similarListings, setSimilarListings] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   const isSoldStatus = (status) => {
     const normalizedStatus = String(status || "").toLowerCase();
     return normalizedStatus.includes("selled") || normalizedStatus.includes("sold out") || normalizedStatus === "sold";
   };
-  const displayStatus = isSoldStatus(listing?.status) ? "selled" : "still available";
+  
+  const displayStatus = isSoldStatus(listing?.status) ? "Sold Out" : "Available";
   const isCarsCategory = listing?.Category?.name?.toLowerCase() === "cars";
+  const isSold = isSoldStatus(listing?.status);
+  const listingLatitude = Number(listing?.location?.latitude ?? listing?.latitude);
+  const listingLongitude = Number(listing?.location?.longitude ?? listing?.longitude);
+  const hasCoordinates = Number.isFinite(listingLatitude) && Number.isFinite(listingLongitude);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const listingImages = Array.isArray(listing?.images)
+    ? listing.images
+        .map((img) => (typeof img === "string" ? img : img?.url || img?.uri || img?.file_name || img?.path || ""))
+        .filter(Boolean)
+    : [];
+
+  const currentImageUrl = listingImages.length > 0 ? listingImages[currentImageIndex % listingImages.length] : null;
 
   const fetchReviews = async () => {
     try {
       setLoadingReviews(true);
-
       const response = await reviewsApi.getReviewsByListing(id);
       if (response.ok && response.data) {
         setReviews(response.data);
@@ -126,6 +148,8 @@ function ListingDetailsScreen({ route, navigation }) {
     };
 
     fetchListing();
+    fetchSimilarListings();
+
     fetchReviews();
 
     return () => {
@@ -134,69 +158,120 @@ function ListingDetailsScreen({ route, navigation }) {
   }, [id]);
 
 
+  const fetchSimilarListings = async () => {
+    try {
+      setLoadingSimilar(true);
+      const response = await listingsApi.getSimilarListings(id);
+      if (response.ok && response.data) {
+        const listingsArray = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setSimilarListings(listingsArray.slice(0, 10));
+      } else {
+        setSimilarListings([]);
+      }
+    } catch (error) {
+      if (__DEV__) console.error("Error fetching similar listings:", error);
+      setSimilarListings([]);
+    } finally {
+      setLoadingSimilar(false);
+    }
+  };
 
+  const handleCloseListing = async () => {
+    if (!listing?.id) return;
 
+    try {
+      const response = await listingsApi.closeListing(listing.id);
+      if (!response.ok) {
+        Alert.alert("Failed", "Could not close listing. Please try again.");
+        return;
+      }
 
-  if (loading || isDeletingReview) {
-    return <ActivityIndicator visible={loading || isDeletingReview} />;
-  }
-  if (error) {
-    const normalizedError = String(error || "");
-    const errorType = /404|not\s*found/i.test(normalizedError)
-      ? "notFound"
-      : "server";
-
-    return (
-      <ErrorStateScreen
-        type={errorType}
-        title={errorType === "notFound" ? "Listing not found" : "Unable to load details"}
-        message="Please try again or go back to listings."
-        details={normalizedError}
-        onRetry={() => navigation.replace(routes.LISTING_DETAILS, id)}
-        onGoBack={() => navigation.goBack()}
-        backVariant="primary"
-        backSize="lg"
-      />
-    );
-  }
-
-
-
-    const handleDeleteReview = async (reviewId) => {
-      Alert.alert(
-        "Delete Review",
-        "Are you sure you want to delete this review?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            onPress: async () => {
-              try {
-                setIsDeletingReview(true);
-                const response = await reviewsApi.deleteReview(reviewId);
-                if (!response.ok) {
-                  Alert.alert("Error", "Failed to delete review.");
-                  return;
-                }
-                // Remove the review from the list
-                setReviews(reviews.filter(r => r.id !== reviewId));
-                Alert.alert("Success", "Review deleted successfully.");
-              } catch (error) {
-                Alert.alert("Error", "Failed to delete review.");
-                if (__DEV__) console.error("Failed to delete review:", error);
-              } finally {
-                setIsDeletingReview(false);
-              }
-            },
-            style: "destructive",
-          },
-        ],
-        { cancelable: true }
+      setListing((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Sold out",
+              archived: true,
+            }
+          : prev
       );
-    };
+
+      Alert.alert("Closed", "Listing moved to archive and hidden from feed.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to close listing. Please try again.");
+    }
+  };
+
+  const handleReopenListing = async () => {
+    if (!listing?.id) return;
+
+    try {
+      const response = await listingsApi.reopenListing(listing.id);
+      if (!response.ok) {
+        Alert.alert("Failed", "Could not reopen listing. Please try again.");
+        return;
+      }
+
+      setListing((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Available",
+              archived: false,
+            }
+          : prev
+      );
+
+      Alert.alert("Reopened", "Listing is visible in feed again.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to reopen listing. Please try again.");
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this item: ${listing?.title}\nPrice: ${listing?.price} DH`,
+        title: listing?.title,
+      });
+    } catch (error) {
+      if (__DEV__) console.error("Error sharing:", error);
+    }
+  };
+
+
+  const handleDeleteReview = async (reviewId) => {
+    Alert.alert(
+      "Delete Review",
+      "Are you sure you want to delete this review?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+
+          onPress: async () => {
+            try {
+              setIsDeletingReview(true);
+              const response = await reviewsApi.deleteReview(reviewId); 
+              if (!response.ok) {
+                Alert.alert("Failed", "Could not delete review. Please try again.");
+                return;
+              } 
+              setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete review. Please try again.");
+            } finally {
+              setIsDeletingReview(false);
+            }
+          },
+        },
+      ]
+    );
+  };
   
 
-  // Open native maps app with a robust fallback URL.
+
   const openGpsNavigation = async (latitude, longitude) => {
     const nativeUrl = Platform.select({
       ios: `maps:0,0?q=${latitude},${longitude}`,
@@ -220,7 +295,6 @@ function ListingDetailsScreen({ route, navigation }) {
 
   const openWhatsApp = async () => {
     const rawPhone = listing?.owner?.phone;
-
     if (!rawPhone) {
       Alert.alert("WhatsApp unavailable", "The seller has not provided a phone number.");
       return;
@@ -237,17 +311,10 @@ function ListingDetailsScreen({ route, navigation }) {
         closeContactModal();
         return;
       }
-
       Alert.alert("WhatsApp unavailable", "WhatsApp is not installed or the link cannot be opened.");
     } catch (err) {
-      if (__DEV__) console.error("Error opening WhatsApp:", err);
       Alert.alert("Error", "Unable to open WhatsApp.");
     }
-  };
-
-  const openReportModal = () => {
-    setSelectedReportReason("spam");
-    setReportModalVisible(true);
   };
 
   const openContactModal = () => {
@@ -256,6 +323,49 @@ function ListingDetailsScreen({ route, navigation }) {
 
   const closeContactModal = () => {
     setContactModalVisible(false);
+    setQuickMessage("");
+  };
+
+  const handleSendQuickMessage = async () => {
+    if (!isAuthenticated) {
+      Alert.alert("Sign in required", "Please sign in to send a message.");
+      return;
+    }
+
+    if (!quickMessage.trim()) {
+      Alert.alert("Empty message", "Please enter a message before sending.");
+      return;
+    }
+
+    if (!listing?.owner?.id) {
+      Alert.alert("Error", "Seller information not available.");
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      const response = await messagesApi.createMessage({
+        recipientId: listing.owner.id,
+        content: quickMessage.trim(),
+        listingId: listing.id,
+      });
+
+      if (!response.ok) {
+        Alert.alert("Failed", "Could not send message. Please try again.");
+        return;
+      }
+
+      Alert.alert(
+        "Message sent",
+        "Your message has been sent to the seller."
+      );
+      setQuickMessage("");
+      closeContactModal();
+    } catch (error) {
+      Alert.alert("Error", "Failed to send message. Please try again.",error.message);
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const handleOrderNow = () => {
@@ -279,7 +389,6 @@ function ListingDetailsScreen({ route, navigation }) {
 
   const handleCallSeller = async () => {
     const rawPhone = listing?.owner?.phone;
-
     if (!rawPhone) {
       Alert.alert("Call unavailable", "The seller has not provided a phone number.");
       return;
@@ -294,18 +403,15 @@ function ListingDetailsScreen({ route, navigation }) {
         Alert.alert("Call unavailable", "Your device cannot place phone calls.");
         return;
       }
-
       await Linking.openURL(callUrl);
       closeContactModal();
     } catch (err) {
-      if (__DEV__) console.error("Error opening dialer:", err);
       Alert.alert("Error", "Unable to open the dialer.");
     }
   };
 
   const handleEmailSeller = async () => {
     const sellerEmail = listing?.owner?.email;
-
     if (!sellerEmail) {
       Alert.alert("Email unavailable", "The seller has not provided an email address.");
       return;
@@ -321,33 +427,38 @@ function ListingDetailsScreen({ route, navigation }) {
         Alert.alert("Email unavailable", "No email app is configured on this device.");
         return;
       }
-
       await Linking.openURL(emailUrl);
       closeContactModal();
     } catch (err) {
-      if (__DEV__) console.error("Error opening email app:", err);
       Alert.alert("Error", "Unable to open your email app.");
     }
   };
 
-  const submitReport = () => {
-    const reason = reportReasons.find((item) => item.id === selectedReportReason);
-    setReportModalVisible(false);
-    Alert.alert(
-      "Report submitted",
-      `Thanks. We received your report for: ${reason?.label || "this listing"}.`
+  if (loading || isDeletingReview) {
+    return <ActivityIndicator visible={loading || isDeletingReview} />;
+  }
+  
+  if (error) {
+    const normalizedError = String(error || "");
+    const errorType = /404|not\s*found/i.test(normalizedError) ? "notFound" : "server";
+    return (
+      <ErrorStateScreen
+        type={errorType}
+        title={errorType === "notFound" ? "Listing not found" : "Unable to load details"}
+        message="Please try again or go back to listings."
+        onRetry={() => navigation.replace(routes.LISTING_DETAILS, id)}
+        onGoBack={() => navigation.goBack()}
+      />
     );
-  };
+  }
 
   return (
-    <View style={styles.root}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        
-      >
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <AnimatedHeader title={listing?.title} onBack={() => navigation.goBack()} onShare={handleShare} styles={styles} />
+
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <FlatList
+          <Animated.FlatList
             data={[]}
             renderItem={() => null}
             keyExtractor={() => "listing-details"}
@@ -355,307 +466,249 @@ function ListingDetailsScreen({ route, navigation }) {
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={
               <>
-              <View style={styles.ownerInfoRow}>
-                <Ionicons name="person" size={13} color={colors.secondary} />
-                <Text style={styles.ownerNameText} numberOfLines={1}>
-                  {listing.owner?.name || "Unknown owner"}
-                </Text>
-              </View>
-          <TouchableOpacity
-            delayLongPress={500}
-            onLongPress={() => navigation.navigate(routes.IMAGE_DETAILS, { imageUrl: listing.imageUrl })}
-          >
-    
-           <ImageSlider images={listing.images} style={styles.image} />
+                {/* Image Section */}
+                <View style={styles.imageContainer}>
+                  <ImageSlider images={listing.images} style={styles.imageFull} />
 
-          </TouchableOpacity>
+                  <LinearGradient colors={["transparent", "rgba(0,0,0,0.35)"]} style={styles.imageGradient} />
 
-          <View style={styles.detailsContainer}>
-            <View style={styles.metaHeaderRow}>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>
-                  {listing.Category?.name || "Uncategorized"}
-                </Text>
-              </View>
-              {listing.rating !== undefined && (
-                <View style={styles.ratingContainer}>
-                  {[...Array(5)].map((_, i) => (
-                    <FontAwesome key={i} name={i < listing.rating ? "star" : "star-o"} size={10} color={colors.warning} />
-                  ))}
-                </View>
-              )}
-              {!!listing.status && (
-                <View
-                  style={[
-                    styles.stateBadge,
-                    isSoldStatus(listing.status)
-                      ? styles.stateBadgeSold
-                      : styles.stateBadgeAvailable,
-                  ]}
-                >
-                  <Text style={styles.stateText}>{displayStatus}</Text>
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.title}>{listing.title}</Text>
-
-            <View style={styles.priceRow}>
-              <Text style={styles.price}>{listing.price}  MAD</Text>
-            </View>
-
-            <View style={styles.infoPanel}>
-             
-
-              <View style={[styles.infoRow, styles.descriptionInfoRow]}>
-                <MaterialIcons name="notes" size={16} color={colors.darkGray} />
-                <View style={styles.descriptionInfoTextWrap}>
-                  <Text style={styles.infoLabel}>Description</Text>
-                  <Text style={styles.infoDescription} numberOfLines={4}>
-                    {listing.description || "No description provided."}
-                  </Text>
-                </View>
-              </View>
-
-              {isCarsCategory ? (
-                <View style={styles.carDetailsCard}>
-                  <View style={styles.carDetailsHeader}>
-                    <MaterialCommunityIcons name="car-outline" size={16} color={colors.primary} />
-                    <Text style={styles.infoLabel}>Car Details</Text>
-                  </View>
-
-                  <View style={styles.carDetailsGrid}>
-                    <Text style={styles.carDetailText}>Model: {listing.carModel || "N/A"}</Text>
-                    <Text style={styles.carDetailText}>Color: {listing.carColor || "N/A"}</Text>
-                    <Text style={styles.carDetailText}>Size: {listing.carSize || "N/A"}</Text>
-                    <Text style={styles.carDetailText}>Year: {listing.carYear || "N/A"}</Text>
-                  </View>
-                </View>
-              ) : null}
-
-
-           
-
-              <View style={styles.infoRow}>
-                <MaterialIcons name="location-on" size={16} color={colors.dark} />
-                <Text style={styles.infoText} numberOfLines={1}>
-                  {locationName}
-                </Text>
-              </View>
-            </View>
-
-            <ReviewsSection 
-              reviews={reviews} 
-              onDeleteReview={handleDeleteReview}
-              isDeletingReview={isDeletingReview}
-              listingOwnerId={listing.owner?.id}
-            />
-
-        
-
-       
-
-            {isAuthenticated && user.userId !== listing?.owner?.id ? (
-              <View style={styles.orderSection}>
-                <Text style={styles.sectionLabel}>Order</Text>
-                <AppButton
-                  title="Order Now"
-                  onPress={handleOrderNow}
-                  variant="success"
-                  size="md"
-                />
-              </View>
-            ) : null}
-
-            {isAuthenticated && user.userId !== listing?.owner?.id ? (
-              <View style={styles.contactSection}>
-                <Text style={styles.sectionLabel}>Contact Seller</Text>
-                <AppButton
-                  title="Contact Seller"
-                  onPress={openContactModal}
-                  variant="primary"
-                  size="md"
-                />
-              </View>
-            ) : null}
-
-            <View style={styles.actionSection}>
-              {isOwner(listing.owner.id) && (
-                <View style={styles.actionButtonsRow}>
-                  <AppButton
-                    title="Edit"
-                    onPress={() => navigation.navigate(routes.LISTING_EDIT, { listing })}
-                    variant="secondary"
-                    size="sm"
-                    fullWidth={false}
-                    compact
-                    inline
-                  />
-
-                </View>
-              )}
-
-              {isAuthenticated && !isOwner(listing.owner.id) && (
-                  <AppButton
-                    title="Report"
-                    onPress={openReportModal}
-                    variant="danger"
-                    size="md"
-                    fullWidth={false}
-                    compact
-                  />
-              )}
-            </View>
-
-            <Modal
-              visible={contactModalVisible}
-              transparent
-              animationType="fade"
-              onRequestClose={closeContactModal}
-            >
-              <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={closeContactModal}>
-                  <View style={styles.modalBackdrop} />
-                </TouchableWithoutFeedback>
-
-                <View style={styles.contactModalCard}>
-                  <Text style={styles.reportModalTitle}>Contact seller</Text>
-                  <Text style={styles.reportModalSubtitle}>
-                    Choose how you want to reach the seller.
-                  </Text>
-
-                  <View style={styles.contactActionList}>
-                    <AppButton
-                      title="Call"
-                      onPress={handleCallSeller}
-                      variant="secondary"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                      icon={<MaterialIcons name="call" size={18} color={colors.white} />}
-                    />
-                    <AppButton
-                      title="Email"
-                      onPress={handleEmailSeller}
-                      variant="primary"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                      icon={<MaterialIcons name="email" size={18} color={colors.white} />}
-                    />
-                    {!!listing?.owner?.phone && (
-                      <AppButton
-                        title="WhatsApp"
-                        onPress={openWhatsApp}
-                        variant="success"
-                        size="sm"
-                        fullWidth={false}
-                        compact
-                        inline
-                        icon={<MaterialCommunityIcons name="whatsapp" size={18} color={colors.white} />}
-                      />
-                    )}
-                  </View>
-
-
-                  <View style={styles.reportModalActions}>
-                    <AppButton
-                      title="Close"
-                      onPress={closeContactModal}
-                      variant="outline"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                    />
-                  </View>
-                </View>
-              </View>
-            </Modal>
-
-            <Modal
-              visible={reportModalVisible}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setReportModalVisible(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <TouchableWithoutFeedback onPress={() => setReportModalVisible(false)}>
-                  <View style={styles.modalBackdrop} />
-                </TouchableWithoutFeedback>
-
-                <View style={styles.reportModalCard}>
-                  <Text style={styles.reportModalTitle}>Report listing</Text>
-                  <Text style={styles.reportModalSubtitle}>
-                    Choose the reason that best matches the issue.
-                  </Text>
-
-                  <FlatList
-                    data={reportReasons}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.reportReasonList}
-                    renderItem={({ item }) => {
-                      const selected = item.id === selectedReportReason;
-
-                      return (
-                        <TouchableOpacity
-                          style={[
-                            styles.reportReasonItem,
-                            selected && styles.reportReasonItemSelected,
-                          ]}
-                          onPress={() => setSelectedReportReason(item.id)}
-                          activeOpacity={0.85}
+                  <View style={styles.headerOverlays} pointerEvents="none">
+                    <View style={styles.leftBadges}>
+                      <View style={styles.statusBadge}>
+                        <LinearGradient
+                          colors={isSold ? [colors.danger, colors.danger] : [colors.success, colors.success]}
+                          style={styles.statusGradient}
                         >
-                          <View style={styles.reportReasonTextWrap}>
-                            <Text style={styles.reportReasonLabel}>{item.label}</Text>
-                            <Text style={styles.reportReasonHint}>
-                              Mark this if it best describes the problem.
-                            </Text>
-                          </View>
-                          <MaterialIcons
-                            name={selected ? "radio-button-checked" : "radio-button-unchecked"}
-                            size={22}
-                            color={selected ? colors.danger : colors.mediumGray}
-                          />
-                        </TouchableOpacity>
-                      );
-                    }}
-                  />
+                          <Text style={styles.statusText}>{displayStatus}</Text>
+                        </LinearGradient>
+                      </View>
+                    </View>
 
-                  <View style={styles.reportModalActions}>
-                    <AppButton
-                      title="Cancel"
-                      onPress={() => setReportModalVisible(false)}
-                      variant="outline"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                    />
-                    <AppButton
-                      title="Submit report"
-                      onPress={submitReport}
-                      variant="danger"
-                      size="sm"
-                      fullWidth={false}
-                      compact
-                      inline
-                    />
+               
                   </View>
                 </View>
-              </View>
-            </Modal>
+
+                <View style={styles.detailsContainer}>
+                  {/* Category & Rating */}
+                  <AnimatedInfoCard delay={0}>
+                    <View style={styles.metaHeaderRow}>
+                   
+                      {listing.rating !== undefined && (
+                        <View style={styles.ratingContainer}>
+                          {[...Array(5)].map((_, i) => (
+                            <FontAwesome 
+                              key={i} 
+                              name={i < listing.rating ? "star" : "star-o"} 
+                              size={12} 
+                              color={colors.warning} 
+                            />
+                          ))}
+                          <Text style={styles.ratingText}> ({listing.reviewCount || 0})</Text>
+                        </View>
+                      )}
+                    </View>
+                  </AnimatedInfoCard>
+
+                  {/* Title */}
+                  <AnimatedInfoCard delay={50}>
+                    <Text style={styles.title}>{listing.title}</Text>
+                    <Text style={styles.subtitleMuted}>{listing.Category?.name || ''} </Text>
+                  </AnimatedInfoCard>
+
+                  {/* Price */}
+                  <AnimatedInfoCard delay={100}>
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.price}>{listing.price} DH</Text>
+                      {!isSold && (
+                        <View style={styles.locationInline}>
+                          <MaterialIcons name="place" size={14} color={colors.textSecondary} />
+                          <Text style={styles.locationInlineText}>{locationName}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </AnimatedInfoCard>
+
+                  {/* Seller Card */}
+                  <SellerCard seller={listing.owner}  styles={{ ...styles, sellerCard: [styles.sellerCard, { backgroundColor: themeColors.surface }] }} />
+
+                  {/* Description */}
+                  <AnimatedInfoCard delay={250}>
+                    <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
+                      <View style={styles.sectionHeader}>
+                        <MaterialIcons name="notes" size={20} color={colors.primary} />
+                        <Text style={styles.sectionTitle}>Description</Text>
+                      </View>
+                      <Text style={styles.description}>{listing.description || "No description provided."}</Text>
+                    </View>
+                  </AnimatedInfoCard>
+
+                  {/* Car Details */}
+                  {isCarsCategory && listing && (
+                    <AnimatedInfoCard delay={300}>
+                      <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
+                        <View style={styles.sectionHeader}>
+                          <MaterialCommunityIcons name="car-outline" size={20} color={colors.primary} />
+                          <Text style={styles.sectionTitle}>Vehicle Details</Text>
+                        </View>
+                        <View style={styles.carDetailsGrid}>
+                          <View style={styles.carDetailItem}>
+                            <Text style={styles.carDetailLabel}>Model</Text>
+                            <Text style={styles.carDetailValue}>{listing.carModel || "N/A"}</Text>
+                          </View>
+                          <View style={styles.carDetailItem}>
+                            <Text style={styles.carDetailLabel}>Color</Text>
+                            <Text style={styles.carDetailValue}>{listing.carColor || "N/A"}</Text>
+                          </View>
+                          <View style={styles.carDetailItem}>
+                            <Text style={styles.carDetailLabel}>Year</Text>
+                            <Text style={styles.carDetailValue}>{listing.carYear || "N/A"}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </AnimatedInfoCard>
+                  )}
+
+                  
+
+                  {/* Action Buttons */}
+                  <View style={styles.actionButtonsSpacer} />
+                  <ActionButtons
+                    onOrder={handleOrderNow}
+                    onContact={openContactModal}
+                    onEdit={() => navigation.navigate('ListingEdit', { listing })}
+                    onClose={handleCloseListing}
+                    onReopen={handleReopenListing}
+                    isOwner={isOwner(listing?.owner?.id)}
+                    isAuthenticated={isAuthenticated}   
+                    isSold={isSold}
+                    isClosed={Boolean(listing?.archived)}
+                    styles={styles}
+                  />
 
 
+                  {/* Suggestions / Similar Items */}
+<AnimatedInfoCard delay={430}>
+  <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
+    <View style={styles.sectionHeader}>
+      <MaterialCommunityIcons name="view-grid-outline" size={20} color={colors.primary} />
+      <Text style={styles.sectionTitle}>Similar Listings</Text>
+    </View>
+      {loadingSimilar ? (
+        <ActivityIndicator visible />
+      ) : null}
+    <FlatList
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      data={similarListings}
+      renderItem={({ item }) => (
+        <TouchableOpacity 
+          style={styles.similarItem}
+          onPress={() => navigation.push(routes.LISTING_DETAILS, item.id)}
+        >
+          <Image source={{ uri: item.imageUrl || item.images?.[0]?.url || item.images?.[0] }} style={styles.similarImage} />
+          <Text style={styles.similarPrice}>{item.price} DH</Text>
+          <Text style={styles.similarTitle} numberOfLines={1}>{item.title}</Text>
+        </TouchableOpacity>
+      )}
+      keyExtractor={(item) => item.id.toString()}
+      ListEmptyComponent={() => (
+        <Text style={styles.noSimilarText}>No similar listings found</Text>
+      )}
+    />
+  </View>
+</AnimatedInfoCard>
 
-          </View>
+                  {/* Reviews Section */}
+                  <AnimatedInfoCard delay={450}>
+                    <ReviewsSection 
+                      reviews={reviews} 
+                      onDeleteReview={handleDeleteReview}
+                      isDeletingReview={isDeletingReview}
+                      listingOwnerId={listing?.owner?.id}
+                    />
+                  </AnimatedInfoCard>
+                </View>
               </>
             }
           />
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Contact Modal */}
+      <Modal visible={contactModalVisible} transparent animationType="fade" onRequestClose={closeContactModal}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={closeContactModal}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+          
+          <Animated.View style={[styles.contactModalCard, { backgroundColor: themeColors.surface }]}>
+            <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Contact Seller</Text>
+              <TouchableOpacity onPress={closeContactModal} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </LinearGradient>
+            
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.contactMethods}>
+                <TouchableOpacity style={styles.contactMethod} onPress={handleCallSeller}>
+                  <View style={[styles.contactIcon, { backgroundColor: `${colors.info}15` }]}>
+                    <MaterialIcons name="call" size={24} color={colors.info} />
+                  </View>
+                  <Text style={styles.contactMethodLabel}>Call</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.contactMethod} onPress={handleEmailSeller}>
+                  <View style={[styles.contactIcon, { backgroundColor: `${colors.primary}15` }]}>
+                    <MaterialIcons name="email" size={24} color={colors.primary} />
+                  </View>
+                  <Text style={styles.contactMethodLabel}>Email</Text>
+                </TouchableOpacity>
+                
+                {!!listing?.owner?.phone && (
+                  <TouchableOpacity style={styles.contactMethod} onPress={openWhatsApp}>
+                    <View style={[styles.contactIcon, { backgroundColor: `${colors.success}15` }]}>
+                      <MaterialCommunityIcons name="whatsapp" size={24} color={colors.success} />
+                    </View>
+                    <Text style={styles.contactMethodLabel}>WhatsApp</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              <View style={styles.quickMessageSection}>
+                <Text style={styles.quickMessageLabel}>Send a quick message</Text>
+                <TextInput
+                  style={[styles.quickMessageInput, { backgroundColor: themeColors.surface, borderColor: colors.border }]}
+                  placeholder="Ask the seller anything about this listing..."
+                  placeholderTextColor={colors.textMuted}
+                  value={quickMessage}
+                  onChangeText={setQuickMessage}
+                  multiline
+                  maxLength={500}
+                  editable={!sendingMessage}
+                />
+                <Text style={styles.charCount}>{quickMessage.length}/500</Text>
+                <TouchableOpacity
+                  style={[styles.sendButton, (!quickMessage.trim() || sendingMessage) && styles.sendButtonDisabled]}
+                  onPress={handleSendQuickMessage}
+                  disabled={!quickMessage.trim() || sendingMessage}
+                >
+                  <LinearGradient
+                    colors={[colors.primaryDark, colors.primaryLight]}
+                    style={styles.sendButtonGradient}
+                  >
+                    <Text style={styles.sendButtonText}>
+                      {sendingMessage ? "Sending..." : "Send Message"}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </Modal>
+
+
     </View>
   );
 }
@@ -665,308 +718,718 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  animatedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    overflow: "hidden",
+  },
+  headerGradient: {
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: "hidden",
+  },
+  headerBlur: {
+    paddingTop: Platform.OS === "ios" ? 50 : 40,
+    paddingBottom: 12,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 12,
+  },
   contentContainer: {
     flexGrow: 1,
-    paddingTop: 0,
+    paddingTop: Platform.OS === "ios" ? 104 : 92,
+  },
+  imageContainer: {
+    position: "relative",
+    marginHorizontal: 0,
+  },
+  imageFull: {
+    width: "100%",
+    height: Math.round(width * 0.75),
+  },
+  imageGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 110,
+  },
+  headerOverlays: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    top: 12,
+    bottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    pointerEvents: "none",
+  },
+  leftBadges: {
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  priceWrap: {
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+  },
+  priceChip: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    color: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  statusBadge: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  statusGradient: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  statusText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "700",
   },
   detailsContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingHorizontal: 14,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
-  image: {
-    width: "100%",
-    height: 176,
-  },
-  price: {
-    color: colors.secondary,
-    fontWeight: "bold",
-    fontSize: 22,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    marginTop: 8,
-  },
-  description: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    lineHeight: 24,
-    marginTop: 8,
-  },
-  arrow: {
-    color: '#fff',
-    fontSize: 30,
-    fontWeight: 'bold',
+  animatedInfoCard: {
+    marginBottom: 14,
   },
   metaHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    gap: 10,
+    flexWrap: "wrap",
+    marginBottom: 10,
   },
   categoryBadge: {
-    backgroundColor: colors.infoLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   categoryText: {
-    color: colors.info,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  stateBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  stateBadgeAvailable: {
-    backgroundColor: colors.successLight,
-  },
-  stateBadgeSold: {
-    backgroundColor: colors.dangerLight,
-  },
-  stateText: {
-    color: colors.textPrimary,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  priceRow: {
-    marginTop: 6,
-    marginBottom: 8,
-    
-  },
-  infoPanel: {
-    backgroundColor: colors.lighterGray,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  ownerInfoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    position: "absolute",
-    top: 8,
-    right: 10,
-    zIndex: 5,
-    backgroundColor: "rgba(255, 255, 255, 0.96)",
-    borderWidth: 1,
-    borderColor: colors.lightGray,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  ownerNameText: {
-    fontSize: 11,
-    color: colors.textPrimary,
-    marginLeft: 4,
-    maxWidth: 160,
+    color: colors.primary,
+    fontSize: 12,
     fontWeight: "600",
   },
-  infoRow: {
+  ratingContainer: {
     flexDirection: "row",
-    alignItems: "left",
-    marginVertical: 3,
+    alignItems: "center",
+    gap: 2,
   },
-  infoText: {
-    fontSize: 13,
+  ratingText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginLeft: 4,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
     color: colors.textPrimary,
-    marginLeft: 6,
-    flex: 1,
+    marginBottom: 6,
+    lineHeight: 30,
   },
-  descriptionInfoRow: {
-    alignItems: "flex-start",
+  subtitleMuted: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 6,
   },
-  descriptionInfoTextWrap: {
-    flex: 1,
-    marginLeft: 6,
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
-  carDetailsCard: {
-    marginTop: 10,
-    backgroundColor: colors.infoLight,
-    borderWidth: 1,
-    borderColor: colors.primary,
+  price: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.primary,
+  },
+  itemImagePreviewWrap: {
+    width: "100%",
+    height: 180,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    overflow: "hidden",
+    marginBottom: 12,
   },
-  carDetailsHeader: {
+  itemImagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  placeholderImageAlt: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.lightGray,
+  },
+  availableBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 6,
+    backgroundColor: `${colors.success}15`,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  carDetailsGrid: {
-    gap: 4,
+  availableText: {
+    fontSize: 12,
+    color: colors.success,
+    fontWeight: "600",
   },
-  carDetailText: {
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  infoLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  infoDescription: {
-    fontSize: 13,
-    color: colors.textPrimary,
-    lineHeight: 18,
-    marginTop: 1,
-  },
-  mapWrapper: {
-    marginBottom: 14,
-    backgroundColor: colors.surface,
-    borderColor: colors.lightGray,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  mapHeaderRow: {
+  locationInline: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 6,
   },
-  mapIconWrap: {
+  locationInlineText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+  sellerCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.shadowColor,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  sellerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  sellerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: "hidden",
+  },
+  avatarGradient: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  sellerInfo: {
+    flex: 1,
+  },
+  sellerName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 3,
+  },
+  sellerRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  sellerBadge: {
+    fontSize: 11,
+    color: colors.secondary,
+    fontWeight: "500",
+  },
+  contactButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
+  },
+  contactButtonGradient: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  expandButton: {
+    alignItems: "center",
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  sellerExpanded: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  sellerStats: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  sellerStat: {
+    alignItems: "center",
+  },
+  sellerStatNumber: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  sellerStatLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  sectionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.shadowColor,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  description: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textSecondary,
+  },
+  carDetailsGrid: {
+    gap: 12,
+  },
+  carDetailItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  carDetailLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  carDetailValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.textPrimary,
+  },
+  suggestionsContent: {
+    gap: 12,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 8,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
+  locationText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  locationPreviewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    padding: 12,
+    backgroundColor: colors.background,
+    paddingTop : 16,
+  },
+  locationBubbleWrap: {
+    width: 64,
+    height: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationBubbleOuter: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}14`,
+  },
+  locationBubbleMiddle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}1F`,
+  },
+  locationBubbleInner: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  locationInfoBlock: {
+    flex: 1,
+    gap: 4,
+  },
+  locationNameText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  locationCoordsText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  openMapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+  },
+  openMapButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  actionButtonsContainer: {
+    gap: 10,
+  },
+  actionButtonsSpacer: {
+    height: 14,
+  },
+  orderButton: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  orderButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+  },
+  orderButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  messageButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  messageButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  messageButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  editButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  editButtonIcon: {
+    position: "absolute",
+    top: 10,
+    right: 10,
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.infoLight,
-    marginRight: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 2,
   },
-  mapHeaderTextWrap: {
-    flex: 1,
+  editButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
   },
-  mapTitle: {
+  closeButton: {
+    backgroundColor: `${colors.primary}`,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center", 
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  closeButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  reopenButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reopenButtonText: {
+    color: colors.success,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  soldOutContainer: {
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  soldOutText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  contactSellerButton: {
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+  },
+  contactSellerText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  similarItem: {
+    width: 140,
+    marginRight: 12,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: colors.surface,
+  },
+  similarImage: {
+    width: "100%",
+    height: 100,
+    backgroundColor: colors.lightGray,
+  },
+  similarPrice: {
+    color: colors.primary,
     fontSize: 14,
     fontWeight: "700",
+    paddingHorizontal: 10,
+    paddingTop: 8,
+  },
+  similarTitle: {
     color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "500",
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    paddingTop: 2,
   },
-  mapSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
+  noSimilarText: {
     color: colors.textSecondary,
-  },
-  mapButtonWrap: {
-    marginTop: 10,
-    alignItems: "flex-start",
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  contactSection: {
-    marginTop: 10,
-  },
-  reviewSection: {
-    marginTop: 10,
-  },
-  orderSection: {
-    marginTop: 10,
-  },
-  actionSection: {
-    marginTop: 4,
-  },
-  actionButtonsRow: {
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 8,
+    fontSize: 13,
+    paddingVertical: 8,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
   },
-  reportModalCard: {
-    width: "100%",
-    maxWidth: 420,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    padding: 20,
-  },
   contactModalCard: {
     width: "100%",
     maxWidth: 420,
-    borderRadius: 20,
+    maxHeight: height * 0.8,
     backgroundColor: colors.surface,
-    padding: 20,
+    borderRadius: 22,
+    overflow: "hidden",
   },
-  contactActionList: {
-    marginTop: 12,
+  modalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
-  reportModalTitle: {
+  modalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.textPrimary,
+    color: "#FFF",
   },
-  reportModalSubtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-  },
-  reportReasonList: {
-    marginTop: 16,
-  },
-  reportReasonItem: {
-    flexDirection: "row",
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: colors.lightGray,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-    backgroundColor: colors.lighterGray,
+    justifyContent: "center",
   },
-  reportReasonItemSelected: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerLight,
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  reportReasonTextWrap: {
-    flex: 1,
-    paddingRight: 12,
+  contactMethods: {
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
   },
-  reportReasonLabel: {
-    fontSize: 15,
+  contactMethod: {
+    alignItems: "center",
+    gap: 8,
+    width: 96,
+    paddingVertical: 4,
+  },
+  contactIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contactMethodLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  quickMessageSection: {
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+  },
+  quickMessageLabel: {
+    fontSize: 14,
     fontWeight: "700",
     color: colors.textPrimary,
+    marginBottom: 10,
   },
-  reportReasonHint: {
-    marginTop: 3,
-    fontSize: 12,
-    color: colors.textSecondary,
+  quickMessageInput: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 14,
+    color: colors.textPrimary,
+    minHeight: 100,
+    textAlignVertical: "top",
   },
-  reportModalActions: {
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 8,
+  charCount: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 6,
+    marginBottom: 14,
+    textAlign: "right",
   },
-
+  sendButton: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  sendButtonGradient: {
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  sendButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
 });
 
 export default ListingDetailsScreen;

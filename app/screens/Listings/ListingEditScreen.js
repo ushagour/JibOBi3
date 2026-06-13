@@ -24,9 +24,11 @@ import routes from "../../navigation/routes";
 import AppButton from "../../components/Button";
 import colors from "../../config/colors";
 import ActivityIndicator from "../../components/ActivityIndicator";
+import useTheme from "../../hooks/useTheme";
 
 function CarDetailsFields({ categories }) {
   const { values, setFieldValue } = useFormikContext();
+  const { colors: themeColors } = useTheme();
   const selectedCategory = categories.find((item) => item.id === values.category);
   const isCarsCategory = selectedCategory?.name?.toLowerCase() === "cars";
   
@@ -43,7 +45,7 @@ function CarDetailsFields({ categories }) {
   if (!isCarsCategory) return null;
 
   return (
-    <View style={styles.sectionCard}>
+    <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
       <FormField maxLength={50} name="carModel" placeholder="Car Model" />
       <FormField maxLength={50} name="carColor" placeholder="Car Color" />
       <FormField maxLength={50} name="carSize" placeholder="Car Size" />
@@ -70,6 +72,11 @@ function ListingEditScreen({ route, navigation }) {
   const [progress, setProgress] = useState(0);
   const [uploadVisible, setUploadVisible] = useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
+  const listingImages = Array.isArray(listing?.images)
+    ? listing.images
+        .map((image) => (typeof image === "string" ? image : image?.url || image?.uri || image?.file_name || image?.path || ""))
+        .filter(Boolean)
+    : [];
 
   useEffect(() => {
     // console.log("Listing data:", listing); // Debug log
@@ -183,7 +190,7 @@ function ListingEditScreen({ route, navigation }) {
           carColor: listing.carColor || "",
           carModel: listing.carModel || "",
           carYear: listing.carYear ? listing.carYear.toString() : "",
-          images: listing.images.map((image) => image.url),
+          images: listingImages,
         }}
         onSubmit={handleSubmit}
         validationSchema={validationSchema}

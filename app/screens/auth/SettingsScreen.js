@@ -4,8 +4,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import Screen from "../../components/Screen";
 import Text from "../../components/Text";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 import colors from "../../config/colors";
+import useTheme from "../../hooks/useTheme";
 import AwesomeAlert from "react-native-awesome-alerts";
+import { useTranslation } from "react-i18next";
 
 function SettingRow({ icon, title, subTitle }) {
   return (
@@ -22,6 +25,8 @@ function SettingRow({ icon, title, subTitle }) {
 }
 
 function SettingsScreen() {
+  const { t, i18n } = useTranslation();
+  const { colors: themeColors, isDark } = useTheme();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({
     pushEnabled: true,
@@ -88,19 +93,22 @@ function SettingsScreen() {
 
   return (
     <>
-      <Screen style={styles.screen} paddingSize="lg">
-        <Text style={styles.title}>App Settings</Text>
-        <Text style={styles.subtitle}>Manage your preferences and app behavior.</Text>
+      <Screen
+        key={String(i18n.resolvedLanguage || i18n.language || "en")}
+        style={styles.screen}
+        paddingSize="lg"
+      >
+        <Text style={styles.subtitle}>{t("settings.manage_preferences")}</Text>
 
         {/* Dark Mode Toggle */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: themeColors.surface }]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="brightness-4" size={18} color={colors.primary} />
             </View>
             <View style={styles.textWrap}>
-              <Text style={styles.rowTitle}>Dark Mode</Text>
-              <Text style={styles.rowSubTitle}>Switch to dark theme</Text>
+              <Text style={styles.rowTitle}>{t("settings.dark_mode")}</Text>
+              <Text style={styles.rowSubTitle}>{t("settings.dark_mode_subtitle")}</Text>
             </View>
             <Switch
               value={darkMode}
@@ -111,23 +119,37 @@ function SettingsScreen() {
           </View>
         </View>
 
+        {/* Language Toggle */}
+        <View style={[styles.card, styles.cardSpacing, { backgroundColor: themeColors.surface }]}>
+          <View style={styles.row}>
+            <View style={styles.iconWrap}>
+              <MaterialCommunityIcons name="translate" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.textWrap}>
+              <Text style={styles.rowTitle}>{t("settings.language")}</Text>
+              <Text style={styles.rowSubTitle}>{t("settings.language_subtitle")}</Text>
+            </View>
+            <LanguageSwitcher />
+          </View>
+        </View>
+
         {/* Notification Preferences */}
-        <View style={[styles.card, styles.cardSpacing]}>
+        <View style={[styles.card, styles.cardSpacing, { backgroundColor: themeColors.surface }]}>
           <View style={styles.row}>
             <View style={styles.iconWrap}>
               <MaterialCommunityIcons name="bell-outline" size={18} color={colors.primary} />
             </View>
             <View style={styles.textWrap}>
-              <Text style={styles.rowTitle}>Notifications</Text>
-              <Text style={styles.rowSubTitle}>Manage what alerts you receive</Text>
+              <Text style={styles.rowTitle}>{t("settings.notifications")}</Text>
+              <Text style={styles.rowSubTitle}>{t("settings.notifications_subtitle")}</Text>
             </View>
           </View>
 
           {/* Push Notifications Master Toggle */}
           <View style={styles.notificationRow}>
             <View>
-              <Text style={styles.notificationTitle}>Push Notifications</Text>
-              <Text style={styles.notificationSubtitle}>Enable all notifications</Text>
+              <Text style={styles.notificationTitle}>{t("settings.push_notifications")}</Text>
+              <Text style={styles.notificationSubtitle}>{t("settings.push_notifications_subtitle")}</Text>
             </View>
             <Switch
               value={notifications.pushEnabled}
@@ -142,8 +164,8 @@ function SettingsScreen() {
               {/* Message Notifications */}
               <View style={styles.notificationRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.notificationTitle}>💬 Messages</Text>
-                  <Text style={styles.notificationSubtitle}>Buyer/seller messages</Text>
+                  <Text style={styles.notificationTitle}>💬 {t("settings.messages")}</Text>
+                  <Text style={styles.notificationSubtitle}>{t("settings.messages_subtitle")}</Text>
                 </View>
                 <Switch
                   value={notifications.messageNotifications}
@@ -156,8 +178,8 @@ function SettingsScreen() {
               {/* Review Notifications */}
               <View style={styles.notificationRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.notificationTitle}>⭐ Reviews</Text>
-                  <Text style={styles.notificationSubtitle}>New reviews on your listings</Text>
+                  <Text style={styles.notificationTitle}>⭐ {t("settings.reviews")}</Text>
+                  <Text style={styles.notificationSubtitle}>{t("settings.reviews_subtitle")}</Text>
                 </View>
                 <Switch
                   value={notifications.reviewNotifications}
@@ -170,8 +192,8 @@ function SettingsScreen() {
               {/* Order Notifications */}
               <View style={styles.notificationRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.notificationTitle}>📦 Orders</Text>
-                  <Text style={styles.notificationSubtitle}>New orders and updates</Text>
+                  <Text style={styles.notificationTitle}>📦 {t("settings.orders")}</Text>
+                  <Text style={styles.notificationSubtitle}>{t("settings.orders_subtitle")}</Text>
                 </View>
                 <Switch
                   value={notifications.orderNotifications}
@@ -184,8 +206,8 @@ function SettingsScreen() {
               {/* Marketing Emails */}
               <View style={styles.notificationRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.notificationTitle}>📧 Marketing</Text>
-                  <Text style={styles.notificationSubtitle}>Promotions and updates</Text>
+                  <Text style={styles.notificationTitle}>📧 {t("settings.marketing")}</Text>
+                  <Text style={styles.notificationSubtitle}>{t("settings.marketing_subtitle")}</Text>
                 </View>
                 <Switch
                   value={notifications.marketingEmails}

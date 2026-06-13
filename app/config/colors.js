@@ -7,9 +7,9 @@
  * Then use: theme.colors.primary, theme.spacing.md, etc.
  */
 
-import theme from "./theme";
+// Theme exports named `colors`; re-export that for backward compatibility
+import { colors } from "./theme";
 
-// Re-export for backward compatibility
-export default theme.colors;
+export default colors;
 
 

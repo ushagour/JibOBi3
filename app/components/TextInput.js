@@ -19,6 +19,8 @@ function AppTextInput({
   label = null,
   disabled = false,
   placeholderTextColor = theme.colors.textTertiary,
+  style: userStyle,
+  multiline = false,
   ...otherProps
 }) {
   const [isFocused, setIsFocused] = useState(false);
@@ -38,6 +40,7 @@ function AppTextInput({
       <View
         style={[
           styles.inputContainer,
+          multiline && styles.inputContainerMultiline,
           isFocused && styles.inputFocused,
           error && styles.inputError,
           disabled && styles.inputDisabled,
@@ -54,13 +57,19 @@ function AppTextInput({
         <RNTextInput
           placeholder={placeholder}
           placeholderTextColor={placeholderTextColor}
-          style={[styles.input, { paddingLeft: icon ? 12 : 16 }]}
+          style={[
+            styles.input,
+            { paddingLeft: icon ? 12 : 16 },
+            multiline && styles.inputMultiline,
+            userStyle,
+          ]}
           secureTextEntry={secureTextEntry && !showPassword}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           editable={!disabled}
+          multiline={multiline}
           {...otherProps}
         />
         {secureTextEntry && (
@@ -103,6 +112,11 @@ const styles = StyleSheet.create({
     height: 50,
     ...theme.shadows.xs,
   },
+  inputContainerMultiline: {
+    alignItems: "flex-start",
+    paddingVertical: theme.spacing.sm,
+    height: "auto",
+  },
   inputFocused: {
     borderColor: theme.colors.primary,
     backgroundColor: theme.colors.white,
@@ -122,6 +136,11 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.textPrimary,
     padding: 0,
+  },
+  inputMultiline: {
+    minHeight: 100,
+    textAlignVertical: "top",
+    paddingTop: 6,
   },
   toggleIcon: {
     padding: theme.spacing.sm,

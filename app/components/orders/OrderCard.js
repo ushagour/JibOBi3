@@ -8,7 +8,7 @@ import OrderStatusPill from "./OrderStatusPill";
 function formatCurrency(value) {
   const amount = Number(value);
   if (Number.isNaN(amount)) return "N/A";
-  return `${amount.toFixed(2)} MAD`;
+  return `${amount.toFixed(2)} DH`;
 }
 
 function formatDate(dateValue) {

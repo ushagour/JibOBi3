@@ -1,5 +1,6 @@
 import "expo-dev-client";
 import React, { useState, useEffect, useCallback } from "react";
+import { StatusBar } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen"; // Import SplashScreen
 import myTheme from "./app/navigation/myTheme";
@@ -7,9 +8,15 @@ import AppNavigator from "./app/navigation/AppNavigator";
 import OfflineNotice from "./app/components/OfflineNotice";
 import AuthNavigator from "./app/navigation/AuthNavigator";
 import AuthContext from "./app/auth/context";
+import SplashContext from "./app/context/SplashContext";
 import authStorage from "./app/auth/storage";
 import { navigationRef } from "./app/navigation/rootNavigation";
 import GlobalAlertProvider from "./app/components/GlobalAlertProvider";
+import FloatingAIButton from "./app/components/chatboot/FloatingAIButton";
+import colors from "./app/config/colors";
+import './app/config/i18n'; // Initialize i18n
+import { I18nextProvider } from 'react-i18next';
+import i18n from './app/config/i18n';
 
 // Suppress Expo push token warning when offline
 const originalWarn = console.warn;
@@ -25,6 +32,8 @@ console.warn = (...args) => {
 export default function App() {
   const [user, setUser] = useState();
   const [isReady, setIsReady] = useState(false);
+  const [splashHidden, setSplashHidden] = useState(false);
+  const isAuthenticated = Boolean(user?.userId);
 
   const restoreUser = async () => {
     const user = await authStorage.getUser();
@@ -53,18 +62,27 @@ export default function App() {
     if (isReady) {
       // Hide splash screen once the app is ready
       await SplashScreen.hideAsync();
+      setSplashHidden(true);
     }
   }, [isReady]);
 
   if (!isReady) return null;
 
   return (
-    <NavigationContainer ref={navigationRef} theme={myTheme} onReady={onLayoutRootView}>
-      <OfflineNotice />
-      <AuthContext.Provider  value={{ user, setUser }}>
-        {user ? <AppNavigator /> : <AuthNavigator />}
-      </AuthContext.Provider>
-      <GlobalAlertProvider />
-    </NavigationContainer>
+    <I18nextProvider i18n={i18n}>
+      <>
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary} translucent={false} />
+        <SplashContext.Provider value={{ splashHidden }}>
+        <NavigationContainer ref={navigationRef} theme={myTheme} onReady={onLayoutRootView}>
+          <OfflineNotice />
+          <AuthContext.Provider  value={{ user, setUser }}>
+            {user ? <AppNavigator /> : <AuthNavigator />}
+          </AuthContext.Provider>
+          {isAuthenticated ? <FloatingAIButton user={user} /> : null}
+          <GlobalAlertProvider />
+        </NavigationContainer>
+        </SplashContext.Provider>
+      </>
+    </I18nextProvider>
   );
 }

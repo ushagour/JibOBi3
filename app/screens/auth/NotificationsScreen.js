@@ -11,12 +11,12 @@ import Screen from "../../components/Screen";
 import AppText from "../../components/Text";
 import colors from "../../config/colors";
 import notificationsApi from "../../api/notifications";
+import useTheme from "../../hooks/useTheme";
 
 import ListItemCard from "../../components/cards/ListItemCard";
 import ListItemSeparator from "../../components/ListItemSeparator";
 import ListItemDeleteAction from "../../components/ListItemDeleteAction";
 import Avatar from "../../components/Avatar";   
-import useAuth from "../../auth/useAuth";
 import ordersApi from "../../api/orders";
 
 
@@ -24,6 +24,7 @@ function NotificationsScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { colors: themeColors, isDark } = useTheme();
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -37,7 +38,6 @@ function NotificationsScreen({ navigation }) {
 
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
-      console.log("Loaded notifications:", response.data.notifications);
 
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
@@ -68,7 +68,17 @@ function NotificationsScreen({ navigation }) {
     }
 
     setNotifications((current) =>
-      current.map((item) => (item.id === notification.id ? result.data : item))
+      current.map((item) => {
+        if (item.id !== notification.id) return item;
+        // Ensure relations (actor, listing) are preserved if backend response doesn't include them
+        const updated = result.data || {};
+        return {
+          ...item,
+          ...updated,
+          actor: updated.actor || item.actor,
+          listing: updated.listing || item.listing,
+        };
+      })
     );
     setUnreadCount((current) => (notification.is_read ? current + 1 : Math.max(current - 1, 0)));
   };
@@ -132,13 +142,71 @@ function NotificationsScreen({ navigation }) {
     </View>
   );
 
+  const resolveNotificationTarget = (item) => {
+    // Try common places where related ids may exist (supporting different backend shapes)
+    const orderId =
+      item.order_id ||
+      item?.data?.order_id ||
+      item?.data?.order?.id ||
+      item?.order?.id ||
+      item?.meta?.order_id ||
+      item?.payload?.order_id ||
+      item?.payload?.order?.id ||
+      null;
+
+    const listingId =
+      item.listing_id ||
+      item?.data?.listing_id ||
+      item?.listing?.id ||
+      item?.meta?.listing_id ||
+      item?.payload?.listing_id ||
+      item?.payload?.listing?.id ||
+      null;
+
+    const conversationId =
+      item.conversation_id ||
+      item?.data?.conversation_id ||
+      item?.meta?.conversation_id ||
+      item?.payload?.conversation_id ||
+      null;
+
+    const otherUserId =
+      item?.actor?.id ||
+      item.actor_id ||
+      item?.data?.user_id ||
+      item?.payload?.user_id ||
+      item?.payload?.actor?.id ||
+      null;
+
+    // Messages -> open conversation (prefer conversationId if available)
+    if (item.type === "message") {
+      if (conversationId) return { route: "Conversation", params: { conversationId } };
+      if (otherUserId) return { route: "Conversation", params: { otherUserId, otherUserName: item?.actor?.name } };
+    }
+
+    // Orders -> order details
+    if (item.type === "order" && orderId) {
+      return { route: "OrderDetails", params: { order: { id: orderId } } };
+    }
+
+    // Listing-related notifications
+    if (listingId) {
+      return { route: "ListingDetails", params: { id: listingId } };
+    }
+
+    // Generic fallbacks
+    if (orderId) return { route: "OrderDetails", params: { order: { id: orderId } } };
+    if (conversationId) return { route: "Conversation", params: { conversationId } };
+    if (otherUserId) return { route: "Conversation", params: { otherUserId, otherUserName: item?.actor?.name } };
+
+    return null;
+  };
+
   return (
     <Screen scrollable={false} style={styles.screen} paddingSize="lg">
       <View style={styles.headerRow}>
         <View>
-          <AppText variant="h2" color="textPrimary" style={styles.title}>
-            Notifications
-          </AppText>
+      
           <AppText color="textSecondary" style={styles.subtitle}>
             Review all your alerts in one place
           </AppText>
@@ -173,18 +241,28 @@ function NotificationsScreen({ navigation }) {
 
           return (
             <Pressable
-              onPress={async () => {
-                if (!item.is_read) {
-                  await handleToggleRead(item);
-                }
-                if (item.type === "order" && item.order_id) {
-                  navigation.navigate("OrderDetails", { order: { id: item.order_id } });
-                } else if (item.type === "review" && item.listing_id) {
-                  navigation.navigate("ListingDetails", { id: item.listing_id });
-                }
-              }}
+                onPress={async () => {
+                  if (!item.is_read) {
+                    await handleToggleRead(item);
+                  }
+
+                  const target = resolveNotificationTarget(item);
+                  if (target) {
+                    navigation.navigate(target.route, target.params);
+                    return;
+                  }
+
+                  // fallback: open orders list if it's an order-type without id
+                  if (item.type === "order") {
+                    navigation.navigate("Orders");
+                    return;
+                  }
+
+                  Alert.alert("Open notification", "Unable to determine a destination for this notification.");
+                }}
               style={[
                 styles.notificationCard,
+                { backgroundColor: themeColors.surface },
                 item.is_read ? styles.readCard : styles.unreadCard,
               ]}
             >
@@ -216,20 +294,6 @@ function NotificationsScreen({ navigation }) {
                     🕐 {formattedTime}
                   </AppText>
                 </View>
-
-                <View style={styles.metaRow}>
-                  <View style={[styles.metaBadge, { backgroundColor: meta.color }]}>
-                    <MaterialCommunityIcons
-                      name={meta.icon}
-                      size={12}
-                      color={colors.white}
-                    />
-                    <AppText style={styles.metaBadgeText}>{meta.label}</AppText>
-                  </View>
-                  <AppText style={[styles.statusBadge, item.is_read ? styles.readBadge : styles.unreadBadge]}>
-                    {item.is_read ? "Read" : "Unread"}
-                  </AppText>
-                </View>
               </View>
 
               <TouchableOpacity
@@ -247,6 +311,8 @@ function NotificationsScreen({ navigation }) {
           );
         }}
       />
+
+      {/* Conversation navigation handled above for message notifications */}
     </Screen>
   );
 }
@@ -428,6 +494,56 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
     fontSize: 12,
+  },
+  modalOverlayCenter: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  replyModalCard: {
+    width: "100%",
+    maxWidth: 520,
+    borderRadius: 14,
+    padding: 16,
+  },
+  replyModalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  replyInput: {
+    minHeight: 100,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    textAlignVertical: "top",
+    marginBottom: 12,
+  },
+  replyActionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  replyCancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  replyCancelText: {
+    color: colors.textSecondary,
+    fontWeight: "700",
+  },
+  replySendButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  replySendText: {
+    color: colors.white,
+    fontWeight: "800",
   },
 });
 
