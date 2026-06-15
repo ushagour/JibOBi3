@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet, View, TouchableOpacity } from "react-native";
 
-import Product from "../../components/cards/Product";
+import ProductCard from "../../components/cards/ProductCard";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
@@ -10,7 +10,9 @@ import ActivityIndicator from "../../components/ActivityIndicator";
 import useApi from "../../hooks/useApi";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Button from "../../components/Button";
+import useTheme from "../../hooks/useTheme";
 
 function MyListingsScreen({ navigation }) {
   const { user } = useAuth();
@@ -83,9 +85,23 @@ function MyListingsScreen({ navigation }) {
     }
     loadArchivedListings();
   };
+  const { colors: themeColors } = useTheme();
+
+   useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 16 }}
+          onPress={() => navigation.navigate(routes.CREATE_LISTING)}
+        >
+          <MaterialCommunityIcons name="plus" size={24} color={themeColors.primary} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, themeColors]);  
 
   return (
-    <>
+    <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} scrollable={false} paddingSize="xs">
       <ActivityIndicator visible={loadingCurrent} />
       <View style={styles.screen}>
         <View style={styles.tabsRow}>
@@ -133,24 +149,23 @@ function MyListingsScreen({ navigation }) {
           }
           keyExtractor={(listing) => listing.id.toString()}
           renderItem={({ item }) => (
-            <Product
+            <ProductCard
+              id={item.id}
               title={item.title}
-              price={item.price}
-              imageUri={item.images?.[0]?.url}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
-              thumbnailUrl={item.images?.[0]?.thumbnailUrl}
+              item={item}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, { id: item.id })}
+          
             />
           )}
         />
       </View>
-    </>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     padding: 20,
-    backgroundColor: colors.light,
     flex: 1,
   },
   tabsRow: {

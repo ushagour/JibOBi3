@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
-import { useLayoutEffect } from "react";
+import React, { useEffect, useMemo, useState,useLayoutEffect } from "react";
 import {
   FlatList,
   RefreshControl,
@@ -16,8 +15,10 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import dayjs from "dayjs";
 import { MaterialCommunityIcons, Ionicons, Feather } from "@expo/vector-icons";
-import Product from "../../components/cards/Product";
-import routes from "../../navigation/routes";
+import ProductCard from "../../components/cards/ProductCard";
+import SearchBar from "../../components/screens/listings/SearchBar";
+import CategoryFilters from "../../components/screens/listings/CategoryFilters";
+import QuickFilters from "../../components/screens/listings/QuickFilters";
 import Screen from "../../components/Screen";
 import listingsApi from "../../api/listings";
 import favoritesApi from "../../api/favorites";
@@ -30,10 +31,10 @@ import useTheme from "../../hooks/useTheme";
 import { Alert } from "react-native";
 import useLocation from "../../hooks/useLocation";
 import colors from "../../config/colors";
+import routes from "../../navigation/routes";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
-// Use shared theme colors
+const { width } = Dimensions.get("window");
+const CARD_WIDTH = (width - 40) / 2;
 
 const CATEGORY_FALLBACK_ICONS = {
   Sneakers: "👟",
@@ -41,7 +42,7 @@ const CATEGORY_FALLBACK_ICONS = {
   Electronics: "🎧",
   Fashion: "👕",
   Furniture: "🪑",
-  cars: "🚗",
+  Cars: "🚗",
   Other: "📦",
 };
 
@@ -56,265 +57,37 @@ const resolveCategoryIcon = (category) => {
   return CATEGORY_FALLBACK_ICONS[category?.name] || "🛍️";
 };
 
-const isAvailableStatus = (status) => {
-  const normalized = String(status || "").toLowerCase().trim();
-  if (!normalized) return true;
-  if (
-    normalized.includes("selled") ||
-    normalized.includes("sold out") ||
-    normalized === "sold"
-  ) {
-    return false;
-  }
-  return normalized.includes("available");
-};
-
 const isClosedListing = (item) => {
   const normalizedStatus = String(item?.status || "").toLowerCase().trim();
-  return Boolean(item?.archived) || !isAvailableStatus(normalizedStatus);
+  return Boolean(item?.archived) || !normalizedStatus.includes("available");
 };
 
-// Animated Product Card Component with Entrance Animation
-const AnimatedProductCard = ({ item, index, onPress, onLikePress, isLiked, isClosed, navigation }) => {
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const translateYAnim = useRef(new Animated.Value(50)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        damping: 12,
-        mass: 0.8,
-        stiffness: 100,
-        useNativeDriver: true,
-        delay: index * 50,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-        delay: index * 50,
-      }),
-      Animated.spring(translateYAnim, {
-        toValue: 0,
-        damping: 15,
-        mass: 0.8,
-        stiffness: 120,
-        useNativeDriver: true,
-        delay: index * 50,
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={{
-        transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
-        opacity: opacityAnim,
-      }}
-    >
-      <Product
-        title={item.title}
-        imageUri={item.imageUri || item.imageUrl}
-        onPress={onPress}
-        onLikePress={onLikePress}
-        isLiked={isLiked}
-        isClosed={isClosed}
-        price={item.price}
-        seller={item.owner?.name}
-        description={item.description}
-        createdAt={dayjs(item.createdAt).format("MMM D")}
-        containerStyle={styles.productListCard}
-      />
-    </Animated.View>
-  );
-};
-
-// Trending Categories Widget
-const TrendingCategories = ({ categories, selectedCategory, onSelectCategory, onSeeAll }) => {
-  const { colors: themeColors } = useTheme();
-  const scrollX = useRef(new Animated.Value(0)).current;
-
-  return (
-    <View style={styles.trendingSection}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Trending Categories</Text>
-        <TouchableOpacity onPress={onSeeAll}>
-          <Text style={styles.seeAllText}>See All</Text>
-        </TouchableOpacity>
-      </View>
-      <Animated.FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={categories.slice(0, 8)}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.categoriesContainer}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        renderItem={({ item, index }) => {
-          const inputRange = [
-            (index - 1) * 80,
-            index * 80,
-            (index + 1) * 80,
-          ];
-          const scale = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.9, 1.1, 0.9],
-            extrapolate: "clamp",
-          });
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.6, 1, 0.6],
-            extrapolate: "clamp",
-          });
-          const isSelected = selectedCategory === item.id;
-
-          return (
-            <Animated.View style={{ transform: [{ scale }], opacity }}>
-              <TouchableOpacity
-                style={[
-                  styles.categoryChip,
-                  { backgroundColor: isSelected ? colors.primary : themeColors.surface },
-                ]}
-                onPress={() => onSelectCategory(item.id)}
-              >
-                <Text style={styles.categoryEmoji}>{item.icon}</Text>
-                <Text
-                  style={[
-                    styles.categoryName,
-                    { color: isSelected ? "#FFF" : colors.textPrimary },
-                  ]}
-                >
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        }}
-      />
-    </View>
-  );
-};
-
-// Search Bar with Animation
-const AnimatedSearchBar = ({ searchQuery, onSearchChange, isFocused, onFocus, onBlur }) => {
-  const { colors: themeColors } = useTheme();
-  const searchBarAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(searchBarAnim, {
-      toValue: isFocused ? 1 : 0,
-      useNativeDriver: false,
-      tension: 50,
-      friction: 7,
-    }).start();
-  }, [isFocused]);
-
-  const searchBarWidth = searchBarAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [screenWidth - 32, screenWidth - 32],
-  });
-
-  return (
-    <Animated.View style={[styles.searchWrapper, { width: searchBarWidth }]}>
-      <View style={[styles.searchBarContainer, { backgroundColor: themeColors.surface }]}>
-        <Feather name="search" size={20} color={colors.textTertiary || colors.textSecondary} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search products..."
-          placeholderTextColor={colors.textTertiary || colors.textSecondary}
-          value={searchQuery}
-          onChangeText={onSearchChange}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => onSearchChange("")}>
-            <Feather name="x" size={20} color={colors.textTertiary || colors.textSecondary} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </Animated.View>
-  );
-};
-
-// Quick Filters Widget - NEW: No default selection
-const QuickFilters = ({ onFilterPress, activeFilter }) => {
-  const { colors: themeColors } = useTheme();
-  const filters = [
-    { icon: "📍", label: "Nearby", value: "nearby" },
-    { icon: "⭐", label: "Top Rated", value: "topRated" },
-    { icon: "🆕", label: "Newest", value: "newest" },
-  ];
-
-  return (
-    <View style={styles.quickFiltersSection}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickFiltersScrollContent}>
-        {filters.map((filter, index) => {
-          const isActive = activeFilter === filter.value;
-          return (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.quickFilterChip,
-                { backgroundColor: isActive ? colors.primary : themeColors.surface },
-                isActive && styles.quickFilterChipActive
-              ]}
-              onPress={() => onFilterPress(filter.value)}
-            >
-              <Text style={styles.filterEmoji}>{filter.icon}</Text>
-              <Text style={[
-                styles.filterLabel,
-                { color: isActive ? "#FFF" : colors.textPrimary },
-                isActive && styles.filterLabelActive
-              ]}>{filter.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-};
-
-// Main Component - UPDATED: Show newest first, nearby on demand
-function ListingsScreen({ navigation, route }) {
+function ListingsScreen({ navigation }) {
   const { user, isLoggedIn } = useAuth();
-  const { location, getLocationName } = useLocation();
-  const { city, country } = getLocationName();
+  const { location } = useLocation();
   const { colors: themeColors } = useTheme();
   const isGuest = !isLoggedIn();
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // API hooks
   const {
-    data: nearbyListings,
-    error: nearbyError,
-    loading: nearbyLoading,
-    request: fetchNearbyListings,
-  } = useApi(listingsApi.nearbyListings);
-
-  const {
-    data: allListings,
-    error: allListingsError,
-    loading: allListingsLoading,
-    request: fetchAllListings,
+    data: listingsData,
+    error: listingsError,
+    loading: listingsLoading,
+    request: fetchListings,
   } = useApi(listingsApi.getListings);
 
   const {
-    data: newestListings,
-    error: newestError,
-    loading: newestLoading,
-    request: fetchNewestListings,
-  } = useApi(listingsApi.getNewestListings); // You may need to create this API endpoint
+    data: nearbyData,
+    error: nearbyError,
+    loading: nearbyLoading,
+    request: fetchNearby,
+  } = useApi(listingsApi.nearbyListings);
 
   const {
-    data: categoryListings,
+    data: categoryData,
     error: categoryError,
     loading: categoryLoading,
-    request: fetchListingsByCategory,
+    request: fetchByCategory,
   } = useApi(listingsApi.getListingsByCategory);
 
   const { data: categoriesData, request: fetchCategories } = useApi(
@@ -325,27 +98,7 @@ function ListingsScreen({ navigation, route }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [favoriteIds, setFavoriteIds] = useState([]);
-  const [activeFilter, setActiveFilter] = useState(null); // ✅ NO default filter
-  const [showAllListings, setShowAllListings] = useState(false);
-  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: user?.name || "Explorer",
-      headerSubtitle: `Welcome back · ${city || country || "📍"} `,
-      headerRight: () =>
-        isGuest ? null : (
-          <TouchableOpacity
-            style={[styles.notificationButton, { backgroundColor: themeColors.surface }]}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
-          >
-            <View style={styles.notificationBadge} />
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
-        ),
-    });
-  }, [navigation, user?.name, city, country, isGuest, themeColors]);
+  const [activeFilter, setActiveFilter] = useState(null);
 
   const loadFavorites = async () => {
     try {
@@ -354,7 +107,7 @@ function ListingsScreen({ navigation, route }) {
         setFavoriteIds(response.data.data);
       }
     } catch (error) {
-      if (__DEV__) console.error("Error loading favorites:", error);
+      console.error("Error loading favorites:", error);
     }
   };
 
@@ -364,184 +117,85 @@ function ListingsScreen({ navigation, route }) {
       name: category.name,
       icon: resolveCategoryIcon(category),
     }));
+    return [{ id: "all", name: "All", icon: "🧭" }, ...apiCategories];
+  }, [categoriesData]);
 
-    if (apiCategories.length > 0) {
-      return [{ id: "all", name: "All", icon: "🧭" }, ...apiCategories];
-    }
-
-    const derivedCategories = Array.from(
-      new Map(
-        (allListings || [])
-          .map((item) => item?.Category)
-          .filter(Boolean)
-          .map((category) => [
-            String(category.id ?? category.name),
-            {
-              id: String(category.id ?? category.name),
-              name: category.name,
-              icon: resolveCategoryIcon(category),
-            },
-          ])
-      ).values()
-    );
-
-    return [{ id: "all", name: "All", icon: "🧭" }, ...derivedCategories];
-  }, [categoriesData, allListings]);
-
-  // Determine which data source to use
-  const getListingsSource = () => {
-    if (showAllListings) return allListings;
-    
-    if (activeFilter === "nearby") return nearbyListings;
-    
-    // Default: show newest listings
-    return newestListings || allListings;
+  const getCurrentListings = () => {
+    if (activeFilter === "nearby") return nearbyData || [];
+    if (selectedCategory !== "all") return categoryData || [];
+    return listingsData || [];
   };
 
-  const listingsSource = getListingsSource();
-
-  // Sort listings by newest first (createdAt descending)
-  const sortedListings = useMemo(() => {
-    const source = listingsSource || [];
-    return [...source].sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.created_at || 0);
-      const dateB = new Date(b.createdAt || b.created_at || 0);
-      return dateB - dateA; // Newest first
-    });
-  }, [listingsSource]);
+  const currentListings = getCurrentListings();
 
   const filteredListings = useMemo(() => {
-    let query = searchQuery.trim().toLowerCase();
-    let filtered = sortedListings.filter((item) => {
-      if (isGuest && selectedCategory !== "all") {
-        const categoryId = String(item?.Category?.id ?? "");
-        if (categoryId !== String(selectedCategory)) return false;
-      }
-      if (!query) return true;
-      const title = item?.title?.toLowerCase() || "";
-      const description = item?.description?.toLowerCase() || "";
-      return title.includes(query) || description.includes(query);
-    });
+    let filtered = [...currentListings];
 
-    // Apply additional filters
-    if (activeFilter === "topRated") {
-      filtered = filtered.filter((item) => Number(item?.rating || 0) >= 4.5);
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.title?.toLowerCase().includes(query) ||
+          item.description?.toLowerCase().includes(query)
+      );
     }
 
+    if (activeFilter === "topRated") {
+      filtered = filtered.filter((item) => (item.rating || 0) >= 4.5);
+    }
+
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.created_at || 0);
+      const dateB = new Date(b.createdAt || b.created_at || 0);
+      return dateB - dateA;
+    });
+
     return filtered;
-  }, [sortedListings, searchQuery, isGuest, selectedCategory, activeFilter]);
+  }, [currentListings, searchQuery, activeFilter]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (activeFilter === "nearby" && location) {
+        await fetchNearby(location.latitude, location.longitude);
+      } else if (selectedCategory !== "all") {
+        await fetchByCategory(selectedCategory);
+      } else {
+        await fetchListings();
+      }
+    };
+    loadData();
+  }, [selectedCategory, activeFilter, location]);
+
+  useEffect(() => {
+    fetchCategories();
+    if (!isGuest) loadFavorites();
+    fetchListings();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      if (showAllListings) {
-        await fetchAllListings();
-      } else if (activeFilter === "nearby") {
-        if (location?.latitude && location?.longitude) {
-          await fetchNearbyListings(location.latitude, location.longitude);
-        } else {
-          await fetchNearbyListings();
-        }
-      } else {
-        // Default: fetch newest listings
-        if (fetchNewestListings) {
-          await fetchNewestListings();
-        } else {
-          await fetchAllListings();
-        }
-      }
-    } finally {
-      setRefreshing(false);
+    if (activeFilter === "nearby" && location) {
+      await fetchNearby(location.latitude, location.longitude);
+    } else if (selectedCategory !== "all") {
+      await fetchByCategory(selectedCategory);
+    } else {
+      await fetchListings();
     }
-  };
-
-  const handleSeeAll = async () => {
-    setSelectedCategory("all");
-    setShowAllListings(true);
-    await fetchAllListings();
+    setRefreshing(false);
   };
 
   const handleSelectCategory = (categoryId) => {
-    setShowAllListings(false);
     setSelectedCategory(categoryId);
-    
-    // Fetch listings for the selected category
-    if (categoryId !== "all") {
-      fetchListingsByCategory(categoryId);
-    } else if (activeFilter === "nearby") {
-      // If no category and nearby filter is active
-      if (location?.latitude && location?.longitude) {
-        fetchNearbyListings(location.latitude, location.longitude);
-      }
+    setActiveFilter(null);
+  };
+
+  const handleFilterPress = (filter) => {
+    if (activeFilter === filter) {
+      setActiveFilter(null);
+    } else {
+      setActiveFilter(filter);
     }
   };
-
-  // ✅ Initial load: fetch newest listings (not nearby!)
-  useEffect(() => {
-    const loadInitialListings = async () => {
-      if (!hasLoadedInitial) {
-        // Default: load newest listings first
-        if (fetchNewestListings) {
-          await fetchNewestListings();
-        } else {
-          await fetchAllListings();
-        }
-        setHasLoadedInitial(true);
-      }
-    };
-    
-    loadInitialListings();
-    fetchCategories();
-    if (!isGuest) loadFavorites();
-  }, []);
-
-  // ✅ Handle filter changes (Nearby, Top Rated, etc.)
-  const handleFilterPress = async (filter) => {
-    // Toggle filter: if same filter, turn it off
-    const nextFilter = activeFilter === filter ? null : filter;
-    setActiveFilter(nextFilter);
-    
-    // Reset to default view when filter is cleared
-    if (nextFilter === null) {
-      setShowAllListings(false);
-      if (fetchNewestListings) {
-        await fetchNewestListings();
-      } else {
-        await fetchAllListings();
-      }
-      return;
-    }
-    
-    // Handle specific filters
-    if (nextFilter === "nearby") {
-      setShowAllListings(false);
-      setSelectedCategory("all");
-      if (location?.latitude && location?.longitude) {
-        await fetchNearbyListings(location.latitude, location.longitude);
-      } else {
-        await fetchNearbyListings();
-      }
-    } else if (nextFilter === "topRated") {
-      // Top rated filter - just filter the existing data
-      // No API call needed
-    }
-  };
-
-  // Get loading and error states
-  const getLoadingState = () => {
-    if (showAllListings) return allListingsLoading;
-    if (activeFilter === "nearby") return nearbyLoading;
-    return newestLoading || allListingsLoading;
-  };
-
-  const getErrorState = () => {
-    if (showAllListings) return allListingsError;
-    if (activeFilter === "nearby") return nearbyError;
-    return newestError;
-  };
-
-  const activeLoading = getLoadingState();
-  const activeError = getErrorState();
 
   const handleFavoritePress = async (listingId) => {
     if (isGuest) {
@@ -554,135 +208,107 @@ function ListingsScreen({ navigation, route }) {
     if (isAlreadyFavorite) {
       Alert.alert(
         "Remove from favorites?",
-        "Do you want to remove this listing from your favorites?",
+        "Do you want to remove this listing?",
         [
-          { text: "Keep it", style: "cancel" },
+          { text: "Cancel", style: "cancel" },
           {
             text: "Remove",
             style: "destructive",
             onPress: async () => {
-              try {
-                const response = await favoritesApi.removeFavorite(listingId);
-                if (!response.ok) {
-                  Alert.alert("Oops", "Could not remove favorite right now.");
-                  return;
-                }
+              const response = await favoritesApi.removeFavorite(listingId);
+              if (response.ok) {
                 setFavoriteIds((current) => current.filter((id) => id !== listingId));
-                Alert.alert("Removed", "Listing removed from your favorites.");
-              } catch (error) {
-                Alert.alert("Oops", "Could not remove favorite right now.");
               }
             },
           },
         ]
       );
-      return;
-    }
-
-    try {
+    } else {
       const response = await favoritesApi.addFavorite(listingId);
-      if (!response.ok) {
-        Alert.alert("Oops", "Could not add favorite right now.");
-        return;
+      if (response.ok) {
+        setFavoriteIds((current) => [...current, listingId]);
       }
-      setFavoriteIds((current) =>
-        current.includes(listingId) ? current : [...current, listingId]
-      );
-    } catch (error) {
-      Alert.alert("Oops", "Could not add favorite right now.");
     }
   };
 
-  if (activeError && !activeLoading) {
+  const isLoading = listingsLoading || nearbyLoading || categoryLoading;
+  const hasError = listingsError || nearbyError || categoryError;
+
+  if (hasError && !isLoading) {
     return (
       <ErrorStateScreen
         type="network"
         title="Unable to load listings"
-        message="We could not fetch listings right now. Check your network and retry."
-        onRetry={() => {
-          if (activeFilter === "nearby") {
-            fetchNearbyListings(location?.latitude, location?.longitude);
-          } else if (fetchNewestListings) {
-            fetchNewestListings();
-          } else {
-            fetchAllListings();
-          }
-        }}
+        message="Check your network and retry."
+        onRetry={handleRefresh}
       />
     );
   }
 
   const renderListEmpty = () => (
-    <View style={[styles.emptyContainer, { backgroundColor: themeColors.surface }]}>
-      <View style={styles.emptyIconCircle}>
-        <MaterialCommunityIcons name="package-variant-closed" size={40} color={colors.primary} />
-      </View>
-      <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No Products Found</Text>
-      <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}> 
-        {activeFilter === "nearby" 
-          ? "No nearby products found. Try expanding your search radius or check other categories."
-          : activeFilter === "topRated"
-          ? "No top-rated products found at the moment."
-          : "No products found. Check back later for new listings!"}
-      </Text>
-      {activeFilter === "nearby" && (
-        <TouchableOpacity 
-          style={styles.clearFilterButton}
-          onPress={() => handleFilterPress("nearby")}
-        >
-          <Text style={styles.clearFilterText}>Clear Nearby Filter</Text>
-        </TouchableOpacity>
-      )}
+    <View style={styles.emptyContainer}>
+      <MaterialCommunityIcons name="package-variant-closed" size={50} color={colors.medium} />
     </View>
   );
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: user?.name || "Explorer",
+      headerSubtitle: `Welcome back · `,
+      headerRight: () =>
+        isGuest ? null : (
+          <TouchableOpacity
+            style={[styles.notificationButton, { backgroundColor: themeColors.surface }]}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate(routes.NOTIFICATIONS)}
+          >
+            <View style={styles.notificationBadge} />
+            <Ionicons name="notifications-outline" size={22} color={themeColors.text} />
+          </TouchableOpacity>
+        ),
+    });
+  }, [navigation, user?.name, isGuest, themeColors]);
+
   return (
     <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} scrollable={false} paddingSize="xs">
-      <ActivityIndicator visible={activeLoading} />
+      <ActivityIndicator visible={isLoading} />      
 
+      {/* Search Bar - Fixed at top */}
+      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+
+      {/* Category Filters */}
+      <CategoryFilters
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
+      />
+
+      {/* Quick Filters */}
+      <QuickFilters activeFilter={activeFilter} onFilterPress={handleFilterPress} />
+
+      {/* Products Grid */}
       <FlatList
         data={filteredListings}
-        keyExtractor={(listing) => listing.id.toString()}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <AnimatedSearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              isFocused={isSearchFocused}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        renderItem={({ item }) => (
+          <View style={styles.cardWrapper}>
+            <ProductCard
+              item={item}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, { id: item.id })}
+              onLikePress={() => handleFavoritePress(item.id)}
+              isLiked={favoriteIds.includes(item.id)}
+              isClosed={isClosedListing(item)}
             />
-            <TrendingCategories
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={handleSelectCategory}
-              onSeeAll={handleSeeAll}
-            />
-            <QuickFilters onFilterPress={handleFilterPress} activeFilter={activeFilter} />
           </View>
-        }
+        )}
         ListEmptyComponent={renderListEmpty}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.productsVerticalContainer}
-        renderItem={({ item, index }) => (
-          <AnimatedProductCard
-            item={item}
-            index={index}
-            onPress={() => navigation.navigate(routes.LISTING_DETAILS, item.id)}
-            onLikePress={!isGuest ? () => handleFavoritePress(item.id) : undefined}
-            isLiked={favoriteIds.includes(item.id)}
-            isClosed={isClosedListing(item)}
-            navigation={navigation}
-          />
-        )}
+        contentContainerStyle={styles.listContent}
       />
     </Screen>
   );
@@ -691,313 +317,39 @@ function ListingsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  columnWrapper: {
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+  },
+  cardWrapper: {
+    width: CARD_WIDTH,
+    marginBottom: 8,
+  },
+  listContent: {
+    paddingBottom: 80,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 80,
   },
   notificationButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.shadowColor || colors.shadowColorStrong,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    marginRight: 12,
+    padding: 6,
+    borderRadius: 20,
   },
   notificationBadge: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    top: 4,
+    right: 4,
     width: 8,
     height: 8,
     borderRadius: 4,
     zIndex: 1,
   },
-  listHeader: {
-    paddingBottom: 12,
-  },
-  searchWrapper: {
-    paddingHorizontal: 0,
-    marginBottom: 16,
-  },
-  searchBarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 48,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.shadowColor || colors.shadowColorStrong,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-    paddingVertical: 8,
-  },
-  quickFiltersSection: {
-    paddingHorizontal: 0,
-    marginBottom: 20,
-  },
-  quickFiltersScrollContent: {
-    paddingHorizontal: 0,
-  },
-  quickFilterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    paddingHorizontal: 13,
-    paddingVertical: 10,
-    borderRadius: 30,
-    marginRight: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.shadowColor || colors.shadowColorStrong,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  quickFilterChipActive: {
-    shadowOpacity: 0.2,
-    elevation: 3,
-  },
-  filterEmoji: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  filterLabel: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: "500",
-  },
-  filterLabelActive: {
-    color: "#FFF",
-  },
-  statsWidget: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    borderRadius: 20,
-    paddingVertical: 20,
-    overflow: "hidden",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFF",
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#FFF",
-    opacity: 0.9,
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: "#FFF",
-    opacity: 0.2,
-  },
-  trendingSection: {
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 0,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  seeAllText: {
-    fontSize: 13,
-    color: colors.primary,
-    fontWeight: "600",
-  },
-  categoriesContainer: {
-    paddingHorizontal: 0,
-    gap: 8,
-  },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 30,
-    marginRight: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.shadowColor || colors.shadowColorStrong,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  categoryEmoji: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  categoryName: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: "500",
-  },
-  emptyContainer: {
-    marginHorizontal: 16,
-    marginTop: 60,
-    backgroundColor: colors.surface,
-    borderRadius: 24,
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.shadowColor || colors.shadowColorStrong,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${colors.primary}10`,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyDescription: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  clearFilterButton: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-    backgroundColor: colors.primary,
-  },
-  clearFilterText: {
-    color: "#FFF",
-    fontWeight: "600",
-  },
-  productsVerticalContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 12,
-  },
-  productListCard: {
-    width: "100%",
-    marginRight: 0,
-    borderRadius: 20,
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.shadowColor || colors.shadowColorStrong,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  featuredBanner: {
-    marginHorizontal: 0,
-    marginBottom: 20,
-    borderRadius: 20,
-    padding: 20,
-    overflow: "hidden",
-  },
-  bannerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  bannerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFF",
-    marginBottom: 4,
-  },
-  bannerSubtitle: {
-    fontSize: 12,
-    color: "#FFF",
-    opacity: 0.9,
-    marginBottom: 12,
-  },
-  bannerButton: {
-    backgroundColor: "#FFF",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  bannerButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#FF6B6B",
-  },
-  bannerIcon: {
-    opacity: 0.8,
-  },
+
+
 });
 
 export default ListingsScreen;
