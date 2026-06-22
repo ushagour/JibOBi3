@@ -359,14 +359,14 @@ function LoginScreen({ navigation }) {
                 </View>
 
                 {/* Divider */}
-                <View style={styles.divider}>
+                {/* <View style={styles.divider}>
                   <View style={styles.dividerLine} />
                   <Text style={styles.dividerText}>{t("auth_screens.or_continue_with")}</Text>
                   <View style={styles.dividerLine} />
-                </View>
+                </View> */}
 
                 {/* Social Media Login */}
-                <View style={styles.socialButtonsContainer}>
+                {/* <View style={styles.socialButtonsContainer}>
                   <TouchableOpacity
                     style={[styles.socialButton, { backgroundColor: "#DB4437" }]}
                     onPress={() => handleSocialLogin("Google")}
@@ -390,7 +390,7 @@ function LoginScreen({ navigation }) {
                   >
                     <MaterialCommunityIcons name="apple" size={24} color="#FFF" />
                   </TouchableOpacity>
-                </View>
+                </View> */}
               </Animated.View>
             </View>
           </TouchableWithoutFeedback>

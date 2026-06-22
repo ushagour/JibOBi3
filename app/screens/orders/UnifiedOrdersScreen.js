@@ -4,6 +4,7 @@ import {
   FlatList,
   StyleSheet,
   View,
+  Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -57,6 +58,7 @@ function UnifiedOrdersScreen({ navigation }) {
     asBuyer: { total: 0, pending: 0, shipped: 0, delivered: 0 },
     asSeller: { total: 0, pending: 0, shipped: 0, delivered: 0 },
   });
+
 
   const userId = user?.userId;
 
@@ -220,18 +222,21 @@ function UnifiedOrdersScreen({ navigation }) {
   );
 
   // Render role badge
-  const renderRoleBadge = (order) => (
-    <View style={[styles.roleBadge, { backgroundColor: `${order.roleColor}15` }]}>
-      <MaterialCommunityIcons name={order.roleIcon} size={14} color={order.roleColor} />
-      <Text style={[styles.roleText, { color: order.roleColor }]}>
-        {order.roleLabel} from {order.otherParty}
-      </Text>
-    </View>
-  );
+  // const renderRoleBadge = (order) => (
+  //   <View style={[styles.roleBadge, { backgroundColor: `${order.roleColor}15` }]}>
+  //     <MaterialCommunityIcons name={order.roleIcon} size={14} color={order.roleColor} />
+  //     <Text style={[styles.roleText, { color: order.roleColor }]}>
+  //       {order.roleLabel} from {order.otherParty}
+  //     </Text>
+  //   </View>
+  // );
 
   // Render order card
   const renderOrderCard = ({ item }) => {
     const statusConfig = STATUS_CONFIG[item.normalizedStatus] || STATUS_CONFIG.pending;
+
+    console.log(item);
+    
     
     return (
       <TouchableOpacity
@@ -256,13 +261,13 @@ function UnifiedOrdersScreen({ navigation }) {
         {/* Card Content */}
         <View style={styles.cardContent}>
           {/* Role Badge */}
-          {renderRoleBadge(item)}
+          {/* {renderRoleBadge(item)} */}
 
           {/* Product Info */}
           <View style={styles.productSection}>
             <View style={styles.imageContainer}>
-              {item.listing_image ? (
-                <Image source={{ uri: item.listing_image }} style={styles.productImage} />
+              {item.Listing.imageUrl ? (
+                <Image source={{ uri: item.Listing.imageUrl }} style={styles.productImage} />
               ) : (
                 <View style={styles.imagePlaceholder}>
                   <MaterialCommunityIcons name="package-variant" size={24} color={statusConfig.color} />
@@ -272,7 +277,7 @@ function UnifiedOrdersScreen({ navigation }) {
 
             <View style={styles.productDetails}>
               <Text style={styles.productName} numberOfLines={2}>
-                {item.listing_title || "Product"}
+                {item.Listing.title || "Product"}
               </Text>
               
               <View style={styles.detailsGrid}>
@@ -286,7 +291,7 @@ function UnifiedOrdersScreen({ navigation }) {
                   <MaterialCommunityIcons name="currency-usd" size={12} color="#666" />
                   <Text style={styles.detailLabel}>Total:</Text>
                   <Text style={[styles.price, { color: statusConfig.color }]}>
-                    ${(item.total_price || item.price || 0).toFixed(2)}
+                    {(item.total_price || item.price || 0).toFixed(2)} DH
                   </Text>
                 </View>
               </View>

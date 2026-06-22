@@ -40,8 +40,9 @@ function HeaderRightPopupMenu({ navigation }) {
         Alert.alert("Error", "Could not load notifications.");
         return;
       }
+      
 
-      setNotificationCount((response.data.notifications || []).length);
+      setNotificationCount((response.data.unreadCount));
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
       Alert.alert("Error", "Could not load notifications.");

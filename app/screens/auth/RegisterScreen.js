@@ -274,14 +274,14 @@ function RegisterScreen({ navigation }) {
                 </Form>
 
                 {/* Divider */}
-                <View style={styles.divider}>
+                {/* <View style={styles.divider}>
                   <View style={styles.dividerLine} />
                   <Text style={styles.dividerText}>{t("auth_screens.or_sign_up_with")}</Text>
                   <View style={styles.dividerLine} />
-                </View>
+                </View> */}
 
                 {/* Social Media Registration */}
-                <View style={styles.socialButtonsContainer}>
+                {/* <View style={styles.socialButtonsContainer}>
                   <TouchableOpacity
                     style={[styles.socialButton, { backgroundColor: "#DB4437" }]}
                     onPress={() => handleSocialRegister("Google")}
@@ -305,7 +305,7 @@ function RegisterScreen({ navigation }) {
                   >
                     <MaterialCommunityIcons name="apple" size={22} color="#FFF" />
                   </TouchableOpacity>
-                </View>
+                </View> */}
 
                 {/* Navigate to Login */}
                 <View style={styles.loginContainer}>

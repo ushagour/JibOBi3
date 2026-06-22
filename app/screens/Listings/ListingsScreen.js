@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   columnWrapper: {
     justifyContent: "space-between",
-    paddingHorizontal: 8,
+    paddingHorizontal:14,
   },
   cardWrapper: {
     width: CARD_WIDTH,
