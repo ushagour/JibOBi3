@@ -3,6 +3,7 @@ import { Alert, Keyboard, StyleSheet, TouchableOpacity, View } from "react-nativ
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Yup from "yup";
 import { useFormikContext } from "formik";
+import { useTranslation } from "react-i18next";
 
 import colors from "../config/colors";
 import Text from "./Text";
@@ -46,6 +47,7 @@ function RatingSelector({ targetLabel = "listing", targetName }) {
 
 function AddReviewForm({ listing, targetLabel = "listing", targetName, onSuccess }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const handleSubmit = async ({ rating, content }, { resetForm }) => {
     Keyboard.dismiss();
@@ -53,7 +55,7 @@ function AddReviewForm({ listing, targetLabel = "listing", targetName, onSuccess
     const userId = user?.userId ?? user?.id;
 
     if (!userId) {
-      Alert.alert("Error", "You need to be signed in to submit a review.");
+      Alert.alert(t('common.error'), t('alerts.sign_in_required'));
       return;
     }
 
@@ -65,12 +67,12 @@ function AddReviewForm({ listing, targetLabel = "listing", targetName, onSuccess
     });
 
     if (!result.ok) {
-      Alert.alert("Error", "Could not submit your review.");
+      Alert.alert(t('common.error'), t('review_management.error_deleting'));
       return;
     }
 
     resetForm();
-    Alert.alert("Success", "Your review has been posted.");
+    Alert.alert(t('common.success'), t('reviews_flow.review_posted'));
 
     if (onSuccess) {
       onSuccess(result.data);
@@ -90,10 +92,10 @@ function AddReviewForm({ listing, targetLabel = "listing", targetName, onSuccess
         multiline
         name="content"
         numberOfLines={4}
-        placeholder={`Write your review about the ${targetLabel}${targetName ? ` ${targetName}` : ""}...`}
+        placeholder={t('reviews_flow.write_review', { target: targetLabel + (targetName ? ` ${targetName}` : "") })}
       />
 
-      <SubmitButton title="Submit Review" />
+      <SubmitButton title={t('reviews_flow.submit_review')} />
     </Form>
   );
 }

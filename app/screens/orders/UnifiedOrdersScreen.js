@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -38,16 +39,19 @@ const ORDER_STATUS = {
   CANCELLED: "cancelled",
 };
 
-const STATUS_CONFIG = {
-  pending: { label: "Pending", color: "#FFC107", icon: "clock-outline", bg: "#FFF8E1" },
-  processing: { label: "Processing", color: "#2196F3", icon: "cog", bg: "#E3F2FD" },
-  shipped: { label: "Shipped", color: "#9C27B0", icon: "truck-delivery", bg: "#F3E5F5" },
-  delivered: { label: "Delivered", color: "#4CAF50", icon: "package-variant", bg: "#E8F5E9" },
-  completed: { label: "Completed", color: "#2ECC71", icon: "check-circle", bg: "#F0FFF4" },
-  cancelled: { label: "Cancelled", color: "#F44336", icon: "close-circle", bg: "#FFEBEE" },
-};
+function getStatusConfig(t) {
+  return {
+    pending: { label: t("orders_unified.status_pending"), color: "#FFC107", icon: "clock-outline", bg: "#FFF8E1" },
+    processing: { label: t("orders_unified.status_processing"), color: "#2196F3", icon: "cog", bg: "#E3F2FD" },
+    shipped: { label: t("orders_unified.status_shipped"), color: "#9C27B0", icon: "truck-delivery", bg: "#F3E5F5" },
+    delivered: { label: t("orders_unified.status_delivered"), color: "#4CAF50", icon: "package-variant", bg: "#E8F5E9" },
+    completed: { label: t("orders_unified.status_completed"), color: "#2ECC71", icon: "check-circle", bg: "#F0FFF4" },
+    cancelled: { label: t("orders_unified.status_cancelled"), color: "#F44336", icon: "close-circle", bg: "#FFEBEE" },
+  };
+}
 
 function UnifiedOrdersScreen({ navigation }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(ORDER_TYPES.AS_BUYER);
   const [buyerOrders, setBuyerOrders] = useState([]);
@@ -59,7 +63,7 @@ function UnifiedOrdersScreen({ navigation }) {
     asSeller: { total: 0, pending: 0, shipped: 0, delivered: 0 },
   });
 
-
+  const STATUS_CONFIG = getStatusConfig(t);
   const userId = user?.userId;
 
   // Load all orders
@@ -72,7 +76,7 @@ function UnifiedOrdersScreen({ navigation }) {
       const response = await ordersApi.getOrders();
       
       if (!response.ok || !response.data) {
-        Alert.alert("Error", "Could not load orders.");
+        Alert.alert(t("common.error"), t("orders_errors.load_error"));
         return;
       }
 
@@ -93,9 +97,9 @@ function UnifiedOrdersScreen({ navigation }) {
         type: ORDER_TYPES.AS_BUYER,
         normalizedStatus: String(order?.status || "").toLowerCase(),
         roleIcon: "cart-outline",
-        roleLabel: "You purchased",
+        roleLabel: t("orders_unified.you_purchased"),
         roleColor: "#4CAF50",
-        otherParty: order.seller_name || "Seller",
+        otherParty: order.seller_name || t("common.unknown"),
         otherPartyId: order.seller_id,
       }));
 
@@ -104,9 +108,9 @@ function UnifiedOrdersScreen({ navigation }) {
         type: ORDER_TYPES.AS_SELLER,
         normalizedStatus: String(order?.status || "").toLowerCase(),
         roleIcon: "storefront-outline",
-        roleLabel: "Someone bought",
+        roleLabel: t("orders_unified.someone_bought"),
         roleColor: "#2196F3",
-        otherParty: order.buyer_name || "Buyer",
+        otherParty: order.buyer_name || t("common.unknown"),
         otherPartyId: order.buyer_id,
       }));
 
@@ -118,12 +122,12 @@ function UnifiedOrdersScreen({ navigation }) {
 
     } catch (error) {
       console.error("Failed to load orders:", error);
-      Alert.alert("Error", "Could not load orders.");
+      Alert.alert(t("common.error"), t("orders_errors.load_error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userId]);
+  }, [userId, t]);
 
   const calculateStats = (buyer, seller) => {
     setStats({
@@ -157,10 +161,10 @@ function UnifiedOrdersScreen({ navigation }) {
       const response = await ordersApi.updateOrderStatus(order.id, newStatus);
       if (response.ok) {
         loadAllOrders(); // Reload all orders
-        Alert.alert("Success", `Order ${newStatus} successfully`);
+        Alert.alert(t("common.success"), t("orders_unified.update_success", { status: newStatus }));
       }
     } catch (error) {
-      Alert.alert("Error", "Could not update order");
+      Alert.alert(t("common.error"), t("orders_errors.update_error"));
     }
   };
 

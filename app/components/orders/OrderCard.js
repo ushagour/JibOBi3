@@ -1,5 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import Text from "../Text";
 import colors from "../../config/colors";
@@ -19,7 +20,8 @@ function formatDate(dateValue) {
 }
 
 function OrderCard({ order, onPress }) {
-  const title = order?.Listing?.title || order?.listing?.title || "Order";
+  const { t } = useTranslation();
+  const title = order?.Listing?.title || order?.listing?.title || t("orders_unified.product_fallback");
   const totalPrice = order?.total_price ?? order?.total_amount;
 
   return (
@@ -34,20 +36,20 @@ function OrderCard({ order, onPress }) {
       </View>
 
       <View style={styles.metaRow}>
-        <Text style={styles.metaText}>Qty: {order?.quantity || 1}</Text>
-        <Text style={styles.metaText}>Total: {formatCurrency(totalPrice)}</Text>
+        <Text style={styles.metaText}>{t("order_item.qty")} {order?.quantity || 1}</Text>
+        <Text style={styles.metaText}>{t("order_item.total_label")} {formatCurrency(totalPrice)}</Text>
       </View>
 
       <View style={styles.metaRow}>
         <Text style={styles.metaText} numberOfLines={1}>
-          Phone: {order?.phone || "-"}
+          {t("orders_checkout.phone")}: {order?.phone || "-"}
         </Text>
         <Text style={styles.metaText}>{formatDate(order?.createdAt)}</Text>
       </View>
 
       {order?.shipping_address ? (
         <Text style={styles.address} numberOfLines={2}>
-          Address: {order.shipping_address}
+          {t("orders_checkout.shipping_address")}: {order.shipping_address}
         </Text>
       ) : null}
     </Pressable>

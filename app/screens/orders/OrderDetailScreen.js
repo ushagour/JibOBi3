@@ -13,6 +13,7 @@ import {
   FlatList,
   Animated,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
 import { MaterialCommunityIcons, MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -29,6 +30,7 @@ import useAuth from "../../auth/useAuth";
 import routes from "../../navigation/routes";
 
 const OrderDetailScreen = ({ route, navigation }) => {
+  const { t } = useTranslation();
   const { order: initialOrder } = route.params || {};
   const { user } = useAuth();
   const { colors: themeColors, isDark } = useTheme();
@@ -41,11 +43,11 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const [selectedSeller, setSelectedSeller] = useState(null);
 
   const reportReasons = [
-    { id: "behavior", label: "Inappropriate seller behavior", icon: "block-helper" },
-    { id: "scam", label: "Suspicious or scam transaction", icon: "security" },
-    { id: "quality", label: "Poor quality or condition mismatch", icon: "alert-circle" },
-    { id: "nodelivery", label: "Non-delivery or incomplete order", icon: "package-x" },
-    { id: "other", label: "Other issue", icon: "help" },
+    { id: "behavior", label: t('orders_detail.reason_inappropriate'), icon: "block-helper" },
+    { id: "scam", label: t('orders_detail.reason_scam'), icon: "security" },
+    { id: "quality", label: t('orders_detail.reason_quality'), icon: "alert-circle" },
+    { id: "nodelivery", label: t('orders_detail.reason_delivery'), icon: "package-x" },
+    { id: "other", label: t('orders_detail.reason_other'), icon: "help" },
   ];
 
   useEffect(() => {
@@ -65,11 +67,11 @@ const OrderDetailScreen = ({ route, navigation }) => {
         setOrder(response.data);
       } else {
         if (__DEV__) console.error("Failed to fetch order:", response);
-        Alert.alert("Error", "Could not load order details. Please try again.");
+        Alert.alert(t('common.error'), t('orders_detail.order_details_error'));
       }
     } catch (error) {
       if (__DEV__) console.error("Failed to fetch order detail:", error);
-      Alert.alert("Error", "Failed to load order details. Please try again.");
+      Alert.alert(t('common.error'), t('orders_detail.order_details_error'));
     } finally {
       setLoading(false);
     }
@@ -97,19 +99,19 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const handleCloseOrder = () => {
     // Only seller can close the order
     if (!seller || user?.id !== seller?.id) {
-      Alert.alert("Permission denied", "Only the seller can close this order.");
+      Alert.alert(t('orders_detail.permission_denied'), t('orders_detail.seller_only_close'));
       return;
     }
 
     if (!order || !order.id) return;
 
     Alert.alert(
-      "Confirm close order",
-      "This order is already marked as successful. Do you want to close it now as the listing owner?",
+      t('orders_detail.confirm_close'),
+      t('orders_detail.close_confirmation'),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('common.cancel'), style: "cancel" },
         {
-          text: "Yes, close order",
+          text: t('orders_detail.yes_close_order'),
           onPress: async () => {
             setLoading(true);
             try {
@@ -117,13 +119,13 @@ const OrderDetailScreen = ({ route, navigation }) => {
               if (resp && resp.ok) {
                 // try to update local order state from response or fallback
                 setOrder((prev) => ({ ...(prev || {}), status: "completed" , ...(resp.data || {}) }));
-                Alert.alert("Order closed", "The order has been marked as completed.");
+                Alert.alert(t('orders_detail.order_closed'), t('orders_detail.order_closed_success'));
               } else {
-                Alert.alert("Failed", "Could not close the order. Please try again.");
+                Alert.alert(t('orders_detail.failed'), t('orders_detail.close_failed'));
               }
             } catch (err) {
               if (__DEV__) console.error("Close order failed:", err);
-              Alert.alert("Error", "Something went wrong while closing the order.");
+              Alert.alert(t('common.error'), t('orders_detail.something_went_wrong'));
             } finally {
               setLoading(false);
             }
@@ -135,7 +137,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
   const submitReport = async () => {
     if (!order?.id) {
-      Alert.alert("Error", "Order ID is missing. Please try again.");
+      Alert.alert(t('common.error'), t('orders_detail.order_id_missing'));
       return;
     }
 
@@ -155,22 +157,22 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
         setReportModalVisible(false);
         Alert.alert(
-          "Report submitted",
-          `Thanks. We received your report for: ${reason?.label || selectedSeller?.name || "this seller"}. Our team will review it shortly.`
+          t('orders_detail.report_submitted'),
+          t('orders_detail.report_success_message').replace('{reason}', reason?.label || selectedSeller?.name || t('common.user'))
         );
       } else {
         const statusCode = response?.error?.response?.status;
         if (statusCode === 409) {
           setOrder((prev) => ({ ...(prev || {}), hasReported: true }));
           setReportModalVisible(false);
-          Alert.alert("Already reported", "You have already reported this order.");
+          Alert.alert(t('orders_detail.already_reported'), t('orders_detail.already_reported_message'));
         } else {
-          Alert.alert("Error", "Could not submit your report. Please try again.");
+          Alert.alert(t('common.error'), t('orders_detail.report_failed'));
         }
       }
     } catch (error) {
       if (__DEV__) console.error("Failed to report order:", error);
-      Alert.alert("Error", "Could not submit your report. Please try again.");
+      Alert.alert(t('common.error'), t('orders_detail.report_failed'));
     } finally {
       setReportSubmitting(false);
       setSelectedSeller(null);
@@ -194,12 +196,12 @@ const OrderDetailScreen = ({ route, navigation }) => {
             color={colors.medium}
             style={{ marginBottom: 16 }}
           />
-          <Text style={styles.emptyTitle}>Order not found</Text>
+          <Text style={styles.emptyTitle}>{t('orders_detail.order_not_found')}</Text>
           <Text style={styles.emptyText}>
-            The order details could not be loaded. Please try again or return to your orders.
+            {t('orders_detail.order_details_error')}
           </Text>
           <AppButton
-            title="Back to Orders"
+            title={t('orders_detail.back_to_orders')}
             onPress={() => navigation.navigate(routes.ORDERS)}
             variant="primary"
             style={{ marginTop: 16 }}
@@ -253,7 +255,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Order ID */}
         <View style={styles.headerSection}>
-          <Text style={styles.orderId}>Order #{order?.id}</Text>
+          <Text style={styles.orderId}>{t('orders_detail.order_id', { id: order?.id })}</Text>
           <View style={styles.headerStatusWrap}>
             <View style={styles.statusBadge}>
               <View
@@ -275,7 +277,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
             {isSoldListing && (
               <View style={styles.soldListingBadge}>
                 <MaterialCommunityIcons name="check-decagram" size={14} color={colors.white} />
-                <Text style={styles.soldListingBadgeText}>Sold listing</Text>
+                <Text style={styles.soldListingBadgeText}>{t('orders_detail.sold_listing')}</Text>
               </View>
             )}
           </View>
@@ -287,12 +289,12 @@ const OrderDetailScreen = ({ route, navigation }) => {
         {/* Buyer + Seller Information */}
         <View style={styles.section}>
           <View style={styles.dualInfoHeader}>
-            <Text style={styles.sectionTitle}>People</Text>
+            <Text style={styles.sectionTitle}>{t('orders_detail.people')}</Text>
           </View>
 
           <View style={[styles.dualInfoRow, { backgroundColor: themeColors.surface }]}>
             <View style={styles.personCard}>
-              <Text style={styles.personLabel}>Buyer</Text>
+              <Text style={styles.personLabel}>{t('orders_detail.buyer')}</Text>
               <View style={styles.personRow}>
                 <Avatar
                   name={buyer?.name}
@@ -301,8 +303,8 @@ const OrderDetailScreen = ({ route, navigation }) => {
                   bgColor={colors.primary}
                 />
                 <View style={styles.personInfo}>
-                  <Text style={styles.personName} numberOfLines={1}>{buyer?.name || "N/A"}</Text>
-                  <Text style={styles.personMeta} numberOfLines={1}>{buyer?.email || "N/A"}</Text>
+                  <Text style={styles.personName} numberOfLines={1}>{buyer?.name || t('orders_detail.n_a')}</Text>
+                  <Text style={styles.personMeta} numberOfLines={1}>{buyer?.email || t('orders_detail.n_a')}</Text>
                 </View>
               </View>
             </View>
@@ -310,7 +312,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
             <View style={styles.peopleDivider} />
 
             <View style={styles.personCard}>
-              <Text style={styles.personLabel}>Seller</Text>
+              <Text style={styles.personLabel}>{t('orders_detail.seller')}</Text>
               <View style={styles.personRow}>
                 <Avatar
                   name={seller?.name}
@@ -319,8 +321,8 @@ const OrderDetailScreen = ({ route, navigation }) => {
                   bgColor={colors.primary}
                 />
                 <View style={styles.personInfo}>
-                  <Text style={styles.personName} numberOfLines={1}>{seller?.name || "N/A"}</Text>
-                  <Text style={styles.personMeta} numberOfLines={1}>{seller?.email || "N/A"}</Text>
+                  <Text style={styles.personName} numberOfLines={1}>{seller?.name || t('orders_detail.n_a')}</Text>
+                  <Text style={styles.personMeta} numberOfLines={1}>{seller?.email || t('orders_detail.n_a')}</Text>
                   {seller?.phone && <Text style={styles.personMeta} numberOfLines={1}>{seller.phone}</Text>}
                 </View>
                 {seller?.id && (
@@ -339,7 +341,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
         {/* Item Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Item Details</Text>
+          <Text style={styles.sectionTitle}>{t('orders_detail.item_details')}</Text>
           <View style={[styles.itemCard, { backgroundColor: themeColors.surface }]}>
             {currentImageUrl ? (
               <View style={styles.imageCarouselWrap}>
@@ -407,20 +409,20 @@ const OrderDetailScreen = ({ route, navigation }) => {
               </View>
             )}
 
-            <Text style={styles.itemTitle}>{listing?.title || "N/A"}</Text>
+            <Text style={styles.itemTitle}>{listing?.title || t('orders_detail.n_a')}</Text>
             <Text style={styles.itemDescription} numberOfLines={3}>
-              {listing?.description || "No description"}
+              {listing?.description || t('orders_detail.no_description')}
             </Text>
 
             <View style={styles.itemPriceRow}>
               <View>
-                <Text style={styles.itemLabel}>Unit Price</Text>
+                <Text style={styles.itemLabel}>{t('orders_detail.unit_price')}</Text>
                   <Text style={styles.itemPrice}>
-                    {listing?.price ? `${listing.price.toFixed(2)} DH` : "N/A"}
+                    {listing?.price ? `${listing.price.toFixed(2)} DH` : t('orders_detail.n_a')}
                   </Text>
               </View>
               <View>
-                <Text style={styles.itemLabel}>Quantity</Text>
+                <Text style={styles.itemLabel}>{t('orders_detail.quantity')}</Text>
                 <Text style={styles.itemPrice}>{order?.quantity || 1}</Text>
               </View>
             </View>
@@ -429,7 +431,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
         {/* Shipping Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Shipping Information</Text>
+          <Text style={styles.sectionTitle}>{t('orders_detail.shipping_info')}</Text>
           <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.infoRow}>
               <MaterialCommunityIcons
@@ -438,9 +440,9 @@ const OrderDetailScreen = ({ route, navigation }) => {
                 color={colors.primary}
               />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Address</Text>
+                <Text style={styles.infoLabel}>{t('orders_detail.address')}</Text>
                 <Text style={styles.infoValue}>
-                  {order?.shipping_address || "N/A"}
+                  {order?.shipping_address || t('orders_detail.n_a')}
                 </Text>
               </View>
             </View>
@@ -452,8 +454,8 @@ const OrderDetailScreen = ({ route, navigation }) => {
                 color={colors.primary}
               />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Phone</Text>
-                <Text style={styles.infoValue}>{order?.phone || "N/A"}</Text>
+                <Text style={styles.infoLabel}>{t('orders_detail.phone')}</Text>
+                <Text style={styles.infoValue}>{order?.phone || t('orders_detail.n_a')}</Text>
               </View>
             </View>
 
@@ -465,7 +467,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
                   color={colors.primary}
                 />
                 <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Notes</Text>
+                  <Text style={styles.infoLabel}>{t('orders_detail.notes')}</Text>
                   <Text style={styles.infoValue}>{order.notes}</Text>
                 </View>
               </View>
@@ -475,38 +477,38 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
         {/* Payment Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Details</Text>
+          <Text style={styles.sectionTitle}>{t('orders_detail.payment_details')}</Text>
           <View style={[styles.priceCard, { backgroundColor: themeColors.surface }]}>
             <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Unit Price</Text>
+              <Text style={styles.priceLabel}>{t('orders_detail.unit_price')}</Text>
                 <Text style={styles.priceValue}>
-                  {listing?.price ? `${listing.price.toFixed(2)} DH` : "N/A"}
+                  {listing?.price ? `${listing.price.toFixed(2)} DH` : t('orders_detail.n_a')}
                 </Text>
             </View>
 
             <View style={[styles.priceRow, styles.borderTop]}>
-              <Text style={styles.priceLabel}>Quantity</Text>
+              <Text style={styles.priceLabel}>{t('orders_detail.quantity')}</Text>
               <Text style={styles.priceValue}>{order?.quantity || 1}</Text>
             </View>
 
             <View style={[styles.priceRow, styles.borderTop]}>
-              <Text style={styles.priceLabelBold}>Total</Text>
+              <Text style={styles.priceLabelBold}>{t('orders_detail.total')}</Text>
               <Text style={styles.priceTotalValue}>
-                  {order?.total_price ? `${order.total_price.toFixed(2)} DH` : "N/A"}
+                  {order?.total_price ? `${order.total_price.toFixed(2)} DH` : t('orders_detail.n_a')}
               </Text>
             </View>
 
             <View style={[styles.priceRow, styles.borderTop]}>
-              <Text style={styles.priceLabel}>Payment Method</Text>
+              <Text style={styles.priceLabel}>{t('orders_detail.payment_method')}</Text>
               <Text style={styles.priceValue}>
                 {order?.payment_method === "cash_on_delivery"
-                  ? "Cash on Delivery"
-                  : order?.payment_method || "N/A"}
+                  ? t('orders_detail.cash_on_delivery')
+                  : order?.payment_method || t('orders_detail.n_a')}
               </Text>
             </View>
 
             <View style={[styles.priceRow, styles.borderTop]}>
-              <Text style={styles.priceLabel}>Payment Status</Text>
+              <Text style={styles.priceLabel}>{t('orders_detail.payment_status')}</Text>
               <Text
                 style={[
                   styles.priceValue,
@@ -534,14 +536,14 @@ const OrderDetailScreen = ({ route, navigation }) => {
           {canReportIssue && (
             <TouchableOpacity style={styles.reportButtonRow} onPress={handleReportPress} activeOpacity={0.8}>
               <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.danger} />
-              <Text style={styles.reportButtonText}>Report Issue</Text>
+              <Text style={styles.reportButtonText}>{t('orders_detail.report_issue')}</Text>
             </TouchableOpacity>
           )}
 
           {canCloseOrder && (
             <TouchableOpacity style={styles.closeButtonRow} onPress={handleCloseOrder} activeOpacity={0.8}>
               <MaterialCommunityIcons name="close-circle-outline" size={16} color={colors.success} />
-              <Text style={styles.closeButtonText}>Close Order</Text>
+              <Text style={styles.closeButtonText}>{t('orders_detail.close_order')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -554,7 +556,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
           
           <View style={styles.actionsLeft}>
             <AppButton
-              title="Back to Orders"
+              title={t('orders_detail.back_to_orders')}
               onPress={() => navigation.goBack()}
               variant="outline"
               size="md"
@@ -564,7 +566,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
           <View style={styles.actionsRight}>
             {order && isCompletedOrder && !order.hasReviewed && (
               <AppButton
-                title="Leave Review"
+                title={t('orders_detail.leave_review')}
                 onPress={openReviewModal}
                 variant="primary"
                 size="md"
@@ -594,7 +596,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
           >
             <View style={[styles.reviewModalCard, { backgroundColor: themeColors.surface }]}>
               <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Leave a Review for Seller</Text>
+                  <Text style={styles.modalTitle}>{t('orders_detail.leave_review_title')}</Text>
                 <TouchableOpacity onPress={closeReviewModal}>
                   <MaterialCommunityIcons
                     name="close"
@@ -634,7 +636,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
           
               <Animated.View style={[styles.reportModalCard, { backgroundColor: themeColors.surface }] }>
                 <LinearGradient colors={[colors.error, colors.error]} style={styles.reportModalHeader}>
-              <Text style={[styles.modalTitle, { color: '#FFF', fontSize: 18, fontWeight: '700' }]}>Report Seller</Text>
+              <Text style={[styles.modalTitle, { color: '#FFF', fontSize: 18, fontWeight: '700' }]}>{t('orders_detail.report_seller')}</Text>
               <TouchableOpacity onPress={closeReportModal} style={styles.modalCloseButton}>
                 <Ionicons name="close" size={24} color="#FFF" />
               </TouchableOpacity>
@@ -642,10 +644,10 @@ const OrderDetailScreen = ({ route, navigation }) => {
             
                 <ScrollView showsVerticalScrollIndicator={false} style={styles.reportModalContent}>
               <Text style={[styles.modalSubtitle, { marginBottom: 14, fontSize: 13, marginTop: 2 }]}>
-                Choose the reason that best matches the issue.
+                {t('orders_detail.report_reason_hint')}
               </Text>
               <Text style={styles.reportSellerName}>
-                Seller: {selectedSeller?.name || seller?.name || "Unknown seller"}
+                {t('orders_detail.seller_name_label', { name: selectedSeller?.name || seller?.name || t('orders_detail.unknown_seller') })}
               </Text>
               
               <FlatList
@@ -683,11 +685,11 @@ const OrderDetailScreen = ({ route, navigation }) => {
             
             <View style={styles.reportModalActions}>
               <TouchableOpacity style={styles.cancelButton} onPress={closeReportModal}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.submitButton} onPress={submitReport} disabled={reportSubmitting}>
                 <LinearGradient colors={[colors.error, colors.error]} style={styles.submitButtonGradient}>
-                  <Text style={styles.submitButtonText}>{reportSubmitting ? "Submitting..." : "Submit Report"}</Text>
+                  <Text style={styles.submitButtonText}>{reportSubmitting ? t('orders_detail.submitting') : t('orders_detail.submit_report')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

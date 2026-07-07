@@ -2,14 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import colors from '../../../config/colors';
 import useTheme from '../../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 
 const QuickFilters = ({ activeFilter, onFilterPress }) => {
   const { colors: themeColors } = useTheme();
+  const { t } = useTranslation();
   
   const filters = [
-    { icon: "📍", label: "Nearby", value: "nearby" },
-    { icon: "⭐", label: "Top Rated", value: "topRated" },
-    { icon: "🆕", label: "Newest", value: "newest" },
+    { icon: "📍", label: t("quick_filters.nearby"), value: "nearby" },
+    { icon: "⭐", label: t("quick_filters.top_rated"), value: "topRated" },
+    { icon: "🆕", label: t("quick_filters.newest"), value: "newest" },
   ];
 
   return (

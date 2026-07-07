@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef } from "react";
 import { Alert, StyleSheet, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 // import MapView, { Marker } from "react-native-maps";//todo it woeks on  developemt build 
 
 import Screen from "../../components/Screen";
@@ -20,6 +21,7 @@ function parsePrice(value) {
 }
 
 function OrderCheckoutScreen({ route, navigation }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { colors: themeColors, isDark } = useTheme();
   const listing = route?.params?.listing;
@@ -47,27 +49,27 @@ function OrderCheckoutScreen({ route, navigation }) {
     }
 
     if (!user?.userId) {
-      Alert.alert("Sign in required", "Please sign in to place an order.");
+      Alert.alert(t("orders_checkout.sign_in_required"), t("orders_checkout.sign_in_to_order"));
       return;
     }
 
     if (!listing?.id) {
-      Alert.alert("Error", "Listing not found.");
+      Alert.alert(t("orders_checkout.error_title"), t("orders_checkout.listing_not_found"));
       return;
     }
 
     if (!shippingAddress.trim()) {
-      Alert.alert("Missing address", "Please enter a shipping address.");
+      Alert.alert(t("orders_checkout.missing_address"), t("orders_checkout.missing_address"));
       return;
     }
 
     if (!phone.trim()) {
-      Alert.alert("Missing phone", "Please enter a phone number.");
+      Alert.alert(t("orders_checkout.missing_phone"), t("orders_checkout.missing_phone"));
       return;
     }
 
     if (!agreeToTerms) {
-      Alert.alert("Terms required", "Please agree to the terms and conditions.");
+      Alert.alert(t("orders_checkout.terms_required"), t("orders_checkout.terms_required"));
       return;
     }
 
@@ -89,7 +91,7 @@ function OrderCheckoutScreen({ route, navigation }) {
       });
 
       if (!response.ok) {
-        Alert.alert("Order failed", "Could not Confirm Request. Please try again.");
+        Alert.alert(t("orders_checkout.order_failed"), t("orders_checkout.order_failed"));
         // Allow retry
         submissionInProgressRef.current = false;
         return;
@@ -111,9 +113,9 @@ function OrderCheckoutScreen({ route, navigation }) {
 
       if (__DEV__) console.log("Created order response:", createdOrderRaw, createdOrder);
 
-      Alert.alert("Order placed", "Your order has been created successfully.", [
+      Alert.alert(t("orders_checkout.order_created"), t("orders_checkout.order_created"), [
         {
-          text: "View Order Details",
+          text: t("orders_checkout.view_order"),
           onPress: () => {
             // Navigate to order details screen with the created order
             // Pass the order with all available data for the details screen to use
@@ -130,7 +132,7 @@ function OrderCheckoutScreen({ route, navigation }) {
           },
         },
         {
-          text: "OK",
+          text: t("common.ok"),
           onPress: () => {
             // Navigate to orders list
             navigation.navigate(routes.ORDERS);
@@ -139,7 +141,7 @@ function OrderCheckoutScreen({ route, navigation }) {
       ]);
     } catch (error) {
       if (__DEV__) console.error("Create order failed:", error);
-      Alert.alert("Order failed", "Could not Confirm Request. Please try again.");
+      Alert.alert(t("orders_checkout.order_failed"), t("orders_checkout.order_failed"));
       // Allow retry on error
       submissionInProgressRef.current = false;
     } finally {
@@ -149,8 +151,8 @@ function OrderCheckoutScreen({ route, navigation }) {
 
   return (
     <Screen style={styles.screen} paddingSize="lg">
-      <Text style={styles.title}>Checkout</Text>
-      <Text style={styles.subtitle}>Complete the details to place your order.</Text>
+      <Text style={styles.title}>{t("navigation.checkout")}</Text>
+      <Text style={styles.subtitle}>{t("orders_checkout.subtitle")}</Text>
 
       {location && (
         <MapView
@@ -173,14 +175,14 @@ function OrderCheckoutScreen({ route, navigation }) {
 
       <View style={[styles.summaryCard, { backgroundColor: themeColors.surface }]}>
         <Text style={styles.listingTitle} numberOfLines={2}>
-          {listing?.title || "Listing"}
+          {listing?.title || t("orders_checkout.listing_fallback")}
         </Text>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Unit price</Text>
+          <Text style={styles.summaryLabel}>{t("orders_checkout.unit_price")}</Text>
           <Text style={styles.summaryValue}>{unitPrice.toFixed(2)} DH</Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Quantity</Text>
+          <Text style={styles.summaryLabel}>{t("orders_checkout.quantity")}</Text>
           <View style={styles.quantityControl}>
             <TouchableOpacity
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
@@ -200,34 +202,34 @@ function OrderCheckoutScreen({ route, navigation }) {
           </View>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total</Text>
+          <Text style={styles.summaryLabel}>{t("orders_checkout.total")}</Text>
           <Text style={styles.totalValue}>{total.toFixed(2)} DH</Text>
         </View>
       </View>
 
       <View style={[styles.userInfoCard, { backgroundColor: themeColors.surface }]}>
-        <Text style={styles.sectionLabel}>Your Information</Text>
+        <Text style={styles.sectionLabel}>{t("orders_checkout.your_info")}</Text>
         <View style={styles.userInfoRow}>
-          <Text style={styles.userInfoLabel}>Name</Text>
-          <Text style={styles.userInfoValue}>{user?.firstName || ""} {user?.lastName || ""}</Text>
+          <Text style={styles.userInfoLabel}>{t("orders_checkout.name")}</Text>
+          <Text style={styles.userInfoValue}>{user?.name || "ali"} </Text>
         </View>
         <View style={styles.userInfoRow}>
-          <Text style={styles.userInfoLabel}>Email</Text>
-          <Text style={styles.userInfoValue}>{user?.email || "N/A"}</Text>
+          <Text style={styles.userInfoLabel}>{t("common.email")}</Text>
+          <Text style={styles.userInfoValue}>{user?.email || t("common.na")}</Text>
         </View>
       </View>
 
       <AppTextInput
-        label="Shipping Address"
-        placeholder="City, street, apartment..."
+        label={t("orders_checkout.shipping_address")}
+        placeholder={t("orders_checkout.address_placeholder")}
         value={shippingAddress}
         onChangeText={setShippingAddress}
         disabled={loading}
       />
 
       <AppTextInput
-        label="Phone"
-        placeholder="06XXXXXXXX"
+        label={t("orders_checkout.phone")}
+        placeholder={t("orders_checkout.phone_placeholder")}
         keyboardType="phone-pad"
         value={phone}
         onChangeText={setPhone}
@@ -235,8 +237,8 @@ function OrderCheckoutScreen({ route, navigation }) {
       />
 
       <AppTextInput
-        label="Notes (optional)"
-        placeholder="Any delivery notes"
+        label={t("orders_checkout.notes_optional")}
+        placeholder={t("orders_checkout.notes_placeholder")}
         value={notes}
         onChangeText={setNotes}
         multiline
@@ -257,12 +259,12 @@ function OrderCheckoutScreen({ route, navigation }) {
           />
         </View>
         <Text style={styles.termsText}>
-          I agree to the terms and conditions
+          {t("orders_checkout.agree_terms")}
         </Text>
       </TouchableOpacity>
 
       <AppButton
-        title={loading ? "Placing..." : "Confirm Request"}
+        title={loading ? t("orders_checkout.placing") : t("orders_checkout.confirm_request")}
         onPress={handlePlaceOrder}
         loading={loading}
         variant="primary"
@@ -270,7 +272,7 @@ function OrderCheckoutScreen({ route, navigation }) {
       />
 
       <AppButton
-        title="Back to Listing"
+        title={t("orders_checkout.back_to_listing")}
         onPress={() => navigation.goBack()}
         variant="outline"
         size="md"

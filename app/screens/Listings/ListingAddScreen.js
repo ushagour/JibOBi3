@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import * as Yup from "yup";
 import { useFormikContext } from "formik";
+import { useTranslation } from "react-i18next";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Text from "../../components/Text";
 import AnimatedHeader from "../../components/AnimatedHeader";
@@ -44,6 +45,7 @@ import useAuth from "../../auth/useAuth";
 // Additional Details Fields Component
 function AdditionalDetailsFields() {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { t } = useTranslation();
   const { colors: themeColors } = useTheme();
 
   return (
@@ -54,7 +56,7 @@ function AdditionalDetailsFields() {
       >
         <View style={styles.advancedHeaderLeft}>
           <MaterialCommunityIcons name="tune" size={20} color={colors.primary} />
-          <Text style={styles.advancedHeaderTitle}>Additional Details</Text>
+          <Text style={styles.advancedHeaderTitle}>{t('listing_add.additional_details')}</Text>
         </View>
         <MaterialCommunityIcons
           name={showAdvanced ? "chevron-up" : "chevron-down"}
@@ -65,14 +67,14 @@ function AdditionalDetailsFields() {
 
       {showAdvanced && (
         <View style={styles.advancedContent}>
-          <FormField maxLength={50} name="carModel" placeholder="Model / Brand" icon="car" />
-          <FormField maxLength={50} name="carColor" placeholder="Color" icon="palette" />
-          <FormField maxLength={50} name="carSize" placeholder="Size / Dimensions" icon="ruler" />
+          <FormField maxLength={50} name="carModel" placeholder={t('listing_add.model_placeholder')} icon="car" />
+          <FormField maxLength={50} name="carColor" placeholder={t('listing_add.color_placeholder')} icon="palette" />
+          <FormField maxLength={50} name="carSize" placeholder={t('listing_add.size_placeholder')} icon="ruler" />
           <FormField
             keyboardType="numeric"
             maxLength={4}
             name="carYear"
-            placeholder="Year"
+            placeholder={t('listing_add.year_placeholder')}
             icon="calendar"
           />
         </View>
@@ -83,6 +85,7 @@ function AdditionalDetailsFields() {
 
 // Enhanced Fraud Detection Result Component
 function FraudDetectionResult({ result, onPublish, isLoading }) {
+  const { t } = useTranslation();
   const { colors: themeColors } = useTheme();
 
   if (!result) return null;
@@ -94,9 +97,9 @@ function FraudDetectionResult({ result, onPublish, isLoading }) {
   };
 
   const getRiskStatus = (score) => {
-    if (score >= 70) return { status: "BLOCKED", label: "High Risk - Cannot Publish", icon: "shield-off" };
-    if (score >= 40) return { status: "UNDER REVIEW", label: "Needs Review - Proceed with Caution", icon: "shield-alert" };
-    return { status: "SAFE", label: "Safe to Publish", icon: "shield-check" };
+    if (score >= 70) return { status: t('listing_add.blocked'), label: t('listing_add.high_risk'), icon: "shield-off" };
+    if (score >= 40) return { status: t('listing_add.under_review'), label: t('listing_add.needs_review'), icon: "shield-alert" };
+    return { status: t('listing_add.safe'), label: t('listing_add.safe_publish'), icon: "shield-check" };
   };
 
   const riskData = getRiskStatus(result.fraudScore);
@@ -189,16 +192,16 @@ function FraudDetectionResult({ result, onPublish, isLoading }) {
             disabled={isLoading}
           >
             <Text style={styles.publishButtonText}>
-              {isLoading ? "Publishing..." : "Publish Listing"}
+              {isLoading ? t('listing_add.publishing') : t('listing_add.publish_listing')}
             </Text>
           </TouchableOpacity>
         )}
 
-        {riskData.status === "BLOCKED" && (
+        {riskData.status === t('listing_add.blocked') && (
           <View style={styles.blockedWarning}>
             <MaterialCommunityIcons name="alert-octagon" size={20} color={colors.danger} />
             <Text style={styles.blockedText}>
-              This listing cannot be published due to high fraud risk.
+              {t('listing_add.blocked_message')}
             </Text>
           </View>
         )}
@@ -211,6 +214,7 @@ function FraudDetectionResult({ result, onPublish, isLoading }) {
 // Description Section Component
 function DescriptionSection() {
   const { values } = useFormikContext();
+  const { t } = useTranslation();
   const { colors: themeColors } = useTheme();
   const descriptionLength = values.description?.length || 0;
   const maxLength = 500;
@@ -222,7 +226,7 @@ function DescriptionSection() {
       <View style={styles.descriptionHeader}>
         <View style={styles.descriptionHeaderLeft}>
           <MaterialCommunityIcons name="text-box" size={18} color={colors.primary} />
-          <Text style={styles.descriptionLabel}>Description</Text>
+          <Text style={styles.descriptionLabel}>{t('listing_add.description')}</Text>
         </View>
         <Text style={[
           styles.charCounter,
@@ -238,7 +242,7 @@ function DescriptionSection() {
         multiline
         name="description"
         numberOfLines={5}
-        placeholder="Describe your item in detail... What condition is it in? Any special features?"
+        placeholder={t('listing_add.description_placeholder')}
         icon="text"
         textAlignVertical="top"
         style={styles.textArea}
@@ -257,7 +261,7 @@ function DescriptionSection() {
 
       {/* Hint */}
       <Text style={styles.descriptionHint}>
-        {descriptionLength === 0 ? "Add details to attract buyers" : `${maxLength - descriptionLength} characters left`}
+        {descriptionLength === 0 ? t('listing_add.attract_hint') : t('listing_add.chars_left', { count: maxLength - descriptionLength })}
       </Text>
     </View>
   );
@@ -265,6 +269,7 @@ function DescriptionSection() {
 
 // Enhanced Form Actions Component
 function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult }) {
+  const { t } = useTranslation();
   const { handleSubmit, errors, touched, values } = useFormikContext();
   const [showErrors, setShowErrors] = useState(false);
 
@@ -274,7 +279,7 @@ function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult 
       const errorMessages = Object.entries(errors)
         .map(([field, error]) => `• ${field}: ${error}`)
         .join("\n");
-      Alert.alert("Please Fix Errors", errorMessages);
+      Alert.alert(t('listing_add.fix_errors'), errorMessages);
       return;
     }
     onAnalyze();
@@ -290,12 +295,12 @@ function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult 
         disabled={isAnalyzing}
       >
         <Text style={styles.analyzeButtonText}>
-          {isAnalyzing ? "Analyzing..." : "Analyze & Review"}
+          {isAnalyzing ? t('listing_add.analyzing') : t('listing_add.analyze_review')}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.cancelButtonText}>Cancel</Text>
+        <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -303,6 +308,7 @@ function FormActions({ navigation, onAnalyze, isAnalyzing, fraudDetectionResult 
 
 // Main Component
 function ListingAddScreen({ navigation }) {
+  const { t } = useTranslation();
   const { location } = useLocation();
   const { colors: themeColors } = useTheme();
   const [categories, setCategories] = useState([]);
@@ -323,25 +329,25 @@ function ListingAddScreen({ navigation }) {
       .then((response) => {
         setCategories(response.data);
       })
-      .catch(() => Alert.alert("Error", "Unable to fetch categories"));
+      .catch(() => Alert.alert(t('common.error'), t('listing_add.fetch_categories_error')));
   }, []);
 
   const analyzeListing = async (listingData) => {
     try {
       if (!listingData.title?.trim()) {
-        Alert.alert("Missing Info", "Please enter a title.");
+        Alert.alert(t('listing_add.missing_info'), t('listing_form.missing_title'));
         return;
       }
       if (!listingData.price) {
-        Alert.alert("Missing Info", "Please enter a price.");
+        Alert.alert(t('listing_add.missing_info'), t('listing_form.missing_price'));
         return;
       }
       if (!listingData.category) {
-        Alert.alert("Missing Info", "Please select a category.");
+        Alert.alert(t('listing_add.missing_info'), t('listing_form.missing_category'));
         return;
       }
       if (!listingData.images?.length) {
-        Alert.alert("Missing Info", "Please select at least one image.");
+        Alert.alert(t('listing_add.missing_info'), t('listing_form.missing_images'));
         return;
       }
 
@@ -374,9 +380,9 @@ function ListingAddScreen({ navigation }) {
 
       setFraudDetectionResult(result);
       setCurrentListingData(listingData);
-      showNotification("Listing analyzed successfully", "success");
+      showNotification(t('listing_add.analyzed_success'), "success");
     } catch (error) {
-      showNotification("Failed to analyze listing", "error");
+      showNotification(t('listing_add.analyze_failed'), "error");
     } finally {
       setIsAnalyzing(false);
     }
@@ -400,7 +406,7 @@ function ListingAddScreen({ navigation }) {
     if (!currentListingData) return;
 
     if (!location?.latitude || !location?.longitude) {
-      Alert.alert("Location Required", "Please enable location services to publish.");
+      Alert.alert(t('listing_add.location_required_title'), t('listing_form.location_required'));
       return;
     }
 
@@ -426,27 +432,27 @@ function ListingAddScreen({ navigation }) {
       );
 
       if (!response.ok) {
-        showNotification(response.data?.error || "Unable to post listing", "error");
+        showNotification(response.data?.error || t('listing_add.unable_post'), "error");
         return;
       }
 
       const createdListingId = response.data?.id;
 
       if (!createdListingId) {
-        showNotification("Listing added and is under review", "success");
+        showNotification(t('listing_add.under_review_success'), "success");
         setFraudDetectionResult(null);
         setTimeout(() => navigation.goBack(), 2000);
         return;
       }
 
-      showNotification("Listing published successfully!", "success");
+      showNotification(t('listing_add.published_success'), "success");
       setFraudDetectionResult(null);
       navigation.navigate("Feed", {
         screen: routes.LISTING_DETAILS,
         params: createdListingId,
       });
     } catch (error) {
-      showNotification("An unexpected error occurred", "error");
+      showNotification(t('common.error'), "error");
     } finally {
       setUploadVisible(false);
       setIsPublishing(false);
@@ -456,8 +462,8 @@ function ListingAddScreen({ navigation }) {
   return (
     <>
       <AnimatedHeader 
-        title="Add Listing"
-        subtitle="Create a new product listing"
+        title={t('listing_add.title')}
+        subtitle={t('listing_add.subtitle')}
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
         gradientColors={[colors.primaryLight, colors.primary]}
@@ -490,7 +496,7 @@ function ListingAddScreen({ navigation }) {
                   onPress={() => setFraudDetectionResult(null)}
                 >
                   <MaterialCommunityIcons name="arrow-left" size={20} color={colors.primary} />
-                  <Text style={styles.backToEditText}>Back to Edit</Text>
+                  <Text style={styles.backToEditText}>{t('listing_add.back_to_edit')}</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -519,7 +525,7 @@ function ListingAddScreen({ navigation }) {
                 {/* Images Section */}
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
                   <Text style={styles.sectionHint}>
-                    Add at least one image. The first image will be your cover.
+                    {t('listing_add.add_image_hint')}
                   </Text>
                   <FormImagePicker name="images" />
                 </View>
@@ -529,14 +535,14 @@ function ListingAddScreen({ navigation }) {
                   <FormField
                     maxLength={255}
                     name="title"
-                    placeholder="What are you selling?"
+                    placeholder={t('listing_add.selling_placeholder')}
                     icon="format-title"
                   />
                   <FormField
                     keyboardType="numeric"
                     maxLength={8}
                     name="price"
-                    placeholder="Price (DH)"
+                    placeholder={t('listing_add.price_placeholder')}
                     icon="cash"
                   />
                 </View>

@@ -3,9 +3,10 @@ import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import colors from '../../../config/colors';
 import useTheme from '../../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 
-
-const SearchBar = ({ value, onChange, placeholder = "Search products..." }) => {
+const SearchBar = ({ value, onChange, placeholder }) => {
+  const { t } = useTranslation();
   const { colors: themeColors } = useTheme();
 
   return (
@@ -13,7 +14,7 @@ const SearchBar = ({ value, onChange, placeholder = "Search products..." }) => {
       <Feather name="search" size={18} color={colors.textSecondary} />
       <TextInput
         style={styles.input}
-        placeholder={placeholder}
+        placeholder={placeholder || t('common.search')}
         placeholderTextColor={colors.textSecondary}
         value={value}
         onChangeText={onChange}

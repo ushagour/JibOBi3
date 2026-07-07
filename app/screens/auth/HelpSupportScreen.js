@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, View, TouchableOpacity, Alert, Linking, ScrollView, Modal, TouchableWithoutFeedback } from "react-native";
+import { useTranslation } from "react-i18next";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 
 import Screen from "../../components/Screen";
@@ -9,36 +10,37 @@ import useTheme from "../../hooks/useTheme";
 import AppButton from "../../components/Button";
 import routes from "../../navigation/routes";
 
-const FAQs = [
+// FAQs array will be created dynamically using translations
+const createFAQs = (t) => [
   {
     id: 1,
-    question: "How do I create a listing?",
-    answer: "Tap the '+' button at the bottom of the app, fill in the listing details, add photos, and submit. Your listing will be reviewed before going live.",
+    question: t("help_support.faq_create_listing_q"),
+    answer: t("help_support.faq_create_listing_a"),
   },
   {
     id: 2,
-    question: "How do I place an order?",
-    answer: "Browse listings, tap on an item you like, click 'Order Now', fill in your shipping address and preferences, then confirm your order.",
+    question: t("help_support.faq_place_order_q"),
+    answer: t("help_support.faq_place_order_a"),
   },
   {
     id: 3,
-    question: "How does payment work?",
-    answer: "We use Cash on Delivery (COD) for all transactions. Pay the seller directly when you receive your item.",
+    question: t("help_support.faq_payment_q"),
+    answer: t("help_support.faq_payment_a"),
   },
   {
     id: 4,
-    question: "Can I cancel my order?",
-    answer: "You can cancel orders within 24 hours of placement. Go to Orders, select your order, and tap 'Cancel'.",
+    question: t("help_support.faq_cancel_q"),
+    answer: t("help_support.faq_cancel_a"),
   },
   {
     id: 5,
-    question: "How do I contact a seller?",
-    answer: "Go to the listing details and tap 'Contact Seller' to reach them via phone, email, or WhatsApp.",
+    question: t("help_support.faq_contact_seller_q"),
+    answer: t("help_support.faq_contact_seller_a"),
   },
   {
     id: 6,
-    question: "How do I report a listing?",
-    answer: "If you find inappropriate content, tap the 'Report' button on the listing details to submit a report.",
+    question: t("help_support.faq_report_q"),
+    answer: t("help_support.faq_report_a"),
   },
 ];
 
@@ -46,9 +48,11 @@ const SUPPORT_EMAIL = "support@jibobi.com";
 const SUPPORT_PHONE = "+1234567890";
 
 function HelpSupportScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors: themeColors, isDark } = useTheme();
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [contactModalVisible, setContactModalVisible] = useState(false);
+  const FAQs = createFAQs(t);
 
   const toggleFAQ = (id) => {
     setExpandedFAQ(expandedFAQ === id ? null : id);
@@ -62,11 +66,11 @@ function HelpSupportScreen({ navigation }) {
         await Linking.openURL(emailUrl);
         setContactModalVisible(false);
       } else {
-        Alert.alert("Email not available", "No email app configured on this device.");
+        Alert.alert(t("help_support.email_unavailable"), t("help_support.email_unavailable_msg"));
       }
     } catch (error) {
       if (__DEV__) console.error("Error opening email:", error);
-      Alert.alert("Error", "Unable to open email app.");
+      Alert.alert("Error", t("help_support.email_error"));
     }
   };
 
@@ -78,11 +82,11 @@ function HelpSupportScreen({ navigation }) {
         await Linking.openURL(phoneUrl);
         setContactModalVisible(false);
       } else {
-        Alert.alert("Call not available", "Your device cannot make phone calls.");
+        Alert.alert(t("help_support.call_unavailable"), t("help_support.call_unavailable_msg"));
       }
     } catch (error) {
       if (__DEV__) console.error("Error opening dialer:", error);
-      Alert.alert("Error", "Unable to open dialer.");
+      Alert.alert("Error", t("help_support.call_error"));
     }
   };
 
@@ -96,32 +100,33 @@ function HelpSupportScreen({ navigation }) {
         await Linking.openURL(whatsappUrl);
         setContactModalVisible(false);
       } else {
-        Alert.alert("WhatsApp unavailable", "WhatsApp is not installed or the link cannot be opened.");
+        Alert.alert(t("help_support.whatsapp_unavailable"), t("help_support.whatsapp_unavailable_msg"));
       }
     } catch (error) {
       if (__DEV__) console.error("Error opening WhatsApp:", error);
-      Alert.alert("Error", "Unable to open WhatsApp.");
+      Alert.alert("Error", t("help_support.whatsapp_error"));
     }
   };
 
   return (
     <Screen style={styles.screen} paddingSize="lg" scrollable={false}>
-      <Text style={styles.subtitle}>Find answers, contact support, and get help with your account.</Text>
+      <Text style={styles.title}>{t("help_support.title")}</Text>
+      <Text style={styles.subtitle}>{t("help_support.subtitle")}</Text>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="robot-outline" size={20} color={colors.secondary} />
-            <Text style={styles.sectionTitle}>Jibobi Assistant</Text>
+            <Text style={styles.sectionTitle}>{t("help_support.assistant_title")}</Text>
           </View>
 
           <View style={[styles.assistantCard, { backgroundColor: themeColors.surface }]}>
             <Text style={styles.contactDescription}>
-              Ask the assistant about orders, listings, payments, reporting, or account help.
+              {t("help_support.assistant_desc")}
             </Text>
 
             <AppButton
-              title="Open Assistant"
+              title={t("help_support.open_assistant")}
               onPress={() => navigation.navigate(routes.ASSISTANT)}
               variant="primary"
               size="md"
@@ -135,7 +140,7 @@ function HelpSupportScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="chat-question-outline" size={20} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+            <Text style={styles.sectionTitle}>{t("help_support.faq_title")}</Text>
           </View>
 
           <View style={[styles.faqContainer, { backgroundColor: themeColors.surface }]}>
@@ -173,16 +178,16 @@ function HelpSupportScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="headset" size={20} color={colors.secondary} />
-            <Text style={styles.sectionTitle}>Contact Support</Text>
+            <Text style={styles.sectionTitle}>{t("help_support.contact_title")}</Text>
           </View>
 
           <View style={[styles.contactCard, { backgroundColor: themeColors.surface }]}>
             <Text style={styles.contactDescription}>
-              Have a question we didn't answer? Our support team is ready to help!
+              {t("help_support.contact_desc")}
             </Text>
 
             <AppButton
-              title="Get in Touch"
+              title={t("help_support.get_in_touch")}
               onPress={() => setContactModalVisible(true)}
               variant="primary"
               size="md"
@@ -207,7 +212,7 @@ function HelpSupportScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="lightbulb-on-outline" size={20} color={colors.warning} />
-            <Text style={styles.sectionTitle}>Quick Tips</Text>
+            <Text style={styles.sectionTitle}>{t("help_support.tips_title")}</Text>
           </View>
 
           <View style={styles.tipsContainer}>
@@ -215,25 +220,25 @@ function HelpSupportScreen({ navigation }) {
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
-              <Text style={styles.tipText}>Complete your profile to increase trust with buyers</Text>
+              <Text style={styles.tipText}>{t("help_support.tip_profile")}</Text>
             </View>
             <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
-              <Text style={styles.tipText}>Upload clear photos for better listing visibility</Text>
+              <Text style={styles.tipText}>{t("help_support.tip_photos")}</Text>
             </View>
             <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
-              <Text style={styles.tipText}>Respond quickly to buyer inquiries</Text>
+              <Text style={styles.tipText}>{t("help_support.tip_respond")}</Text>
             </View>
             <View style={[styles.tip, { backgroundColor: themeColors.surface }]}>
               <View style={styles.tipIcon}>
                 <MaterialIcons name="check-circle" size={20} color={colors.success} />
               </View>
-              <Text style={styles.tipText}>Leave reviews after purchases to help others</Text>
+              <Text style={styles.tipText}>{t("help_support.tip_reviews")}</Text>
             </View>
           </View>
         </View>
@@ -252,12 +257,12 @@ function HelpSupportScreen({ navigation }) {
           </TouchableWithoutFeedback>
 
           <View style={styles.contactModal}>
-            <Text style={styles.modalTitle}>Contact Support</Text>
-            <Text style={styles.modalSubtitle}>Choose how you want to reach us</Text>
+            <Text style={styles.modalTitle}>{t("help_support.modal_title")}</Text>
+            <Text style={styles.modalSubtitle}>{t("help_support.modal_subtitle")}</Text>
 
             <View style={styles.contactOptions}>
               <AppButton
-                title="Send Email"
+                title={t("help_support.send_email")}
                 onPress={handleEmailSupport}
                 variant="primary"
                 size="sm"
@@ -267,7 +272,7 @@ function HelpSupportScreen({ navigation }) {
                 icon={<MaterialIcons name="email" size={18} color={colors.white} />}
               />
               <AppButton
-                title="Call Now"
+                title={t("help_support.call_now")}
                 onPress={handlePhoneSupport}
                 variant="secondary"
                 size="sm"
@@ -277,7 +282,7 @@ function HelpSupportScreen({ navigation }) {
                 icon={<MaterialCommunityIcons name="phone" size={18} color={colors.white} />}
               />
               <AppButton
-                title="WhatsApp"
+                title={t("help_support.whatsapp")}
                 onPress={handleWhatsAppSupport}
                 variant="success"
                 size="sm"
@@ -290,7 +295,7 @@ function HelpSupportScreen({ navigation }) {
 
             <View style={styles.modalActions}>
               <AppButton
-                title="Close"
+                title={t("common.close")}
                 onPress={() => setContactModalVisible(false)}
                 variant="outline"
                 size="sm"

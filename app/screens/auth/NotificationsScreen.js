@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useTranslation } from "react-i18next";
 
 dayjs.extend(relativeTime);
 
@@ -21,6 +22,7 @@ import ordersApi from "../../api/orders";
 
 
 function NotificationsScreen({ navigation }) {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -32,7 +34,7 @@ function NotificationsScreen({ navigation }) {
     try {
       const response = await notificationsApi.getNotifications({ limit: 100 });
       if (!response.ok || !response.data) {
-        Alert.alert("Error", "Could not load notifications.");
+        Alert.alert(t("common.error"), t("notifications_screen.load_error"));
         return;
       }
 
@@ -41,7 +43,7 @@ function NotificationsScreen({ navigation }) {
 
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
-      Alert.alert("Error", "Could not load notifications.");
+      Alert.alert(t("common.error"), t("notifications_screen.load_error"));
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ function NotificationsScreen({ navigation }) {
     });
 
     if (!result.ok) {
-      Alert.alert("Error", "Could not update notification.");
+      Alert.alert(t("common.error"), t("notifications_screen.update_error"));
       return;
     }
 
@@ -86,7 +88,7 @@ function NotificationsScreen({ navigation }) {
   const handleDeleteNotification = async (notificationId) => {
     const result = await notificationsApi.deleteNotification(notificationId);
     if (!result.ok) {
-      Alert.alert("Error", "Could not delete notification.");
+      Alert.alert(t("common.error"), t("notifications_screen.delete_error"));
       return;
     }
 
@@ -101,7 +103,7 @@ function NotificationsScreen({ navigation }) {
   const handleMarkAllRead = async () => {
     const result = await notificationsApi.markAllAsRead();
     if (!result.ok) {
-      Alert.alert("Error", "Could not mark notifications as read.");
+      Alert.alert(t("common.error"), t("notifications_screen.mark_read_error"));
       return;
     }
 
@@ -116,10 +118,10 @@ function NotificationsScreen({ navigation }) {
   };
 
   const getNotificationTypeMeta = (type) => {
-    if (type === "like") return { label: "Like", icon: "heart", color: colors.danger };
-    if (type === "review") return { label: "Review", icon: "star", color: colors.warning };
-    if (type === "message") return { label: "Message", icon: "email", color: colors.info };
-    return { label: "Update", icon: "bell-outline", color: colors.medium };
+    if (type === "like") return { label: t("notifications_screen.type_like"), icon: "heart", color: colors.danger };
+    if (type === "review") return { label: t("notifications_screen.type_review"), icon: "star", color: colors.warning };
+    if (type === "message") return { label: t("notifications_screen.type_message"), icon: "email", color: colors.info };
+    return { label: t("notifications_screen.type_update"), icon: "bell-outline", color: colors.medium };
   };
 
   const renderRightActions = (item) => (
@@ -129,7 +131,7 @@ function NotificationsScreen({ navigation }) {
         style={styles.swipeReadAction}
         onPress={() => handleToggleRead(item)}
       >
-        <AppText style={styles.swipeActionText}>{item.is_read ? "Unread" : "Read"}</AppText>
+        <AppText style={styles.swipeActionText}>{item.is_read ? t("notifications_screen.unread") : t("notifications_screen.read")}</AppText>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -137,7 +139,7 @@ function NotificationsScreen({ navigation }) {
         style={styles.swipeDeleteAction}
         onPress={() => handleDeleteNotification(item.id)}
       >
-        <AppText style={styles.swipeActionText}>Delete</AppText>
+        <AppText style={styles.swipeActionText}>{t("notifications_screen.delete")}</AppText>
       </TouchableOpacity>
     </View>
   );
@@ -208,7 +210,7 @@ function NotificationsScreen({ navigation }) {
         <View>
       
           <AppText color="textSecondary" style={styles.subtitle}>
-            Review all your alerts in one place
+            {t("notifications_screen.subtitle")}
           </AppText>
         </View>
 
@@ -216,7 +218,7 @@ function NotificationsScreen({ navigation }) {
 
       <View style={styles.actionsRow}>
         <TouchableOpacity onPress={handleMarkAllRead} activeOpacity={0.8}>
-          <AppText style={styles.actionText}>Mark All Read</AppText>
+          <AppText style={styles.actionText}>{t("notifications_screen.mark_all_read")}</AppText>
         </TouchableOpacity>
       </View>
 
@@ -230,7 +232,7 @@ function NotificationsScreen({ navigation }) {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="bell-off-outline" size={34} color={colors.medium} />
-            <AppText style={styles.emptyText}>No notifications yet.</AppText>
+            <AppText style={styles.emptyText}>{t("notifications_screen.empty")}</AppText>
           </View>
         }
         renderItem={({ item }) => {
@@ -258,7 +260,7 @@ function NotificationsScreen({ navigation }) {
                     return;
                   }
 
-                  Alert.alert("Open notification", "Unable to determine a destination for this notification.");
+                  Alert.alert(t("notifications_screen.open_error_title"), t("notifications_screen.open_error_message"));
                 }}
               style={[
                 styles.notificationCard,
@@ -275,7 +277,7 @@ function NotificationsScreen({ navigation }) {
               <View style={styles.notificationContentWrapper}>
                 <View style={styles.notificationHeader}>
                   <AppText style={styles.notificationTitle}>
-                    {item?.actor?.name || "User"}
+                    {item?.actor?.name || t("common.user")}
                   </AppText>
                   <AppText style={styles.notificationTime}>
                     {timeAgo}

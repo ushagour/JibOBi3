@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet, View, TouchableOpacity } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import ProductCard from "../../components/cards/ProductCard";
 import colors from "../../config/colors";
@@ -15,6 +16,7 @@ import Button from "../../components/Button";
 import useTheme from "../../hooks/useTheme";
 
 function MyListingsScreen({ navigation }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     data: activeListings,
@@ -109,26 +111,26 @@ function MyListingsScreen({ navigation }) {
             style={[styles.tabButton, activeTab === "active" && styles.tabButtonActive]}
             onPress={() => setActiveTab("active")}
           >
-            <AppText style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>Active</AppText>
+            <AppText style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>{t("my_listings.active")}</AppText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "sold" && styles.tabButtonActive]}
             onPress={() => setActiveTab("sold")}
           >
-            <AppText style={[styles.tabText, activeTab === "sold" && styles.tabTextActive]}>Sold</AppText>
+            <AppText style={[styles.tabText, activeTab === "sold" && styles.tabTextActive]}>{t("my_listings.sold")}</AppText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "archived" && styles.tabButtonActive]}
             onPress={() => setActiveTab("archived")}
           >
-            <AppText style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>Archived</AppText>
+            <AppText style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>{t("my_listings.archived")}</AppText>
           </TouchableOpacity>
         </View>
 
         {hasError && (
           <View style={styles.errorContainer}>
-            <AppText>Couldn't retrieve the listings.</AppText>
-            <Button title="Retry" onPress={handleRetry} />
+            <AppText>{t("my_listings.load_error")}</AppText>
+            <Button title={t("common.retry")} onPress={handleRetry} />
           </View>
         )}
 
@@ -139,10 +141,10 @@ function MyListingsScreen({ navigation }) {
               <View style={styles.emptyContainer}>
                 <AppText>
                   {activeTab === "active"
-                    ? "No active listings yet."
+                    ? t("my_listings.no_active")
                     : activeTab === "sold"
-                    ? "No sold listings yet."
-                    : "No archived listings yet."}
+                    ? t("my_listings.no_sold")
+                    : t("my_listings.no_archived")}
                 </AppText>
               </View>
             ) : null

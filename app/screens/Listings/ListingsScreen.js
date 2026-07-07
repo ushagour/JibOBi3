@@ -32,6 +32,7 @@ import { Alert } from "react-native";
 import useLocation from "../../hooks/useLocation";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
+import { useTranslation } from "react-i18next";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 40) / 2;
@@ -63,6 +64,7 @@ const isClosedListing = (item) => {
 };
 
 function ListingsScreen({ navigation }) {
+  const { t } = useTranslation();
   const { user, isLoggedIn } = useAuth();
   const { location } = useLocation();
   const { colors: themeColors } = useTheme();
@@ -254,7 +256,7 @@ function ListingsScreen({ navigation }) {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: user?.name || "Explorer",
-      headerSubtitle: `Welcome back · `,
+      headerSubtitle: t("listings_screen.welcome_back"),
       headerRight: () =>
         isGuest ? null : (
           <TouchableOpacity

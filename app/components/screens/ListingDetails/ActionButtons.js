@@ -1,5 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Alert } from "react-native";
+import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import colors from "../../../config/colors";
@@ -20,6 +21,7 @@ export default function ActionButtons({
   styles: s = {} 
 }) {
   const { colors: themeColors } = useTheme();
+  const { t } = useTranslation();
 
   // Don't show anything for guests
   if (!isAuthenticated) return null;
@@ -33,10 +35,10 @@ export default function ActionButtons({
           <View style={s.actionButtonsContainer}>
             <View style={[s.soldOutContainer, { backgroundColor: themeColors.surface }]}>
               <MaterialCommunityIcons name="sale" size={24} color={colors.danger} />
-              <Text style={s.soldOutText}>This item is no longer available</Text>
+              <Text style={s.soldOutText}>{t("listing_details_screen.item_not_available")}</Text>
               {onContact && (
                 <TouchableOpacity style={s.contactSellerButton} onPress={onContact}>
-                  <Text style={s.contactSellerText}>Contact Seller</Text>
+                  <Text style={s.contactSellerText}>{t("listing_details_screen.contact")}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -56,7 +58,7 @@ export default function ActionButtons({
               style={s.orderButtonGradient}
             >
               <MaterialCommunityIcons name="shopping" size={22} color="#FFF" />
-              <Text style={s.orderButtonText}>Order Now</Text>
+              <Text style={s.orderButtonText}>{t("listing_details_screen.order_now")}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -65,7 +67,7 @@ export default function ActionButtons({
             <TouchableOpacity style={s.messageButton} onPress={onContact}>
               <View style={s.messageButtonContent}>
               <MaterialCommunityIcons name="chat-outline" size={22} color={colors.primary} />
-              <Text style={s.messageButtonText}>Message Seller</Text>
+              <Text style={s.messageButtonText}>{t("listing_details_screen.message_seller")}</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -81,7 +83,7 @@ export default function ActionButtons({
         {/* Edit Button - always shown for owners */}
         <TouchableOpacity style={s.editButton} onPress={onEdit}>
           <MaterialCommunityIcons name="pencil" size={20} color={colors.primary} />
-          <Text style={s.editButtonText}>Edit Listing</Text>
+          <Text style={s.editButtonText}>{t("listing_details_screen.edit_listing")}</Text>
         </TouchableOpacity>
 
         {/* Close/Reopen Button based on listing status */}
@@ -91,12 +93,12 @@ export default function ActionButtons({
             style={s.closeButton} 
             onPress={() => {
               Alert.alert(
-                "Close Listing",
-                "Are you sure you want to close this listing? It will no longer be visible to buyers.",
+                t("listing_details_screen.close_listing_confirmation"),
+                t("listing_details_screen.close_listing_message"),
                 [
-                  { text: "Cancel", style: "cancel" },
+                  { text: t("common.cancel"), style: "cancel" },
                   { 
-                    text: "Yes, Close", 
+                    text: t("listing_details_screen.close_listing_confirm"), 
                     style: "destructive",
                     onPress: onClose 
                   }
@@ -105,7 +107,7 @@ export default function ActionButtons({
             }}
           >
             <MaterialCommunityIcons name="close" size={20} color={colors.white} />
-            <Text style={s.closeButtonText}>Close Listing</Text>
+            <Text style={s.closeButtonText}>{t("listing_details_screen.close_listing")}</Text>
           </TouchableOpacity>
         ) : (
           // Closed/Sold listing - show Reopen button
@@ -113,12 +115,12 @@ export default function ActionButtons({
             style={s.reopenButton} 
             onPress={() => {
               Alert.alert(
-                "Reopen Listing",
-                "Do you want to reopen this listing? It will become visible to buyers again.",
+                t("listing_details_screen.reopen_listing_confirmation"),
+                t("listing_details_screen.reopen_listing_message"),
                 [
-                  { text: "Cancel", style: "cancel" },
+                  { text: t("common.cancel"), style: "cancel" },
                   { 
-                    text: "Yes, Reopen",
+                    text: t("listing_details_screen.reopen_listing_confirm"),
                     onPress: onReopen 
                   }
                 ]
@@ -126,7 +128,7 @@ export default function ActionButtons({
             }}
           >
             <MaterialCommunityIcons name="refresh" size={20} color={colors.success} />
-            <Text style={s.reopenButtonText}>Reopen Listing</Text>
+            <Text style={s.reopenButtonText}>{t("listing_details_screen.reopen_listing")}</Text>
           </TouchableOpacity>
         )}
 

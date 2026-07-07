@@ -22,7 +22,7 @@ const ImageSlider = (props) => {
       prevButton={<Text style={styles.arrow}>◀</Text>}
     >
       {(images || []).map((image, index) => (
-        <View key={index} style={styles.slide}>
+        <View key={`img-${image.url || image.uri || index}`} style={styles.slide}>
           {/* Ensure the source prop is an object with a uri key */}
           <Image source={{ uri: image.url }} style={[styles.image, { width: sliderWidth, height: sliderHeight }]} resizeMode="cover" />
         </View>

@@ -1,16 +1,17 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 import Text from "../Text";
 import colors from "../../config/colors";
 
-function getStatusMeta(status) {
+function getStatusMeta(status, t) {
   const normalized = String(status || "pending").toLowerCase();
 
   if (normalized === "completed") {
     return {
-      label: "Completed",
+      label: t("orders_unified.status_completed"),
       icon: "check-circle-outline",
       color: colors.success,
       backgroundColor: colors.successLight,
@@ -19,7 +20,7 @@ function getStatusMeta(status) {
 
   if (normalized === "cancelled") {
     return {
-      label: "Cancelled",
+      label: t("orders_unified.status_cancelled"),
       icon: "close-circle-outline",
       color: colors.danger,
       backgroundColor: colors.dangerLight,
@@ -27,7 +28,7 @@ function getStatusMeta(status) {
   }
 
   return {
-    label: "Pending",
+    label: t("orders_unified.status_pending"),
     icon: "clock-outline",
     color: colors.warning,
     backgroundColor: colors.warningLight,
@@ -35,7 +36,8 @@ function getStatusMeta(status) {
 }
 
 function OrderStatusPill({ status }) {
-  const meta = getStatusMeta(status);
+  const { t } = useTranslation();
+  const meta = getStatusMeta(status, t);
 
   return (
     <View style={[styles.container, { backgroundColor: meta.backgroundColor }]}> 
