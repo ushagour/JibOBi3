@@ -34,20 +34,20 @@ const isStrongPassword = (password) => {
   return hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
 };
 
-const getPasswordStrengthMessage = () => {
-  return "Password must be at least 8 characters and contain uppercase, lowercase, number, and special character (!@#$%^&* etc.)";
+const getPasswordStrengthMessage = (t) => {
+  return t("privacySecurityScreen.passwordStrengthMessage");
 };
 
-const changePasswordValidationSchema = Yup.object().shape({
-  currentPassword: Yup.string().required("Current password is required"),
+const changePasswordValidationSchema = (t) => Yup.object().shape({
+  currentPassword: Yup.string().required(t("privacySecurityScreen.currentPasswordRequired")),
   newPassword: Yup.string()
-    .required("New password is required")
-    .test("strong-password", getPasswordStrengthMessage(), (value) => {
+    .required(t("privacySecurityScreen.newPasswordRequired"))
+    .test("strong-password", getPasswordStrengthMessage(t), (value) => {
       return isStrongPassword(value);
     }),
   confirmNewPassword: Yup.string()
-    .oneOf([Yup.ref("newPassword"), null], "Passwords must match")
-    .required("Please confirm your new password"),
+    .oneOf([Yup.ref("newPassword"), null], t("privacySecurityScreen.passwordsMustMatch"))
+    .required(t("privacySecurityScreen.confirmNewPasswordRequired")),
 });
 
 // Storage keys
@@ -67,6 +67,7 @@ function PrivacySecurityScreen() {
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState(null);
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const { t } = useTranslation();
   
   const [sweetAlert, setSweetAlert] = useState({
     show: false,
@@ -105,7 +106,7 @@ function PrivacySecurityScreen() {
         setIsBiometricAvailable(false);
       }
     } catch (error) {
-      console.error("Biometric availability check failed:", error);
+      console.error("Biometric  check failed:", error);
       setIsBiometricAvailable(false);
     }
   };
@@ -116,7 +117,7 @@ function PrivacySecurityScreen() {
       const saved = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
       setIsBiometricEnabled(saved === "true");
     } catch (error) {
-      console.error("Failed to load biometric preference:", error);
+      console.error("Failed to load  preference:", error);
     }
   };
 
@@ -126,7 +127,7 @@ function PrivacySecurityScreen() {
       await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, enabled.toString());
       setIsBiometricEnabled(enabled);
     } catch (error) {
-      console.error("Failed to save biometric preference:", error);
+      console.error("Failed to save  preference:", error);
     }
   };
 
@@ -134,8 +135,8 @@ function PrivacySecurityScreen() {
   const authenticateWithBiometrics = async () => {
     if (!isBiometricAvailable) {
       showSweetAlert({
-        title: "Not Available",
-        message: "Biometric authentication is not available on this device or not set up.",
+        title: t("privacySecurityScreen.biometricNotAvailableTitle"),
+        message: t("privacySecurityScreen.biometricNotAvailableMessage"),
         type: "warning",
       });
       return false;
@@ -154,17 +155,17 @@ function PrivacySecurityScreen() {
         await saveBiometricPreference(newState);
         
         showSweetAlert({
-          title: newState ? "✓ Face ID Enabled" : "✓ Face ID Disabled",
+          title: newState ? t("privacySecurityScreen.faceIdEnabledTitle") : t("privacySecurityScreen.faceIdDisabledTitle"),
           message: newState 
-            ? "You can now log in using Face ID / biometric authentication."
-            : "Biometric login has been disabled. You'll use your password to log in.",
+            ? t("privacySecurityScreen.faceIdEnabledMessage")
+            : t("privacySecurityScreen.faceIdDisabledMessage"),
           type: "success",
         });
         return true;
       } else {
         showSweetAlert({
-          title: "Authentication Failed",
-          message: "Could not verify your identity. Please try again.",
+          title: t("privacySecurityScreen.authenticationFailedTitle"),
+          message: t("privacySecurityScreen.authenticationFailedMessage"),  
           type: "danger",
         });
         return false;
@@ -172,8 +173,8 @@ function PrivacySecurityScreen() {
     } catch (error) {
       console.error("Biometric authentication error:", error);
       showSweetAlert({
-        title: "Error",
-        message: "Failed to authenticate. Please try again.",
+        title: t("privacySecurityScreen.errorTitle"),
+        message: t("privacySecurityScreen.authenticationErrorMessage"),
         type: "danger",
       });
       return false;
@@ -184,8 +185,8 @@ function PrivacySecurityScreen() {
   const handleToggleBiometric = async () => {
     if (!isBiometricAvailable) {
       showSweetAlert({
-        title: "Biometric Not Available",
-        message: "Your device doesn't support Face ID / Touch ID or it's not set up. Please go to device settings to enable it.",
+        title: t("privacySecurityScreen.biometricNotAvailableTitle"),
+        message: t("privacySecurityScreen.biometricNotAvailableMessage"),
         type: "warning",
       });
       return;
@@ -244,7 +245,7 @@ function PrivacySecurityScreen() {
       setError(null);
 
       if (!isStrongPassword(userInfo.newPassword)) {
-        setError(getPasswordStrengthMessage());
+        setError(getPasswordStrengthMessage(t));
         return;
       }
 
@@ -256,8 +257,8 @@ function PrivacySecurityScreen() {
       
       if (response.ok) {
         showSweetAlert({
-          title: "✓ Password Updated",
-          message: "Your password has been changed successfully. Please use your new password on next login.",
+          title: t("privacySecurityScreen.passwordUpdatedTitle"),
+          message: t("privacySecurityScreen.passwordUpdatedMessage"),
           type: "success",
           onConfirm: () => {
             resetForm();
@@ -268,8 +269,8 @@ function PrivacySecurityScreen() {
       console.error("Error changing password:", requestError);
       setError("Network error, please try again.");
       showSweetAlert({
-        title: "Error",
-        message: "Failed to update password. Please check your current password and try again.",
+        title: t("privacySecurityScreen.errorTitle"),
+        message: t("privacySecurityScreen.updatePasswordErrorMessage"),
         type: "danger",
       });
     } finally {
@@ -282,8 +283,8 @@ function PrivacySecurityScreen() {
     setDeletionReason("");
     setConfirmEmail("");
     showSweetAlert({
-      title: "⚠️ Delete Account",
-      message: "Deleting your account is permanent and cannot be undone. All your listings and data will be removed.",
+      title: t("privacySecurityScreen.deleteAccountTitle"),
+      message: t("privacySecurityScreen.deleteAccountWarningMessage"),
       type: "warning",
       showCancel: true,
       onConfirm: () => {
@@ -295,14 +296,14 @@ function PrivacySecurityScreen() {
 
   const handleContinueDeletion = () => {
     if (!deletionReason.trim() || deletionReason.trim().length < 10) {
-      Alert.alert("Required", "Please tell us why you're deleting your account (minimum 10 characters).");
+      Alert.alert(t("privacySecurityScreen.requiredTitle"), t("privacySecurityScreen.deletionReasonErrorMessage"));
       return;
     }
 
     setDeletionStep(3);
     showSweetAlert({
-      title: "Verify Your Email",
-      message: `To confirm account deletion, please enter your email: ${user?.email}`,
+      title: t("privacySecurityScreen.verifyEmailTitle"),
+      message: t("privacySecurityScreen.verifyEmailMessage", { email: user?.email }),
       type: "info",
       showCancel: true,
     });
@@ -310,7 +311,7 @@ function PrivacySecurityScreen() {
 
   const handleConfirmDeletion = async () => {
     if (!confirmEmail || confirmEmail !== user?.email) {
-      Alert.alert("Verification Failed", "The email does not match. Please try again.");
+      Alert.alert(t("privacySecurityScreen.verificationFailedTitle"), t("privacySecurityScreen.verificationFailedMessage"));
       return;
     }
 
@@ -325,8 +326,8 @@ function PrivacySecurityScreen() {
 
       if (!response.ok) {
         showSweetAlert({
-          title: "Error",
-          message: response.data?.error || "Failed to delete account.",
+          title: t("privacySecurityScreen.errorTitle"),
+          message: response.data?.error || t("privacySecurityScreen.failedToDeleteAccountMessage"),
           type: "danger",
         });
         return;
@@ -336,8 +337,8 @@ function PrivacySecurityScreen() {
       await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
 
       showSweetAlert({
-        title: "✓ Account Deleted",
-        message: "Your account has been permanently deleted. Thank you for using our service.",
+        title: t("privacySecurityScreen.accountDeletedTitle"),
+        message: t("privacySecurityScreen.accountDeletedMessage"),
         type: "success",
         onConfirm: () => {
           logOut();
@@ -346,8 +347,8 @@ function PrivacySecurityScreen() {
     } catch (requestError) {
       console.error("Failed to delete account:", requestError);
       showSweetAlert({
-        title: "Error",
-        message: "Network error. Please try again.",
+        title: t("privacySecurityScreen.errorTitle") ,
+        message: t("privacySecurityScreen.networkErrorMessage"),
         type: "danger",
       });
     } finally {
@@ -361,7 +362,7 @@ function PrivacySecurityScreen() {
 
       <Screen style={styles.screen} paddingSize="lg">
         <Text style={styles.subtitle}>
-          Manage your password, privacy preferences, and account safety.
+          {t("privacySecurityScreen.subtitle")}
         </Text>
 
         {/* Face ID / Biometric Section */}
@@ -375,7 +376,6 @@ function PrivacySecurityScreen() {
               />
             </View>
             <View style={styles.textWrap}>
-              <Text style={styles.rowTitle}>{biometricInfo.label} Login</Text>
               <Text style={styles.rowSubTitle}>{biometricInfo.description}</Text>
             </View>
             <Switch
@@ -392,7 +392,7 @@ function PrivacySecurityScreen() {
             <View style={styles.biometricWarning}>
               <MaterialCommunityIcons name="alert-circle" size={16} color={colors.warning} />
               <Text style={styles.biometricWarningText}>
-                Face ID / Touch ID not available. Please set up biometric authentication in your device settings.
+                {t("privacySecurityScreen.biometricWarningText")}
               </Text>
             </View>
           )}
@@ -401,7 +401,9 @@ function PrivacySecurityScreen() {
             <View style={styles.biometricInfo}>
               <MaterialCommunityIcons name="information" size={14} color={colors.textSecondary} />
               <Text style={styles.biometricInfoText}>
-                You can now log in using {biometricInfo.label} instead of your password.
+
+                                {t("privacySecurityScreen.biometricInfoText")}
+
               </Text>
             </View>
           )}
@@ -414,8 +416,8 @@ function PrivacySecurityScreen() {
               <MaterialCommunityIcons name="shield-lock-outline" size={18} color={colors.primary} />
             </View>
             <View style={styles.textWrap}>
-              <Text style={styles.rowTitle}>Password & Login</Text>
-              <Text style={styles.rowSubTitle}>Update your password below</Text>
+              <Text style={styles.rowTitle}>{t("privacySecurityScreen.passwordLoginTitle")}</Text>
+              <Text style={styles.rowSubTitle}>{t("privacySecurityScreen.passwordLoginSubtitle")}</Text>
             </View>
           </View>
 
@@ -435,7 +437,7 @@ function PrivacySecurityScreen() {
               autoCorrect={false}
               icon="lock"
               name="currentPassword"
-              placeholder="Current Password"
+              placeholder={t("privacySecurityScreen.currentPasswordPlaceholder")}
               secureTextEntry
               textContentType="password"
             />
@@ -445,13 +447,13 @@ function PrivacySecurityScreen() {
               autoCorrect={false}
               icon="lock"
               name="newPassword"
-              placeholder="New Password"
+              placeholder={t("privacySecurityScreen.newPasswordPlaceholder")}
               secureTextEntry
               textContentType="newPassword"
             />
 
             <Text style={styles.passwordHint}>
-              💡 Must contain: 8+ characters, uppercase, lowercase, number, and special character (!@#$%^&*)
+              💡 {t("privacySecurityScreen.passwordRequirements")}
             </Text>
 
             <FormField
@@ -459,12 +461,12 @@ function PrivacySecurityScreen() {
               autoCorrect={false}
               icon="lock"
               name="confirmNewPassword"
-              placeholder="Confirm New Password"
+              placeholder={t("privacySecurityScreen.confirmNewPasswordPlaceholder")}
               secureTextEntry
               textContentType="password"
             />
 
-            <SubmitButton title="Change Password" color="secondary" />
+            <SubmitButton title={t("privacySecurityScreen.changePasswordButtonTitle")} color="secondary" />
           </Form>
         </View>
 
@@ -476,26 +478,26 @@ function PrivacySecurityScreen() {
                 <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.danger} />
               </View>
               <View style={styles.textWrap}>
-                <Text style={styles.rowTitle}>Danger Zone</Text>
-                <Text style={styles.rowSubTitle}>Delete your account permanently</Text>
+                <Text style={styles.rowTitle}>{t("privacySecurityScreen.dangerZoneTitle")}</Text>
+                <Text style={styles.rowSubTitle}>{t("privacySecurityScreen.dangerZoneSubtitle")}</Text>
               </View>
             </View>
 
             {deletionStep === 0 ? (
               <AppButton
-                title="Delete Account"
+                title={t("privacySecurityScreen.deleteAccountButtonTitle")}
                 onPress={handleDeleteAccount}
                 variant="danger"
               />
             ) : deletionStep === 2 ? (
               <ScrollView style={styles.deletionForm}>
-                <Text style={styles.deletionStepTitle}>Step 1 of 2: Tell us why</Text>
+                <Text style={styles.deletionStepTitle}>{t("privacySecurityScreen.deletionStep1Title")}</Text>
                 <Text style={styles.deletionStepSubtitle}>
-                  Your feedback helps us improve. Please share your reason for leaving.
+                  {t("privacySecurityScreen.deletionStep1Subtitle")}
                 </Text>
                 <TextInput
                   style={styles.reasonInput}
-                  placeholder="Tell us why you're deleting your account..."
+                  placeholder={t("privacySecurityScreen.deletionReasonPlaceholder")}
                   placeholderTextColor={colors.medium}
                   value={deletionReason}
                   onChangeText={setDeletionReason}
@@ -509,7 +511,7 @@ function PrivacySecurityScreen() {
                 </Text>
                 <View style={styles.deletionButtons}>
                   <AppButton
-                    title="Cancel"
+                    title={t("privacySecurityScreen.cancelButtonTitle")}
                     onPress={() => {
                       setDeletionStep(0);
                       setDeletionReason("");
@@ -520,7 +522,7 @@ function PrivacySecurityScreen() {
                     inline
                   />
                   <AppButton
-                    title="Continue"
+                    title={t("privacySecurityScreen.continueButtonTitle")}
                     onPress={handleContinueDeletion}
                     variant="danger"
                     size="sm"
@@ -532,14 +534,14 @@ function PrivacySecurityScreen() {
               </ScrollView>
             ) : deletionStep === 3 ? (
               <ScrollView style={styles.deletionForm}>
-                <Text style={styles.deletionStepTitle}>Step 2 of 2: Verify email</Text>
+                <Text style={styles.deletionStepTitle}>{t("privacySecurityScreen.deletionStep2Title")}</Text>
                 <Text style={styles.deletionStepSubtitle}>
-                  Enter your email to confirm account deletion. This action cannot be undone.
+                  {t("privacySecurityScreen.deletionStep2Subtitle")}
                 </Text>
-                <Text style={styles.emailLabel}>Account email: {user?.email}</Text>
+                <Text style={styles.emailLabel}>{t("privacySecurityScreen.accountEmailLabel")}: {user?.email}</Text>
                 <TextInput
                   style={styles.emailInput}
-                  placeholder="Enter your email to confirm"
+                  placeholder={t("privacySecurityScreen.confirmEmailPlaceholder")}  
                   placeholderTextColor={colors.medium}
                   value={confirmEmail}
                   onChangeText={setConfirmEmail}
@@ -548,11 +550,11 @@ function PrivacySecurityScreen() {
                   editable={!loading}
                 />
                 {confirmEmail && confirmEmail !== user?.email && (
-                  <Text style={styles.emailError}>Email does not match</Text>
+                  <Text style={styles.emailError}>{t("privacySecurityScreen.emailMismatchError")}</Text>
                 )}
                 <View style={styles.deletionButtons}>
                   <AppButton
-                    title="Cancel"
+                    title={t("privacySecurityScreen.cancelButtonTitle")}
                     onPress={() => {
                       setDeletionStep(0);
                       setConfirmEmail("");
@@ -564,7 +566,7 @@ function PrivacySecurityScreen() {
                     inline
                   />
                   <AppButton
-                    title="Delete Account"
+                    title={t("privacySecurityScreen.deleteAccountButtonTitle")}
                     onPress={handleConfirmDeletion}
                     variant="danger"
                     size="sm"
@@ -588,8 +590,8 @@ function PrivacySecurityScreen() {
         closeOnHardwareBackPress={false}
         showCancelButton={sweetAlert.showCancel}
         showConfirmButton={true}
-        cancelText="Cancel"
-        confirmText={sweetAlert.showCancel ? "Confirm" : "OK"}
+        cancelText={t("privacySecurityScreen.cancelButtonTitle")}
+        confirmText={sweetAlert.showCancel ? t("privacySecurityScreen.confirmButtonTitle") : t("privacySecurityScreen.okButtonTitle")}
         confirmButtonColor={
           sweetAlert.type === "danger"
             ? colors.danger

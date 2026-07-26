@@ -294,6 +294,7 @@ function EditProfileScreen({ navigation }) {
     { label: t('user_screen.listings'), value: user?.listings_count || 0, icon: "format-list-bulleted", color: "#4CAF50" },
     { label: t('user_screen.sales'), value: user?.sales_count || 0, icon: "cash-multiple", color: "#2196F3" },
     { label: t('user_screen.member_since'), value: user?.member_since || "2024", icon: "calendar", color: "#9C27B0" },
+    // { label: t('user_screen.phone_number'), value: user?.phone || t('common.not_provided'), icon: "phone", color: "#FF9800" },
   ];
 
   return (
@@ -425,8 +426,8 @@ function EditProfileScreen({ navigation }) {
                   initialValues={{
                     name: user?.name || authUser?.name || "",
                     email: user?.email || authUser?.email || "",
-                    phone: user?.phone || "",
-                    address: user?.address || "",
+                    phone: user?.phone || authUser?.phone || "",
+                    address: user?.address || authUser?.address || "",
                   }}
                   key={`profile-${user?.id || authUser?.userId || "user"}`}
                   onSubmit={handleSubmit}
@@ -514,38 +515,11 @@ function EditProfileScreen({ navigation }) {
                   </TouchableOpacity>
                 ) : null}
 
-                <TouchableOpacity style={styles.accountRow} onPress={() => navigation.navigate(routes.HELP)}>
-                  <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="eye" size={22} color={colors.primary} />
-                    <AppText style={styles.rowLabel}>{t('user_screen.privacy_support')}</AppText>
-                  </View>
-                  <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
-                </TouchableOpacity>
               </View>
             </Animated.View>
 
             {/* Danger Zone - Logout */}
-            <Animated.View style={[
-              styles.dangerSection,
-              { opacity: fadeAnim }
-            ]}>
-              <TouchableOpacity 
-                style={styles.logoutButton}
-                onPress={() => {
-                  Alert.alert(
-                    t('user_screen.logout'),
-                    t('user_screen.logout_confirm'),
-                    [
-                      { text: t('common.cancel'), style: "cancel" },
-                      { text: t('user_screen.logout'), onPress: () => logOut(), style: "destructive" }
-                    ]
-                  );
-                }}
-              >
-                <MaterialCommunityIcons name="logout" size={22} color={colors.danger} />
-                <AppText style={styles.logoutText}>{t('user_screen.logout')}</AppText>
-              </TouchableOpacity>
-            </Animated.View>
+       
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

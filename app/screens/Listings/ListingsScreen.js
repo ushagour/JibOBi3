@@ -209,12 +209,12 @@ function ListingsScreen({ navigation }) {
 
     if (isAlreadyFavorite) {
       Alert.alert(
-        "Remove from favorites?",
-        "Do you want to remove this listing?",
+        t("listings_screen.remove_favorite_title"),
+        t("listings_screen.remove_favorite_message"),
         [
-          { text: "Cancel", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Remove",
+            text: t("common.remove"),
             style: "destructive",
             onPress: async () => {
               const response = await favoritesApi.removeFavorite(listingId);

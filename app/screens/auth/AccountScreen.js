@@ -30,9 +30,7 @@ function AccountScreen({ navigation }) {
     React.useCallback(() => {
  
       loadUnreadMessages();
-      return () => {
-        console.log("👁️ AccountScreen unfocused");
-      };
+
     }, [user])
   );
 

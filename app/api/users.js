@@ -8,13 +8,7 @@ const getUserInfo = (id) => client.get(`/user/${id}`);
 
 
 const updateUserInfo = (id,UserData, onUploadProgress) => {  
-
-    
-    return client.put(`/user/${id}`,UserData  
-    , {
-        headers: {
-            "Content-Type": "multipart/form-data",
-        },
+    return client.put(`/user/${id}`,UserData, {
         onUploadProgress: (progress) =>
             onUploadProgress(progress.loaded / progress.total),
     });

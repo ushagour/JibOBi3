@@ -124,11 +124,20 @@ function OrderCheckoutScreen({ route, navigation }) {
               id: createdOrder.id,
             };
             
-            if (__DEV__) console.log("Navigating to order details with:", orderToPass);
+            if (__DEV__) console.log("Navigating to order details with:", orderToPass.id);
             
-            navigation.navigate(routes.ORDER_DETAILS, {
-              order: orderToPass,
+            try {
+                    // navigation.navigate(routes.ORDER_DETAILS, { orderId: orderToPass.id });
+
+            navigation.navigate("OrderDetailScreen", {
+                order: orderToPass,
             });
+
+            } catch (navError) {
+              if (__DEV__) console.error("Navigation error:", navError);
+              // Fallback: navigate to orders list
+              navigation.navigate(routes.ORDERS);
+            }
           },
         },
         {
