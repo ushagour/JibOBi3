@@ -6,9 +6,9 @@
     "icon": "./assets/adaptive-icon-v1.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/screen.png",
+      "image": "./assets/jibobi3_real_splash_bg.png",
       "resizeMode": "cover",
-      "backgroundColor": "#f3efe6"
+      "backgroundColor": "#FAF6F0"
     },
     "ios": {
       "supportsTablet": true,
@@ -28,6 +28,8 @@
     },
     "extra": {
       "newArchEnabled": true,
+      "env": "prod",
+      "apiUrl": "https://jibobi3.bonto.run/api",
       "eas": {
         "projectId": "34525083-6586-4525-8d78-3e6c0cfb1864"
       }
@@ -43,7 +45,6 @@
       "iosDisplayInForeground": true
     },
     "owner": "ushagour",
-    "releaseChannel": "staging",
     "updates": {
       "enabled": true,
       "url": "https://u.expo.dev/34525083-6586-4525-8d78-3e6c0cfb1864"
