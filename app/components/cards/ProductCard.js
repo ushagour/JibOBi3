@@ -21,7 +21,6 @@ const ProductCard = ({
         <Image 
           source={{ uri: item.imageUri || item.imageUrl }}
           style={styles.image}
-          defaultSource={require('../../../assets/placeholder.png')}
         />
         {isClosed && (
           <View style={styles.soldBadge}>

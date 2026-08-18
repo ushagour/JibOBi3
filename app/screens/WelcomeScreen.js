@@ -130,6 +130,18 @@ function WelcomeScreen({ navigation }) {
 
       </Animated.View>
 
+            <Animated.Text
+        style={[
+          styles.appName,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        Achetez · Vendez · En confiance
+      </Animated.Text>
+
       {/* Animated Buttons Section */}
       <View style={styles.buttonsContainer}>
         <Animated.View
@@ -252,13 +264,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 260,
+    height: 260,
     resizeMode: "contain",
   },
+
+  
   appName: {
-    fontSize: 34,
-    fontWeight: "800",
+    fontSize: 22,
     color: "#FFFFFF",
     marginBottom: 8,
     textShadowColor: "rgba(0, 0, 0, 0.3)",

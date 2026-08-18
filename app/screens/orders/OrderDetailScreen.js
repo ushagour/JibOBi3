@@ -135,6 +135,71 @@ const OrderDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const handleAcceptOrder = () => {
+    if (!order || !order.id) return;
+
+    Alert.alert(
+      t('orders_detail.confirm_accept'),
+      t('orders_detail.accept_confirmation'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('orders_detail.yes_accept_order'),
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const resp = await ordersApi.updateOrderStatus(order.id, "processing");
+              if (resp && resp.ok) {
+                setOrder((prev) => ({ ...(prev || {}), status: "processing", ...(resp.data || {}) }));
+                Alert.alert(t('orders_detail.order_accepted'), t('orders_detail.order_accepted_success'));
+              } else {
+                Alert.alert(t('orders_detail.failed'), t('orders_detail.accept_failed'));
+              }
+            } catch (err) {
+              if (__DEV__) console.error("Accept order failed:", err);
+              Alert.alert(t('common.error'), t('orders_detail.something_went_wrong'));
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeclineOrder = () => {
+    if (!order || !order.id) return;
+
+    Alert.alert(
+      t('orders_detail.confirm_decline'),
+      t('orders_detail.decline_confirmation'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('orders_detail.yes_decline_order'),
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const resp = await ordersApi.updateOrderStatus(order.id, "cancelled");
+              if (resp && resp.ok) {
+                setOrder((prev) => ({ ...(prev || {}), status: "cancelled", ...(resp.data || {}) }));
+                Alert.alert(t('orders_detail.order_declined'), t('orders_detail.order_declined_success'));
+              } else {
+                Alert.alert(t('orders_detail.failed'), t('orders_detail.decline_failed'));
+              }
+            } catch (err) {
+              if (__DEV__) console.error("Decline order failed:", err);
+              Alert.alert(t('common.error'), t('orders_detail.something_went_wrong'));
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const submitReport = async () => {
     if (!order?.id) {
       Alert.alert(t('common.error'), t('orders_detail.order_id_missing'));
@@ -235,6 +300,9 @@ const OrderDetailScreen = ({ route, navigation }) => {
   const currentImageUrl = listingImages[currentImageIndex] || null;
   const canReportIssue = order && !isCancelledOrder && !order?.hasReported;
   const canCloseOrder = user && seller && user.id === seller.id && isCompletedOrder && !isCancelledOrder;
+  const isSeller = user && seller && String(user.id) === String(seller.id);
+  const isPendingOrder = orderStatus === "pending";
+  const canAcceptOrDecline = isSeller && isPendingOrder;
 
 
   const getStatusColor = (status) => {
@@ -306,6 +374,15 @@ const OrderDetailScreen = ({ route, navigation }) => {
                   <Text style={styles.personName} numberOfLines={1}>{buyer?.name || t('orders_detail.n_a')}</Text>
                   <Text style={styles.personMeta} numberOfLines={1}>{buyer?.email || t('orders_detail.n_a')}</Text>
                 </View>
+                {isSeller && buyer?.id && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Conversation", { otherUserId: buyer.id, otherUserName: buyer.name })}
+                    style={styles.messageButton}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialCommunityIcons name="message-text-outline" size={18} color={colors.primary} />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
@@ -533,6 +610,20 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
 
         <View style={styles.actionChipsRow}>
+          {canAcceptOrDecline && (
+            <TouchableOpacity style={styles.acceptButtonRow} onPress={handleAcceptOrder} activeOpacity={0.8}>
+              <MaterialCommunityIcons name="check-circle-outline" size={16} color={colors.success} />
+              <Text style={styles.acceptButtonText}>{t('orders_detail.accept_order')}</Text>
+            </TouchableOpacity>
+          )}
+
+          {canAcceptOrDecline && (
+            <TouchableOpacity style={styles.declineButtonRow} onPress={handleDeclineOrder} activeOpacity={0.8}>
+              <MaterialCommunityIcons name="close-circle-outline" size={16} color={colors.danger} />
+              <Text style={styles.declineButtonText}>{t('orders_detail.decline_order')}</Text>
+            </TouchableOpacity>
+          )}
+
           {canReportIssue && (
             <TouchableOpacity style={styles.reportButtonRow} onPress={handleReportPress} activeOpacity={0.8}>
               <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.danger} />
@@ -1033,6 +1124,38 @@ const styles = StyleSheet.create({
     borderColor: colors.lightGray,
   },
   reportButtonText: {
+    color: colors.danger,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  acceptButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  acceptButtonText: {
+    color: colors.success,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  declineButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+  },
+  declineButtonText: {
     color: colors.danger,
     fontSize: 13,
     fontWeight: '700',

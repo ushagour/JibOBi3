@@ -89,7 +89,6 @@ function UnifiedOrdersScreen({ navigation }) {
       );
 
 
-      console.log("Orders as Buyer:", ordersAsBuyer);
       // For seller orders, check if the user is the listing owner (seller_id comes from Listing.user_id)
       const ordersAsSeller = allOrders.filter(
         (order) => {
@@ -189,6 +188,59 @@ function UnifiedOrdersScreen({ navigation }) {
       userName: order.otherParty,
       orderId: order.id,
     });
+  };
+
+  const handleAcceptOrder = (order) => {
+    Alert.alert(
+      t("orders_unified.accept_confirm_title"),
+      t("orders_unified.accept_confirm_message"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("orders_unified.accept"),
+          onPress: async () => {
+            try {
+              const response = await ordersApi.updateOrderStatus(order.id, ORDER_STATUS.PROCESSING);
+              if (response.ok) {
+                loadAllOrders();
+                Alert.alert(t("common.success"), t("orders_unified.accept_success"));
+              } else {
+                Alert.alert(t("common.error"), t("orders_errors.update_error"));
+              }
+            } catch (error) {
+              Alert.alert(t("common.error"), t("orders_errors.update_error"));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeclineOrder = (order) => {
+    Alert.alert(
+      t("orders_unified.decline_confirm_title"),
+      t("orders_unified.decline_confirm_message"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("orders_unified.decline"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await ordersApi.updateOrderStatus(order.id, ORDER_STATUS.CANCELLED);
+              if (response.ok) {
+                loadAllOrders();
+                Alert.alert(t("common.success"), t("orders_unified.decline_success"));
+              } else {
+                Alert.alert(t("common.error"), t("orders_errors.update_error"));
+              }
+            } catch (error) {
+              Alert.alert(t("common.error"), t("orders_errors.update_error"));
+            }
+          },
+        },
+      ]
+    );
   };
   
 
@@ -398,13 +450,23 @@ function UnifiedOrdersScreen({ navigation }) {
             )}
 
             {item.type === ORDER_TYPES.AS_SELLER && item.normalizedStatus === ORDER_STATUS.PENDING && (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.processBtn]}
-                onPress={() => handleUpdateStatus(item, ORDER_STATUS.PROCESSING)}
-              >
-                <MaterialCommunityIcons name="cog" size={16} color="#FFF" />
-                <Text style={styles.actionBtnText}>{t("orders_unified.process")}</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.acceptBtn]}
+                  onPress={() => handleAcceptOrder(item)}
+                >
+                  <MaterialCommunityIcons name="check" size={16} color="#FFF" />
+                  <Text style={styles.actionBtnText}>{t("orders_unified.accept")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.declineBtn]}
+                  onPress={() => handleDeclineOrder(item)}
+                >
+                  <MaterialCommunityIcons name="close" size={16} color="#FFF" />
+                  <Text style={styles.actionBtnText}>{t("orders_unified.decline")}</Text>
+                </TouchableOpacity>
+              </>
             )}
 
             {item.type === ORDER_TYPES.AS_SELLER && item.normalizedStatus === ORDER_STATUS.PROCESSING && (
@@ -723,6 +785,12 @@ const styles = StyleSheet.create({
   },
   processBtn: {
     backgroundColor: "#FF9800",
+  },
+  acceptBtn: {
+    backgroundColor: "#4CAF50",
+  },
+  declineBtn: {
+    backgroundColor: "#F44336",
   },
   shipBtn: {
     backgroundColor: "#9C27B0",

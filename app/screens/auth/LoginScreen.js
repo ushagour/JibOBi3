@@ -12,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons, Ionicons, Feather } from "@expo/vector-icons";
@@ -257,142 +258,149 @@ function LoginScreen({ navigation }) {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidingView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.innerContainer}>
-              {/* Animated Logo Section */}
-              <Animated.View
-                style={[
-                  styles.logoContainer,
-                  {
-                    opacity: logoAnim,
-                    transform: [{ scale: logoAnim }],
-                  },
-                ]}
-              >
-                <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
- 
-              </Animated.View>
-
-              {/* Animated Form Section */}
-              <Animated.View
-                style={[
-                  styles.formWrapper,
-                  {
-                    opacity: formAnim,
-                    transform: [{ translateY: formAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
-                    })}],
-                  },
-                ]}
-              >
-                <Form
-                  initialValues={{ email: "", password: "" }}
-                  onSubmit={handleSubmit}
-                  validationSchema={validationSchema}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
+              <View style={styles.innerContainer}>
+                {/* Animated Logo Section */}
+                <Animated.View
+                  style={[
+                    styles.logoContainer,
+                    {
+                      opacity: logoAnim,
+                      transform: [{ scale: logoAnim }],
+                    },
+                  ]}
                 >
-                  <ErrorMessage
-                    error={t("auth.invalid_credentials")}
-                    visible={loginFailed}
-                  />
-                  
-                  {/* Email Field */}
-                  <View style={styles.inputGroup}>
-                    <FormField
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      icon="email"
-                      keyboardType="email-address"
-                      name="email"
-                      placeholder={t("auth_screens.enter_email")}
-                      showErrorOnSubmitOnly
-                      textContentType="emailAddress"
-                      containerStyle={styles.formFieldContainer}
-                    />
-                  </View>
+                  <Image style={styles.logo} source={require("../../assets/logo-primary.png")} />
+   
+                </Animated.View>
 
-                  {/* Password Field */}
-                  <View style={styles.inputGroup}>
-                    <View style={styles.passwordWrapper}>
+                {/* Animated Form Section */}
+                <Animated.View
+                  style={[
+                    styles.formWrapper,
+                    {
+                      opacity: formAnim,
+                      transform: [{ translateY: formAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      })}],
+                    },
+                  ]}
+                >
+                  <Form
+                    initialValues={{ email: "", password: "" }}
+                    onSubmit={handleSubmit}
+                    validationSchema={validationSchema}
+                  >
+                    <ErrorMessage
+                      error={t("auth.invalid_credentials")}
+                      visible={loginFailed}
+                    />
+                    
+                    {/* Email Field */}
+                    <View style={styles.inputGroup}>
                       <FormField
                         autoCapitalize="none"
                         autoCorrect={false}
-                        icon="lock"
-                        name="password"
-                        placeholder={t("auth_screens.enter_password")}
+                        icon="email"
+                        keyboardType="email-address"
+                        name="email"
+                        placeholder={t("auth_screens.enter_email")}
                         showErrorOnSubmitOnly
-                        secureTextEntry={!showPassword}
-                        textContentType="password"
+                        textContentType="emailAddress"
                         containerStyle={styles.formFieldContainer}
                       />
-                      <TouchableOpacity
-                        style={styles.eyeIcon}
-                        onPress={() => setShowPassword(!showPassword)}
-                      >
-                      </TouchableOpacity>
                     </View>
+
+                    {/* Password Field */}
+                    <View style={styles.inputGroup}>
+                      <View style={styles.passwordWrapper}>
+                        <FormField
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          icon="lock"
+                          name="password"
+                          placeholder={t("auth_screens.enter_password")}
+                          showErrorOnSubmitOnly
+                          secureTextEntry={!showPassword}
+                          textContentType="password"
+                          containerStyle={styles.formFieldContainer}
+                        />
+                        <TouchableOpacity
+                          style={styles.eyeIcon}
+                          onPress={() => setShowPassword(!showPassword)}
+                        >
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* Forgot Password */}
+                    <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
+                      <Text style={styles.forgotPassword}>{t("auth.forgot_password")}</Text>
+                    </TouchableOpacity>
+
+                    {faceIdReady ? (
+                      <TouchableOpacity style={styles.faceIdButton} onPress={handleFaceIdLogin}>
+                        <MaterialCommunityIcons name="face-recognition" size={18} color={colors.primary} />
+                        <Text style={styles.faceIdButtonText}>{faceIdLabel}</Text>
+                      </TouchableOpacity>
+                    ) : null}
+
+                    {/* Submit Button */}
+                    <SubmitButton title={t("auth_screens.sign_in")} />
+                  </Form>
+
+                  {/* Register Link */}
+                  <View style={styles.registerContainer}>
+                    <Text style={styles.registerText}>{t("auth.new_user")} </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                      <Text style={styles.registerLink}>{t("common.signup")}</Text>
+                    </TouchableOpacity>
                   </View>
 
-                  {/* Forgot Password */}
-                  <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
-                    <Text style={styles.forgotPassword}>{t("auth.forgot_password")}</Text>
-                  </TouchableOpacity>
+                  {/* Divider */}
+                  {/* <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>{t("auth_screens.or_continue_with")}</Text>
+                    <View style={styles.dividerLine} />
+                  </View> */}
 
-                  {faceIdReady ? (
-                    <TouchableOpacity style={styles.faceIdButton} onPress={handleFaceIdLogin}>
-                      <MaterialCommunityIcons name="face-recognition" size={18} color={colors.primary} />
-                      <Text style={styles.faceIdButtonText}>{faceIdLabel}</Text>
+                  {/* Social Media Login */}
+                  {/* <View style={styles.socialButtonsContainer}>
+                    <TouchableOpacity
+                      style={[styles.socialButton, { backgroundColor: "#DB4437" }]}
+                      onPress={() => handleSocialLogin("Google")}
+                      activeOpacity={0.9}
+                    >
+                      <MaterialCommunityIcons name="google" size={24} color="#FFF" />
                     </TouchableOpacity>
-                  ) : null}
-
-                  {/* Submit Button */}
-                  <SubmitButton title={t("auth_screens.sign_in")} />
-                </Form>
-
-                {/* Register Link */}
-                <View style={styles.registerContainer}>
-                  <Text style={styles.registerText}>{t("auth.new_user")} </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-                    <Text style={styles.registerLink}>{t("common.signup")}</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Divider */}
-                {/* <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>{t("auth_screens.or_continue_with")}</Text>
-                  <View style={styles.dividerLine} />
-                </View> */}
-
-                {/* Social Media Login */}
-                {/* <View style={styles.socialButtonsContainer}>
-                  <TouchableOpacity
-                    style={[styles.socialButton, { backgroundColor: "#DB4437" }]}
-                    onPress={() => handleSocialLogin("Google")}
-                    activeOpacity={0.9}
-                  >
-                    <MaterialCommunityIcons name="google" size={24} color="#FFF" />
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.socialButton, { backgroundColor: "#4267B2" }]}
-                    onPress={() => handleSocialLogin("Facebook")}
-                    activeOpacity={0.9}
-                  >
-                    <MaterialCommunityIcons name="facebook" size={24} color="#FFF" />
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.socialButton, { backgroundColor: "#000000" }]}
-                    onPress={() => handleSocialLogin("Apple")}
-                    activeOpacity={0.9}
-                  >
-                    <MaterialCommunityIcons name="apple" size={24} color="#FFF" />
-                  </TouchableOpacity>
-                </View> */}
-              </Animated.View>
-            </View>
+                    
+                    <TouchableOpacity
+                      style={[styles.socialButton, { backgroundColor: "#4267B2" }]}
+                      onPress={() => handleSocialLogin("Facebook")}
+                      activeOpacity={0.9}
+                    >
+                      <MaterialCommunityIcons name="facebook" size={24} color="#FFF" />
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={[styles.socialButton, { backgroundColor: "#000000" }]}
+                      onPress={() => handleSocialLogin("Apple")}
+                      activeOpacity={0.9}
+                    >
+                      <MaterialCommunityIcons name="apple" size={24} color="#FFF" />
+                    </TouchableOpacity>
+                  </View> */}
+                </Animated.View>
+              </View>
+            </ScrollView>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Screen>
@@ -407,6 +415,10 @@ const styles = StyleSheet.create({
   },
   keyboardAvoidingView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
   innerContainer: {
     flex: 1,
