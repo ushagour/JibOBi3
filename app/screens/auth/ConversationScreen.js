@@ -18,31 +18,34 @@ import { MaterialCommunityIcons, Ionicons, Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import AppText from "../../components/Text";
 import Avatar from "../../components/Avatar";
-import theme from "../../config/theme";
 import messagesApi from "../../api/messages";
 import useAuth from "../../auth/useAuth";
+import useTheme from "../../hooks/useTheme";
 
 const { width, height } = Dimensions.get("window");
 
-const palette = {
-  background: theme.colors.background,
-  surface: theme.colors.surface,
-  primary: theme.colors.primary,
-  primaryDark: theme.colors.primaryDark,
-  primaryLight: theme.colors.primaryLight,
-  secondary: theme.colors.secondary,
-  accent: theme.colors.accent,
-  textPrimary: theme.colors.textPrimary,
-  textSecondary: theme.colors.textSecondary,
-  textMuted: theme.colors.textTertiary,
-  border: theme.colors.lightGray,
-  shadow: theme.colors.shadowColor,
-  gradientStart: theme.colors.primaryDark,
-  gradientEnd: theme.colors.primaryLight,
-};
+const getPalette = (themeColors) => ({
+  background: themeColors.background,
+  surface: themeColors.surface,
+  primary: themeColors.primary,
+  primaryDark: themeColors.primaryDark,
+  primaryLight: themeColors.primaryLight,
+  secondary: themeColors.secondary,
+  accent: themeColors.accent,
+  textPrimary: themeColors.textPrimary,
+  textSecondary: themeColors.textSecondary,
+  textMuted: themeColors.textTertiary,
+  border: themeColors.lightGray,
+  shadow: themeColors.shadowColor,
+  gradientStart: themeColors.primaryDark,
+  gradientEnd: themeColors.primaryLight,
+});
 
 // Animated Message Component
 const AnimatedMessage = ({ item, isSender, index }) => {
+  const { colors: themeColors } = useTheme();
+  const palette = getPalette(themeColors);
+  const styles = getStyles(palette);
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateXAnim = useRef(new Animated.Value(isSender ? 50 : -50)).current;
@@ -133,6 +136,9 @@ const AnimatedMessage = ({ item, isSender, index }) => {
 
 // Contact Card Component with Animation
 const AnimatedContactCard = ({ item, onPress, index }) => {
+  const { colors: themeColors } = useTheme();
+  const palette = getPalette(themeColors);
+  const styles = getStyles(palette);
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -187,6 +193,9 @@ const AnimatedContactCard = ({ item, onPress, index }) => {
 
 // Custom Header Component
 const CustomHeader = ({ title, onBack, onSearch, searchQuery, setSearchQuery }) => {
+  const { colors: themeColors } = useTheme();
+  const palette = getPalette(themeColors);
+  const styles = getStyles(palette);
   const [showSearch, setShowSearch] = useState(false);
   const searchAnim = useRef(new Animated.Value(0)).current;
 
@@ -252,6 +261,9 @@ const CustomHeader = ({ title, onBack, onSearch, searchQuery, setSearchQuery }) 
 function ConversationScreen({ route, navigation }) {
   const { otherUserId, otherUserName } = route.params || {};
   const { user } = useAuth();
+  const { colors: themeColors } = useTheme();
+  const palette = getPalette(themeColors);
+  const styles = getStyles(palette);
   const [messages, setMessages] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -452,8 +464,8 @@ function ConversationScreen({ route, navigation }) {
       
       <KeyboardAvoidingView 
         style={styles.keyboardContainer} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
           ref={flatRef}
@@ -464,6 +476,7 @@ function ConversationScreen({ route, navigation }) {
           onRefresh={loadConversation}
           refreshing={loading}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={!loading && (
             <View style={styles.emptyMessages}>
               <MaterialCommunityIcons name="message-text-outline" size={50} color={palette.textMuted} />
@@ -510,7 +523,7 @@ function ConversationScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (palette) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: palette.background,

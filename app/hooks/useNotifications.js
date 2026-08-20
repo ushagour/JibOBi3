@@ -9,45 +9,52 @@ const useNotifications  = (notificationListener) => {
 
     registerForPushNotificationsAsync();
 
-
-    
-
     if (typeof notificationListener === "function") {
       Notifications.addListener(notificationListener);
     }
   }, [notificationListener]);
-
-
 
   async function registerForPushNotificationsAsync() {
     try {
       // Request notification permissions directly from expo-notifications
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
-        alert('Failed to get push token for push notification!');
+        // Silent fail - user denied permission
         return;
       }
       
-      const pushTokenString = (await Notifications.getExpoPushTokenAsync( { projectId: Constants.expoConfig?.extra?.eas?.projectId })).data;
-      //  console.log("pushTokenString", pushTokenString);
-      
-      // Silently attempt to register push token - will retry automatically if offline
-      const result = await expoPushTokensApi.register(pushTokenString);
-      if (!result.ok && result.error?.message?.includes('Network')) {
-        // Silent fail for network errors - Expo will retry automatically
+      // Wrap push token request in try-catch to handle offline/network errors
+      let pushTokenString;
+      try {
+        pushTokenString = (await Notifications.getExpoPushTokenAsync({ 
+          projectId: Constants.expoConfig?.extra?.eas?.projectId 
+        })).data;
+      } catch (tokenError) {
+        // Silent fail for push token errors - Expo will retry automatically
+        // These errors are expected when offline or during network issues
         return;
+      }
+      
+      if (!pushTokenString) return;
+
+      // Silently attempt to register push token - will retry automatically if offline
+      try {
+        const result = await expoPushTokensApi.register(pushTokenString);
+        // Silent fail for network errors - Expo will retry automatically
+      } catch (apiError) {
+        // Silent fail - Expo notifications handles retries automatically
+        // Only log in development for non-network errors
+        if (__DEV__ && apiError?.message && !apiError.message.includes('Network')) {
+          console.debug("Push token registration info:", apiError.message);
+        }
       }
 
     } catch (error) {
-      // Silently catch errors - Expo notifications handles retries
-      // Only log network-related errors in development
-      if (__DEV__ && error.message && !error.message.includes('Network')) {
-        console.log("Error getting a push token", error);
-      }
+      // Silently catch all errors - Expo notifications handles retries
+      // Network errors are expected and will be retried automatically by Expo
     }
   }
-  
-
 
 };
+
 export default useNotifications;

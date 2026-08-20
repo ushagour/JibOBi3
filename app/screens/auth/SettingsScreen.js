@@ -26,8 +26,7 @@ function SettingRow({ icon, title, subTitle }) {
 
 function SettingsScreen() {
   const { t, i18n } = useTranslation();
-  const { colors: themeColors, isDark } = useTheme();
-  const [darkMode, setDarkMode] = useState(false);
+  const { colors: themeColors, isDark, themePreference, setThemePreference } = useTheme();
   const [notifications, setNotifications] = useState({
     pushEnabled: true,
     messageNotifications: true,
@@ -62,10 +61,10 @@ function SettingsScreen() {
 
   const handleDarkModeToggle = async () => {
     try {
-      setDarkMode(!darkMode);
-      // TODO: Persist dark mode preference to AsyncStorage or API
+      const nextThemePreference = isDark ? "light" : "dark";
+      await setThemePreference(nextThemePreference);
       showSweetAlert({
-        title: darkMode ? "☀️ Light Mode Enabled" : "🌙 Dark Mode Enabled",
+        title: nextThemePreference === "dark" ? "🌙 Dark Mode Enabled" : "☀️ Light Mode Enabled",
         message: `Theme preference has been updated.`,
         type: "success",
       });
@@ -111,10 +110,10 @@ function SettingsScreen() {
               <Text style={styles.rowSubTitle}>{t("settings.dark_mode_subtitle")}</Text>
             </View>
             <Switch
-              value={darkMode}
+              value={isDark}
               onValueChange={handleDarkModeToggle}
               trackColor={{ false: colors.lightGray, true: colors.primary }}
-              thumbColor={darkMode ? colors.primary : colors.white}
+              thumbColor={isDark ? colors.primary : colors.white}
             />
           </View>
         </View>
