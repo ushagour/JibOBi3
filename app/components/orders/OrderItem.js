@@ -2,72 +2,75 @@ import React from "react";
 import { StyleSheet, View, TouchableOpacity, Image, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from "react-i18next";
 import Text from "../Text";
 import colors from "../../config/colors";
 
 const { width } = Dimensions.get('window');
 
-// Status configurations with gradient colors
-const STATUS_CONFIG = {
-  pending: {
-    name: "Pending",
-    gradientColors: ["#FF6B6B", "#FF8E8E"],
-    icon: "clock-outline",
-    bgColor: "#FFF5F5",
-    borderColor: "#FF6B6B",
-    textColor: "#FF6B6B",
-  },
-  processing: {
-    name: "Processing",
-    gradientColors: ["#4A90E2", "#6CA3F5"],
-    icon: "cog",
-    bgColor: "#F0F7FF",
-    borderColor: "#4A90E2",
-    textColor: "#4A90E2",
-  },
-  shipped: {
-    name: "Shipped",
-    gradientColors: ["#9B59B6", "#B07CC9"],
-    icon: "truck-delivery",
-    bgColor: "#F8F0FF",
-    borderColor: "#9B59B6",
-    textColor: "#9B59B6",
-  },
-  delivered: {
-    name: "Delivered",
-    gradientColors: ["#27AE60", "#48C77A"],
-    icon: "package-variant",
-    bgColor: "#F0FFF4",
-    borderColor: "#27AE60",
-    textColor: "#27AE60",
-  },
-  completed: {
-    name: "Completed",
-    gradientColors: ["#2ECC71", "#5ED48A"],
-    icon: "check-circle",
-    bgColor: "#F0FFF4",
-    borderColor: "#2ECC71",
-    textColor: "#2ECC71",
-  },
-  cancelled: {
-    name: "Cancelled",
-    gradientColors: ["#E74C3C", "#EC7063"],
-    icon: "close-circle",
-    bgColor: "#FFF5F5",
-    borderColor: "#E74C3C",
-    textColor: "#E74C3C",
-  },
-  refunded: {
-    name: "Refunded",
-    gradientColors: ["#F39C12", "#F5B041"],
-    icon: "cash-refund",
-    bgColor: "#FFFBF0",
-    borderColor: "#F39C12",
-    textColor: "#F39C12",
-  },
-};
-
 function OrderItem({ order, onPress, showActions = false, renderActions }) {
+  const { t } = useTranslation();
+  
+  // Status configurations with gradient colors - now using translation keys
+  const STATUS_CONFIG = {
+    pending: {
+      name: t("orders_unified.status_pending"),
+      gradientColors: ["#FF6B6B", "#FF8E8E"],
+      icon: "clock-outline",
+      bgColor: "#FFF5F5",
+      borderColor: "#FF6B6B",
+      textColor: "#FF6B6B",
+    },
+    processing: {
+      name: t("orders_unified.status_processing"),
+      gradientColors: ["#4A90E2", "#6CA3F5"],
+      icon: "cog",
+      bgColor: "#F0F7FF",
+      borderColor: "#4A90E2",
+      textColor: "#4A90E2",
+    },
+    shipped: {
+      name: t("orders_unified.status_shipped"),
+      gradientColors: ["#9B59B6", "#B07CC9"],
+      icon: "truck-delivery",
+      bgColor: "#F8F0FF",
+      borderColor: "#9B59B6",
+      textColor: "#9B59B6",
+    },
+    delivered: {
+      name: t("orders_unified.status_delivered"),
+      gradientColors: ["#27AE60", "#48C77A"],
+      icon: "package-variant",
+      bgColor: "#F0FFF4",
+      borderColor: "#27AE60",
+      textColor: "#27AE60",
+    },
+    completed: {
+      name: t("orders_unified.status_completed"),
+      gradientColors: ["#2ECC71", "#5ED48A"],
+      icon: "check-circle",
+      bgColor: "#F0FFF4",
+      borderColor: "#2ECC71",
+      textColor: "#2ECC71",
+    },
+    cancelled: {
+      name: t("orders_unified.status_cancelled"),
+      gradientColors: ["#E74C3C", "#EC7063"],
+      icon: "close-circle",
+      bgColor: "#FFF5F5",
+      borderColor: "#E74C3C",
+      textColor: "#E74C3C",
+    },
+    refunded: {
+      name: t("order_item.refunded"),
+      gradientColors: ["#F39C12", "#F5B041"],
+      icon: "cash-refund",
+      bgColor: "#FFFBF0",
+      borderColor: "#F39C12",
+      textColor: "#F39C12",
+    },
+  };
+  
   const status = order.normalizedStatus || order.status || "pending";
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   
@@ -83,9 +86,9 @@ function OrderItem({ order, onPress, showActions = false, renderActions }) {
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays === 0) return t("order_item.today");
+    if (diffDays === 1) return t("order_item.yesterday");
+    if (diffDays < 7) return t("order_item.days_ago", { count: diffDays });
     return date.toLocaleDateString();
   };
 
@@ -130,14 +133,14 @@ function OrderItem({ order, onPress, showActions = false, renderActions }) {
           {/* Order Details */}
           <View style={styles.details}>
             <Text style={styles.productName} numberOfLines={2}>
-              {order.listing_title || "Product"}
+              {order.listing_title || t("orders_unified.product_fallback")}
             </Text>
             
             <View style={styles.infoGrid}>
        
               <View style={styles.infoItem}>
                 <MaterialCommunityIcons name="currency-usd" size={14} color={config.textColor} />
-                <Text style={styles.infoLabel}>Total:</Text>
+                <Text style={styles.infoLabel}>{t("order_item.total")}:</Text>
                 <Text style={[styles.price, { color: config.textColor }]}>
                   ${formattedPrice}
                 </Text>
@@ -146,7 +149,7 @@ function OrderItem({ order, onPress, showActions = false, renderActions }) {
               {formatDate(order.created_at || order.createdAt) && (
                 <View style={styles.infoItem}>
                   <MaterialCommunityIcons name="calendar" size={14} color={config.textColor} />
-                  <Text style={styles.infoLabel}>Date:</Text>
+                  <Text style={styles.infoLabel}>{t("order_item.date")}:</Text>
                   <Text style={styles.infoValue}>
                     {formatDate(order.created_at || order.createdAt)}
                   </Text>
@@ -159,7 +162,7 @@ function OrderItem({ order, onPress, showActions = false, renderActions }) {
               <View style={styles.trackingInfo}>
                 <MaterialCommunityIcons name="map-marker-distance" size={14} color={config.textColor} />
                 <Text style={styles.trackingText}>
-                  Tracking: {order.tracking_number}
+                  {t("order_item.tracking")}: {order.tracking_number}
                 </Text>
               </View>
             )}
@@ -168,7 +171,7 @@ function OrderItem({ order, onPress, showActions = false, renderActions }) {
             {(status === 'processing' || status === 'shipped') && (
               <View style={styles.estimateContainer}>
                 <Text style={styles.estimateText}>
-                  Expected delivery: {getDeliveryEstimate()}
+                  {t("order_item.expected_delivery")}: {getDeliveryEstimate()}
                 </Text>
               </View>
             )}

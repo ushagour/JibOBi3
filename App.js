@@ -1,9 +1,9 @@
 import "expo-dev-client";
 import React, { useState, useEffect, useCallback } from "react";
-import { StatusBar } from "react-native";
+import { BackHandler, StatusBar } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import * as SplashScreen from "expo-splash-screen"; // Import SplashScreen
-import myTheme from "./app/navigation/myTheme";
+import * as SplashScreen from "expo-splash-screen";
+import { getNavigationTheme } from "./app/navigation/myTheme";
 import AppNavigator from "./app/navigation/AppNavigator";
 import OfflineNotice from "./app/components/OfflineNotice";
 import AuthNavigator from "./app/navigation/AuthNavigator";
@@ -14,9 +14,10 @@ import { navigationRef } from "./app/navigation/rootNavigation";
 import GlobalAlertProvider from "./app/components/GlobalAlertProvider";
 import FloatingAIButton from "./app/components/chatboot/FloatingAIButton";
 import colors from "./app/config/colors";
-import './app/config/i18n'; // Initialize i18n
+import './app/config/i18n';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './app/config/i18n';
+import { ThemeProvider } from "./app/hooks/useTheme";
 
 // Suppress Expo push token warning when offline
 const originalWarn = console.warn;
@@ -39,6 +40,20 @@ export default function App() {
     const user = await authStorage.getUser();
     if (user) setUser(user);
   };
+
+  useEffect(() => {
+    const backAction = () => {
+      if (navigationRef.current?.canGoBack?.()) {
+        navigationRef.current.goBack();
+        return true;
+      }
+
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", backAction);
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     // Prevent auto-hiding the splash screen
@@ -71,16 +86,18 @@ export default function App() {
   return (
     <I18nextProvider i18n={i18n}>
       <>
-        <StatusBar barStyle="light-content" backgroundColor={colors.primary} translucent={false} />
+        <StatusBar barStyle="dark-content" backgroundColor={colors.primary} translucent={false} />
         <SplashContext.Provider value={{ splashHidden }}>
-        <NavigationContainer ref={navigationRef} theme={myTheme} onReady={onLayoutRootView}>
-          <OfflineNotice />
-          <AuthContext.Provider  value={{ user, setUser }}>
-            {user ? <AppNavigator /> : <AuthNavigator />}
-          </AuthContext.Provider>
-          {isAuthenticated ? <FloatingAIButton user={user} /> : null}
-          <GlobalAlertProvider />
-        </NavigationContainer>
+        <ThemeProvider>
+          <NavigationContainer ref={navigationRef} theme={getNavigationTheme()} onReady={onLayoutRootView}>
+            <OfflineNotice />
+            <AuthContext.Provider  value={{ user, setUser }}>
+              {user ? <AppNavigator /> : <AuthNavigator />}
+            </AuthContext.Provider>
+            {isAuthenticated ? <FloatingAIButton user={user} /> : null}
+            <GlobalAlertProvider />
+          </NavigationContainer>
+        </ThemeProvider>
         </SplashContext.Provider>
       </>
     </I18nextProvider>

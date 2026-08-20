@@ -17,6 +17,10 @@
       "releaseChannel": "prod",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "prod",
+        "EXPO_PUBLIC_API_URL_PROD": "https://jibobi3.bonto.run/api"
       }
     },
     "staging": {

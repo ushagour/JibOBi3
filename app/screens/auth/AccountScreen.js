@@ -1,6 +1,7 @@
 import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 
 import { ListItem, ListItemSeparator } from "../../components/lists";
 import colors from "../../config/colors";
@@ -19,6 +20,7 @@ import messagesApi from "../../api/messages";
 function AccountScreen({ navigation }) {
   const { user, logOut, isLoggedIn, isGuest } = useAuth();
   const { colors: themeColors } = useTheme();
+  const { t } = useTranslation();
   const loggedIn = isLoggedIn();
   const guestMode = isGuest();
   const [unreadMessageCount, setUnreadMessageCount] = React.useState(0);
@@ -28,9 +30,7 @@ function AccountScreen({ navigation }) {
     React.useCallback(() => {
  
       loadUnreadMessages();
-      return () => {
-        console.log("👁️ AccountScreen unfocused");
-      };
+
     }, [user])
   );
 
@@ -47,7 +47,7 @@ function AccountScreen({ navigation }) {
 
 const menuItems = [
   {
-    title: "My Listings",
+    titleKey: "screen_labels.my_listings",
     icon: {
       name: "format-list-bulleted",
       backgroundColor: colors.primary,
@@ -55,7 +55,7 @@ const menuItems = [
     targetScreen: routes.MY_LISTINGS,
   },
   {
-    title: "Orders",
+    titleKey: "screen_labels.my_orders",
     icon: {
       name: "cart",
       backgroundColor: colors.primary,
@@ -64,7 +64,7 @@ const menuItems = [
 
   },
   {
-    title: "Messages",
+    titleKey: "screen_labels.my_messages",
     icon: {
       name: "message-text", 
       backgroundColor: colors.primary,
@@ -73,17 +73,13 @@ const menuItems = [
     badge: unreadMessageCount,
   },
   {
-    title: "Wishlist",
+    titleKey: "screen_labels.my_wishlist",
     icon: { name: "heart", 
       backgroundColor: colors.primary },
     targetScreen: routes.FAVORITES,
   },
-
-];
-
-const settingsMenuItems = [
   {
-    title: "Preferences",
+    titleKey: "screen_labels.my_preferences",
     icon: {
       name: "cog",
       backgroundColor: colors.secondary,
@@ -91,18 +87,21 @@ const settingsMenuItems = [
     targetScreen: routes.SETTINGS,
   },
   {
-    title: "Help & Support",
+    titleKey: "screen_labels.my_help",
     icon: { name: "help-circle", backgroundColor: colors.secondary },
     targetScreen: routes.HELP,
 
   }
-  ,{
-    title: "logout",
+];
+
+const settingsMenuItems = [
+  {
+    titleKey: "account_screen.logout",
     icon: { name: "logout", backgroundColor: "red" },
     onPress: () => {
-      Alert.alert("Log Out", "Are you sure you want to Log out?", [
-        { text: "Yes", onPress: () => logOut() },
-        { text: "Cancel", style: "cancel" },
+      Alert.alert(t('account_screen.logout_confirm_title'), t('account_screen.logout_confirm_message'), [
+        { text: t('common.yes'), onPress: () => logOut() },
+        { text: t('common.cancel'), style: "cancel" },
       ]);
     }
   }
@@ -116,7 +115,7 @@ const settingsMenuItems = [
       {guestMode ? (
         <View style={[styles.guestBanner, { backgroundColor: themeColors.warningLight, borderColor: themeColors.warning }]}>
           <AppText style={[styles.guestBannerText, { color: themeColors.textPrimary }]}>
-            You are browsing as guest. Login or register to use favorites, notifications, and posting.
+            {t('account_screen.guest_banner')}
           </AppText>
         </View>
       ) : null}
@@ -139,13 +138,13 @@ const settingsMenuItems = [
           }}
         />
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-            Quick Actions
+            {t('account_screen.quick_actions')}
           </AppText>
           <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             {menuItems.map((item, index) => (
-              <View key={item.title}>
-                <ListItem
-                  title={item.title}
+              <View key={`menu-${index}`}>
+              <ListItem
+                  title={t(item.titleKey)}
                   IconComponent={
                     <Icon
                       name={item.icon.name}
@@ -171,13 +170,13 @@ const settingsMenuItems = [
       {loggedIn ? (
         <>
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-            Account Actions
+            {t('account_screen.account_actions')}
           </AppText>
           <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             {settingsMenuItems.map((item, index) => (
-              <View key={item.title}>
+              <View key={`settings-${index}`}>
                 <ListItem
-                  title={item.title}
+                  title={t(item.titleKey)}
                   IconComponent={
                     <Icon name={item.icon.name} backgroundColor={item.icon.backgroundColor} />
                   }
@@ -191,15 +190,15 @@ const settingsMenuItems = [
       ) : (
         <>
           <AppText variant="overline" color="textTertiary" style={styles.sectionTitle}>
-            Guest Actions
+            {t('account_screen.guest_actions')}
           </AppText>
           <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
             <ListItem
-              title="Exit Guest Mode"
+              title={t('account_screen.exit_guest_mode')}
               IconComponent={<Icon name="logout" backgroundColor="#ffe66d" />}
-              onPress={() => Alert.alert("Exit Guest Mode", "Are you sure you want to exit guest mode?", [
-                { text: "Yes", onPress: () => logOut() },
-                { text: "Cancel", style: "cancel" },
+              onPress={() => Alert.alert(t('account_screen.exit_guest_confirm'), t('account_screen.exit_guest_confirm'), [
+                { text: t('common.yes'), onPress: () => logOut() },
+                { text: t('common.cancel'), style: "cancel" },
               ])}
             />
           </View>

@@ -4,11 +4,13 @@ import {
   FlatList,
   StyleSheet,
   View,
+  Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Dimensions,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -37,16 +39,19 @@ const ORDER_STATUS = {
   CANCELLED: "cancelled",
 };
 
-const STATUS_CONFIG = {
-  pending: { label: "Pending", color: "#FFC107", icon: "clock-outline", bg: "#FFF8E1" },
-  processing: { label: "Processing", color: "#2196F3", icon: "cog", bg: "#E3F2FD" },
-  shipped: { label: "Shipped", color: "#9C27B0", icon: "truck-delivery", bg: "#F3E5F5" },
-  delivered: { label: "Delivered", color: "#4CAF50", icon: "package-variant", bg: "#E8F5E9" },
-  completed: { label: "Completed", color: "#2ECC71", icon: "check-circle", bg: "#F0FFF4" },
-  cancelled: { label: "Cancelled", color: "#F44336", icon: "close-circle", bg: "#FFEBEE" },
-};
+function getStatusConfig(t) {
+  return {
+    pending: { label: t("orders_unified.status_pending"), color: "#FFC107", icon: "clock-outline", bg: "#FFF8E1" },
+    processing: { label: t("orders_unified.status_processing"), color: "#2196F3", icon: "cog", bg: "#E3F2FD" },
+    shipped: { label: t("orders_unified.status_shipped"), color: "#9C27B0", icon: "truck-delivery", bg: "#F3E5F5" },
+    delivered: { label: t("orders_unified.status_delivered"), color: "#4CAF50", icon: "package-variant", bg: "#E8F5E9" },
+    completed: { label: t("orders_unified.status_completed"), color: "#2ECC71", icon: "check-circle", bg: "#F0FFF4" },
+    cancelled: { label: t("orders_unified.status_cancelled"), color: "#F44336", icon: "close-circle", bg: "#FFEBEE" },
+  };
+}
 
 function UnifiedOrdersScreen({ navigation }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(ORDER_TYPES.AS_BUYER);
   const [buyerOrders, setBuyerOrders] = useState([]);
@@ -58,6 +63,7 @@ function UnifiedOrdersScreen({ navigation }) {
     asSeller: { total: 0, pending: 0, shipped: 0, delivered: 0 },
   });
 
+  const STATUS_CONFIG = getStatusConfig(t);
   const userId = user?.userId;
 
   // Load all orders
@@ -69,8 +75,9 @@ function UnifiedOrdersScreen({ navigation }) {
       // Get all orders from API
       const response = await ordersApi.getOrders();
       
-      if (!response.ok || !response.data) {
-        Alert.alert("Error", "Could not load orders.");
+      if (!response.ok || !Array.isArray(response.data)) {
+        const errorMsg = response?.data?.error || t("orders_errors.load_error");
+        Alert.alert(t("common.error"), errorMsg);
         return;
       }
 
@@ -81,33 +88,46 @@ function UnifiedOrdersScreen({ navigation }) {
         (order) => String(order.buyer_id) === String(userId)
       );
 
+
+      // For seller orders, check if the user is the listing owner (seller_id comes from Listing.user_id)
       const ordersAsSeller = allOrders.filter(
-        (order) => String(order.seller_id) === String(userId)
+        (order) => {
+          const sellerId = order.Listing?.user_id || order.listing?.user_id;
+          return String(sellerId) === String(userId);
+        }
       );
 
       // Normalize and enhance orders
-      const normalizedBuyerOrders = ordersAsBuyer.map(order => ({
-        ...order,
-        type: ORDER_TYPES.AS_BUYER,
-        normalizedStatus: String(order?.status || "").toLowerCase(),
-        roleIcon: "cart-outline",
-        roleLabel: "You purchased",
-        roleColor: "#4CAF50",
-        otherParty: order.seller_name || "Seller",
-        otherPartyId: order.seller_id,
-      }));
+      const normalizedBuyerOrders = ordersAsBuyer.map(order => {
+        const seller = order.Listing?.User || order.listing?.user;
+        return {
+          ...order,
+          type: ORDER_TYPES.AS_BUYER,
+          normalizedStatus: String(order?.status || "").toLowerCase(),
+          roleIcon: "cart-outline",
+          roleLabel: t("orders_unified.you_purchased"),
+          roleColor: "#4CAF50",
+          otherParty: seller?.name || t("common.unknown"),
+          otherPartyId: seller?.id,
+        };
+      });
 
-      const normalizedSellerOrders = ordersAsSeller.map(order => ({
-        ...order,
-        type: ORDER_TYPES.AS_SELLER,
-        normalizedStatus: String(order?.status || "").toLowerCase(),
-        roleIcon: "storefront-outline",
-        roleLabel: "Someone bought",
-        roleColor: "#2196F3",
-        otherParty: order.buyer_name || "Buyer",
-        otherPartyId: order.buyer_id,
-      }));
+      const normalizedSellerOrders = ordersAsSeller.map(order => {
+        const buyer = order.User || order.user;
+        return {
+          ...order,
+          type: ORDER_TYPES.AS_SELLER,
+          normalizedStatus: String(order?.status || "").toLowerCase(),
+          roleIcon: "storefront-outline",
+          roleLabel: t("orders_unified.someone_bought"),
+          roleColor: "#2196F3",
+          otherParty: buyer?.name || t("common.unknown"),
+          otherPartyId: order.buyer_id,
+        };
+      });
 
+
+      console.log("Normalized Seller Orders:", normalizedSellerOrders);
       setBuyerOrders(normalizedBuyerOrders);
       setSellerOrders(normalizedSellerOrders);
 
@@ -116,12 +136,12 @@ function UnifiedOrdersScreen({ navigation }) {
 
     } catch (error) {
       console.error("Failed to load orders:", error);
-      Alert.alert("Error", "Could not load orders.");
+      Alert.alert(t("common.error"), t("orders_errors.load_error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userId]);
+  }, [userId, t]);
 
   const calculateStats = (buyer, seller) => {
     setStats({
@@ -155,10 +175,10 @@ function UnifiedOrdersScreen({ navigation }) {
       const response = await ordersApi.updateOrderStatus(order.id, newStatus);
       if (response.ok) {
         loadAllOrders(); // Reload all orders
-        Alert.alert("Success", `Order ${newStatus} successfully`);
+        Alert.alert(t("common.success"), t("orders_unified.update_success", { status: newStatus }));
       }
     } catch (error) {
-      Alert.alert("Error", "Could not update order");
+      Alert.alert(t("common.error"), t("orders_errors.update_error"));
     }
   };
 
@@ -169,6 +189,126 @@ function UnifiedOrdersScreen({ navigation }) {
       orderId: order.id,
     });
   };
+
+  const handleAcceptOrder = (order) => {
+    Alert.alert(
+      t("orders_unified.accept_confirm_title"),
+      t("orders_unified.accept_confirm_message"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("orders_unified.accept"),
+          onPress: async () => {
+            try {
+              const response = await ordersApi.updateOrderStatus(order.id, ORDER_STATUS.PROCESSING);
+              if (response.ok) {
+                loadAllOrders();
+                Alert.alert(t("common.success"), t("orders_unified.accept_success"));
+              } else {
+                Alert.alert(t("common.error"), t("orders_errors.update_error"));
+              }
+            } catch (error) {
+              Alert.alert(t("common.error"), t("orders_errors.update_error"));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeclineOrder = (order) => {
+    Alert.alert(
+      t("orders_unified.decline_confirm_title"),
+      t("orders_unified.decline_confirm_message"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("orders_unified.decline"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await ordersApi.updateOrderStatus(order.id, ORDER_STATUS.CANCELLED);
+              if (response.ok) {
+                loadAllOrders();
+                Alert.alert(t("common.success"), t("orders_unified.decline_success"));
+              } else {
+                Alert.alert(t("common.error"), t("orders_errors.update_error"));
+              }
+            } catch (error) {
+              Alert.alert(t("common.error"), t("orders_errors.update_error"));
+            }
+          },
+        },
+      ]
+    );
+  };
+  
+
+
+  const handleDeleteOrder = (order) => {
+    Alert.alert(
+      t("orders_unified.delete_confirm_title"),
+      t("orders_unified.delete_confirm_message"),
+      [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await ordersApi.deleteOrder(order.id);
+              if (response.ok) {
+                loadAllOrders();
+                Alert.alert(t("common.success"), t("orders_unified.delete_success"));
+              }
+            } catch (error) {
+              Alert.alert(t("common.error"), t("orders_errors.delete_error"));
+            }
+          },
+        },
+      ]
+    );
+  };  
+      
+
+
+  const handleCancelOrder = (order) => {
+    Alert.alert(
+      t("orders_unified.cancel_confirm_title"),
+      t("orders_unified.cancel_confirm_message"),
+      [
+        { 
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("orders_unified.cancel"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await ordersApi.cancelOrder(order.id);
+              if (response.ok) {
+                loadAllOrders();
+                Alert.alert(t("common.success"), t("orders_unified.cancel_success"));
+              }
+            } catch (error) {
+              Alert.alert(t("common.error"), t("orders_unified.cancel_failed"));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+
+
+
+
+
+
 
   // Render Tab Header
   const renderTabHeader = () => (
@@ -184,9 +324,9 @@ function UnifiedOrdersScreen({ navigation }) {
         />
         <View>
           <Text style={[styles.tabLabel, activeTab === ORDER_TYPES.AS_BUYER && styles.activeTabLabel]}>
-            My Purchases
+        {t("orders_unified.my_purchases")}
           </Text>
-          <Text style={styles.tabCount}>{stats.asBuyer.total} orders</Text>
+          <Text style={styles.tabCount}>{t("orders_unified.orders_count", { count: stats.asBuyer.total })}</Text>
         </View>
         {stats.asBuyer.pending > 0 && (
           <View style={styles.badge}>
@@ -206,9 +346,9 @@ function UnifiedOrdersScreen({ navigation }) {
         />
         <View>
           <Text style={[styles.tabLabel, activeTab === ORDER_TYPES.AS_SELLER && styles.activeTabLabel]}>
-            Sales 
+            {t("orders_unified.sales")}
           </Text>
-          <Text style={styles.tabCount}>{stats.asSeller.total} orders</Text>
+          <Text style={styles.tabCount}>{t("orders_unified.orders_count", { count: stats.asSeller.total })}</Text>
         </View>
         {stats.asSeller.pending > 0 && (
           <View style={styles.badge}>
@@ -232,6 +372,8 @@ function UnifiedOrdersScreen({ navigation }) {
   // Render order card
   const renderOrderCard = ({ item }) => {
     const statusConfig = STATUS_CONFIG[item.normalizedStatus] || STATUS_CONFIG.pending;
+
+    
     
     return (
       <TouchableOpacity
@@ -256,13 +398,13 @@ function UnifiedOrdersScreen({ navigation }) {
         {/* Card Content */}
         <View style={styles.cardContent}>
           {/* Role Badge */}
-          {renderRoleBadge(item)}
+          {/* {renderRoleBadge(item)} */}
 
           {/* Product Info */}
           <View style={styles.productSection}>
             <View style={styles.imageContainer}>
-              {item.listing_image ? (
-                <Image source={{ uri: item.listing_image }} style={styles.productImage} />
+              {item.Listing.imageUrl ? (
+                <Image source={{ uri: item.Listing.imageUrl }} style={styles.productImage} />
               ) : (
                 <View style={styles.imagePlaceholder}>
                   <MaterialCommunityIcons name="package-variant" size={24} color={statusConfig.color} />
@@ -272,7 +414,7 @@ function UnifiedOrdersScreen({ navigation }) {
 
             <View style={styles.productDetails}>
               <Text style={styles.productName} numberOfLines={2}>
-                {item.listing_title || "Product"}
+                {item.Listing.title || "Product"}
               </Text>
               
               <View style={styles.detailsGrid}>
@@ -286,7 +428,7 @@ function UnifiedOrdersScreen({ navigation }) {
                   <MaterialCommunityIcons name="currency-usd" size={12} color="#666" />
                   <Text style={styles.detailLabel}>Total:</Text>
                   <Text style={[styles.price, { color: statusConfig.color }]}>
-                    ${(item.total_price || item.price || 0).toFixed(2)}
+                    {(item.total_price || item.price || 0).toFixed(2)} DH
                   </Text>
                 </View>
               </View>
@@ -295,15 +437,7 @@ function UnifiedOrdersScreen({ navigation }) {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            {item.type === ORDER_TYPES.AS_BUYER && item.normalizedStatus === ORDER_STATUS.PENDING && (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.cancelBtn]}
-                onPress={() => handleUpdateStatus(item, ORDER_STATUS.CANCELLED)}
-              >
-                <MaterialCommunityIcons name="close" size={16} color="#FFF" />
-                <Text style={styles.actionBtnText}>Cancel</Text>
-              </TouchableOpacity>
-            )}
+       
 
             {item.type === ORDER_TYPES.AS_BUYER && item.normalizedStatus === ORDER_STATUS.SHIPPED && (
               <TouchableOpacity
@@ -311,18 +445,28 @@ function UnifiedOrdersScreen({ navigation }) {
                 onPress={() => navigation.navigate(routes.TRACK_ORDER, { order: item })}
               >
                 <MaterialCommunityIcons name="map-marker-distance" size={16} color="#FFF" />
-                <Text style={styles.actionBtnText}>Track</Text>
+                <Text style={styles.actionBtnText}>{t("orders_unified.track")}</Text>
               </TouchableOpacity>
             )}
 
             {item.type === ORDER_TYPES.AS_SELLER && item.normalizedStatus === ORDER_STATUS.PENDING && (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.processBtn]}
-                onPress={() => handleUpdateStatus(item, ORDER_STATUS.PROCESSING)}
-              >
-                <MaterialCommunityIcons name="cog" size={16} color="#FFF" />
-                <Text style={styles.actionBtnText}>Process</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.acceptBtn]}
+                  onPress={() => handleAcceptOrder(item)}
+                >
+                  <MaterialCommunityIcons name="check" size={16} color="#FFF" />
+                  <Text style={styles.actionBtnText}>{t("orders_unified.accept")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.declineBtn]}
+                  onPress={() => handleDeclineOrder(item)}
+                >
+                  <MaterialCommunityIcons name="close" size={16} color="#FFF" />
+                  <Text style={styles.actionBtnText}>{t("orders_unified.decline")}</Text>
+                </TouchableOpacity>
+              </>
             )}
 
             {item.type === ORDER_TYPES.AS_SELLER && item.normalizedStatus === ORDER_STATUS.PROCESSING && (
@@ -331,7 +475,7 @@ function UnifiedOrdersScreen({ navigation }) {
                 onPress={() => handleUpdateStatus(item, ORDER_STATUS.SHIPPED)}
               >
                 <MaterialCommunityIcons name="truck" size={16} color="#FFF" />
-                <Text style={styles.actionBtnText}>Mark Shipped</Text>
+                <Text style={styles.actionBtnText}>{t("orders_unified.mark_shipped")}</Text>
               </TouchableOpacity>
             )}
 
@@ -340,8 +484,35 @@ function UnifiedOrdersScreen({ navigation }) {
               onPress={() => handleContactParty(item)}
             >
               <MaterialCommunityIcons name="chat" size={16} color="#FFF" />
-              <Text style={styles.actionBtnText}>Message</Text>
+              <Text style={styles.actionBtnText}>{t("orders_unified.message")}</Text>
             </TouchableOpacity>
+
+
+            {item.type === ORDER_TYPES.AS_BUYER && item.normalizedStatus === ORDER_STATUS.CANCELLED && (
+              
+
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.deleteBtn]}
+              onPress={() => handleDeleteOrder(item)}
+            >
+              <MaterialCommunityIcons name="delete" size={16} color="#FFF" />
+              <Text style={styles.actionBtnText}>{t("orders_unified.delete")}</Text>
+            </TouchableOpacity>
+            )}
+
+            {item.type === ORDER_TYPES.AS_BUYER && item.normalizedStatus === ORDER_STATUS.PENDING && (
+              
+
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.cancelBtn]}
+              onPress={() => handleCancelOrder(item)}
+            >
+              <MaterialCommunityIcons name="cancel" size={16} color="#FFF" />
+              <Text style={styles.actionBtnText}>{t("orders_unified.cancel")}</Text>
+            </TouchableOpacity>
+            )}
+
+
           </View>
         </View>
       </TouchableOpacity>
@@ -376,19 +547,19 @@ function UnifiedOrdersScreen({ navigation }) {
                 color={colors.medium}
               />
               <Text style={styles.emptyTitle}>
-                {activeTab === ORDER_TYPES.AS_BUYER ? "No purchases yet" : "No sales yet"}
+                {activeTab === ORDER_TYPES.AS_BUYER ? t("orders_unified.no_purchases_yet") : t("orders_unified.no_sales_yet")}
               </Text>
               <Text style={styles.emptySubtitle}>
                 {activeTab === ORDER_TYPES.AS_BUYER
-                  ? "Start shopping to see your orders here"
-                  : "When someone buys your items, orders will appear here"}
+                  ? t("orders_unified.start_shopping_to_see_orders")
+                  : t("orders_unified.orders_will_appear_here")}
               </Text>
               {activeTab === ORDER_TYPES.AS_BUYER && (
                 <TouchableOpacity
                   style={styles.shopButton}
                   onPress={() => navigation.navigate(routes.HOME)}
                 >
-                  <Text style={styles.shopButtonText}>Start Shopping</Text>
+                  <Text style={styles.shopButtonText}>{t("orders_unified.start_shopping")}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -398,7 +569,7 @@ function UnifiedOrdersScreen({ navigation }) {
           loading && !refreshing ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Loading orders...</Text>
+              <Text style={styles.loadingText}>{t("orders_unified.loading_orders")}...</Text>
             </View>
           ) : null
         }
@@ -615,11 +786,20 @@ const styles = StyleSheet.create({
   processBtn: {
     backgroundColor: "#FF9800",
   },
+  acceptBtn: {
+    backgroundColor: "#4CAF50",
+  },
+  declineBtn: {
+    backgroundColor: "#F44336",
+  },
   shipBtn: {
     backgroundColor: "#9C27B0",
   },
   messageBtn: {
     backgroundColor: "#607D8B",
+  },
+  deleteBtn: {
+    backgroundColor: "#F44336",
   },
   actionBtnText: {
     fontSize: 12,

@@ -6,9 +6,11 @@ import { MaterialIcons, AntDesign } from "@expo/vector-icons";
 import useAuth from "../auth/useAuth";
 import AppButton from "./Button";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwnerId }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -23,7 +25,7 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwne
         hour12: true,
       });
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
+      return t("common.yesterday");
     } else {
       return date.toLocaleDateString("en-US", {
         month: "short",
@@ -45,7 +47,7 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwne
             style={styles.star}
           />
         ))}
-        <Text style={styles.ratingText}>({rating}/5)</Text>
+        <Text style={styles.ratingText}>{t("reviews_section.rating_format", { rating })}</Text>
       </View>
     );
   };
@@ -71,7 +73,7 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwne
           </View>
 
           <View style={styles.reviewerDetails}>
-            <Text style={styles.reviewerName}>{review.User?.name || "Anonymous"}</Text>
+            <Text style={styles.reviewerName}>{review.User?.name || t("common.anonymous")}</Text>
             <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
           </View>
         </View>
@@ -99,8 +101,8 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwne
     return (
       <View style={styles.emptyContainer}>
         <MaterialIcons name="rate-review" size={40} color={colors.lightGray} />
-        <Text style={styles.emptyText}>No reviews yet</Text>
-        <Text style={styles.emptySubtext}>Be the first to review this listing!</Text>
+        <Text style={styles.emptyText}>{t("reviews_section.no_reviews_title")}</Text>
+        <Text style={styles.emptySubtext}>{t("reviews_section.no_reviews_subtitle")}</Text>
       </View>
     );
   }
@@ -108,7 +110,7 @@ function ReviewsSection({ reviews, onDeleteReview, isDeletingReview, listingOwne
   return (
     <View style={styles.container}>
       <Text style={styles.sectionLabel}>
-        Reviews ({reviews.length})
+        {t("reviews_section.reviews_count", { count: reviews.length })}
       </Text>
       <FlatList
         data={reviews}

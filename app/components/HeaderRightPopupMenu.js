@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 
 import colors from "../config/colors";
 import useAuth from "../auth/useAuth";
@@ -9,6 +10,7 @@ import notificationsApi from "../api/notifications";
 import routes from "../navigation/routes";
 
 function HeaderRightPopupMenu({ navigation }) {
+  const { t } = useTranslation();
   const { isLoggedIn } = useAuth();
   const loggedIn = isLoggedIn();
   const [visible, setVisible] = useState(false);
@@ -20,14 +22,14 @@ function HeaderRightPopupMenu({ navigation }) {
       {
         id: "notifications",
         icon: "bell-outline",
-        label: "Notifications",
+        label: t('navigation.notifications'),
         onPress: () => {
           setVisible(false);
           navigation?.navigate(routes.NOTIFICATIONS);
         },
       }
     ],
-    [navigation]
+    [navigation, t]
   );
 
   const loadNotifications = useCallback(async () => {
@@ -37,18 +39,19 @@ function HeaderRightPopupMenu({ navigation }) {
     try {
       const response = await notificationsApi.getNotifications({ limit: 100 });
       if (!response.ok || !response.data) {
-        Alert.alert("Error", "Could not load notifications.");
+        Alert.alert(t('common.error'), t('notifications_screen.load_error'));
         return;
       }
+      
 
-      setNotificationCount((response.data.notifications || []).length);
+      setNotificationCount((response.data.unreadCount));
     } catch (error) {
       if (__DEV__) console.error("Failed to load notifications:", error);
-      Alert.alert("Error", "Could not load notifications.");
+      Alert.alert(t('common.error'), t('notifications_screen.load_error'));
     } finally {
       setLoadingNotifications(false);
     }
-  }, [loggedIn]);
+  }, [loggedIn, t]);
 
   useEffect(() => {
     loadNotifications();

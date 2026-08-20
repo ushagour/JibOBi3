@@ -81,7 +81,7 @@ function GlobalAlertProvider() {
       title={alertState.title}
       message={alertState.message}
       closeOnTouchOutside={!!alertState.canDismiss}
-      closeOnHardwareBackPress={!!alertState.canDismiss}
+      closeOnHardwareBackPress={false}
       showCancelButton={alertState.showCancel}
       showConfirmButton={true}
       cancelText={alertState.cancelText}

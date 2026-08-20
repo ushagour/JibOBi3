@@ -1,5 +1,6 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useTranslation } from "react-i18next";
 import AnimatedHeader from "../components/AnimatedHeader";
 import HeaderRightPopupMenu from "../components/HeaderRightPopupMenu";
 
@@ -25,48 +26,52 @@ import VerifyEmailScreen from "../screens/auth/VerifyEmailScreen";
 
 const Stack = createStackNavigator();
 
-const getHeaderTitle = (routeName) => {
-  const titles = {
-    AccountHome: "Account",
-    UserEdit: "Edit Profile",
-    Settings: "Settings",
-    Notifications: "Notifications",
-    Orders: "Orders",
-    OrderDetails: "Order Details",
-    OrderCheckout: "Checkout",
-    HelpSupport: "Help & Support",
-    Assistant: "Assistant",
-    PrivacySecurity: "Privacy & Security",
-    VerifyEmail: "Verify Email",
-    Favorites: "Favorites",
-    Listings: "Listings",
-    MyListings: "My Listings",
-    AllListings: "All Listings",
-    ListingAdd: "Add Listing",
-    ListingEdit: "Edit Listing",
-    ListingDetails: "Listing Details",
-    ImageDetails: "Image Details",
+const getHeaderTitle = (routeName, t) => {
+  const navKeys = {
+    AccountHome: "account",
+    UserEdit: "edit_profile",
+    Settings: "settings",
+    Notifications: "notifications",
+    Orders: "orders",
+    OrderDetails: "order_details",
+    OrderCheckout: "checkout",
+    HelpSupport: "help_support",
+    Assistant: "assistant",
+    PrivacySecurity: "privacy_security",
+    VerifyEmail: "verify_email",
+    Favorites: "favorites",
+    Listings: "listings",
+    MyListings: "my_listings",
+    AllListings: "all_listings",
+    ListingAdd: "add_listing",
+    ListingEdit: "edit_listing",
+    ListingDetails: "listing_details",
+    ImageDetails: "image_details",
   };
 
-  return titles[routeName] || routeName;
+  const key = navKeys[routeName];
+  return key ? t(`navigation.${key}`) : routeName;
 };
 
-const AccountNavigator = () => (
-  <Stack.Navigator
-    screenOptions={({ navigation, route }) => ({
-      headerShown: true,
-      header: ({ navigation: headerNavigation, route: headerRoute, options, back }) => (
-        <AnimatedHeader
-          title={options.title || getHeaderTitle(route.name)}
-          subtitle={options.headerSubtitle}
-          rightAction={options.headerRight ? options.headerRight({ navigation: headerNavigation, route: headerRoute }) : null}
-          showBackButton={Boolean(back)}
-          onBackPress={() => headerNavigation.goBack()}
-          
-        />
-      ),
-    })}
-  >
+const AccountNavigator = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Stack.Navigator
+      screenOptions={({ navigation, route }) => ({
+        headerShown: true,
+        header: ({ navigation: headerNavigation, route: headerRoute, options, back }) => (
+          <AnimatedHeader
+            title={options.title || getHeaderTitle(route.name, t)}
+            subtitle={options.headerSubtitle}
+            rightAction={options.headerRight ? options.headerRight({ navigation: headerNavigation, route: headerRoute }) : null}
+            showBackButton={Boolean(back)}
+            onBackPress={() => headerNavigation.goBack()}
+            
+          />
+        ),
+      })}
+    >
     <Stack.Screen
       name="AccountHome"
       component={AccountScreen}
@@ -94,7 +99,8 @@ const AccountNavigator = () => (
     <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} options={{ headerShown: false }} />
     <Stack.Screen name="ImageDetails" component={ViewImageScreen} />
   
-  </Stack.Navigator>
-);
+    </Stack.Navigator>
+  );
+};
 
 export default AccountNavigator;

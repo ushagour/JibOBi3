@@ -1,49 +1,57 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 import Screen from "./Screen";
 import AppText from "./Text";
 import AppButton from "./Button";
 import theme from "../config/theme";
 
-const CASES = {
+// Error type configuration
+const getErrorConfig = (type) => ({
   network: {
     icon: "wifi-alert",
     iconBg: theme.colors.warningLight,
     iconColor: theme.colors.warning,
-    title: "No internet connection",
-    message: "Please check your connection and try again.",
+    titleKey: "error_states.no_internet",
+    messageKey: "error_states.no_internet_message",
   },
   server: {
     icon: "server-network-off",
     iconBg: theme.colors.dangerLight,
     iconColor: theme.colors.danger,
-    title: "Server error",
-    message: "Something went wrong on our side. Please try again soon.",
+    titleKey: "error_states.server_error",
+    messageKey: "error_states.server_error_message",
   },
   notFound: {
     icon: "file-search-outline",
     iconBg: theme.colors.infoLight,
     iconColor: theme.colors.info,
-    title: "Content not found",
-    message: "The item may have been removed or is no longer available.",
+    titleKey: "error_states.not_found",
+    messageKey: "error_states.not_found_message",
   },
   permission: {
     icon: "lock-alert-outline",
     iconBg: theme.colors.warningLight,
     iconColor: theme.colors.warning,
-    title: "Permission required",
-    message: "You do not have permission to access this content.",
+    titleKey: "error_states.permission",
+    messageKey: "error_states.permission_message",
   },
   generic: {
     icon: "alert-circle-outline",
     iconBg: theme.colors.dangerLight,
     iconColor: theme.colors.danger,
-    title: "Something went wrong",
-    message: "An unexpected issue happened. Please try again.",
+    titleKey: "error_states.generic",
+    messageKey: "error_states.generic_message",
   },
-};
+})[type] || ({
+  icon: "alert-circle-outline",
+  iconBg: theme.colors.dangerLight,
+  iconColor: theme.colors.danger,
+  titleKey: "error_states.generic",
+  messageKey: "error_states.generic_message",
+});
 
 function ErrorStateScreen({
   type = "generic",
@@ -52,15 +60,20 @@ function ErrorStateScreen({
   details,
   onRetry,
   onGoBack,
-  retryLabel = "Try again",
-  backLabel = "Go back",
+  retryLabel,
+  backLabel,
   backVariant = "outline",
   backSize = "md",
 }) {
-  const config = CASES[type] || CASES.generic;
+  const { t } = useTranslation();
+  const config = getErrorConfig(type);
+  const displayTitle = title || t(config.titleKey);
+  const displayMessage = message || t(config.messageKey);
+  const displayRetryLabel = retryLabel || t('common.try_again');
+  const displayBackLabel = backLabel || t('common.go_back');
   const isDevelopment = __DEV__;
-  const resolvedTitle = isDevelopment ? (title || config.title) : config.title;
-  const resolvedMessage = isDevelopment ? (message || config.message) : config.message;
+  const resolvedTitle = isDevelopment ? (title || displayTitle) : displayTitle;
+  const resolvedMessage = isDevelopment ? (message || displayMessage) : displayMessage;
 
   return (
     <Screen style={styles.screen} scrollable={false}>
@@ -90,7 +103,7 @@ function ErrorStateScreen({
         <View style={styles.actions}>
           {!!onRetry && (
             <AppButton
-              title={retryLabel}
+              title={displayRetryLabel}
               onPress={onRetry}
               variant="primary"
               size="md"
@@ -99,7 +112,7 @@ function ErrorStateScreen({
 
           {!!onGoBack && (
             <AppButton
-              title={backLabel}
+              title={displayBackLabel}
               onPress={onGoBack}
               variant={backVariant}
               size={backSize}

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet, View, TouchableOpacity } from "react-native";
+import { useTranslation } from "react-i18next";
 
-import Product from "../../components/cards/Product";
+import ProductCard from "../../components/cards/ProductCard";
 import colors from "../../config/colors";
 import routes from "../../navigation/routes";
 import Screen from "../../components/Screen";
@@ -10,9 +11,12 @@ import ActivityIndicator from "../../components/ActivityIndicator";
 import useApi from "../../hooks/useApi";
 import useAuth from "../../auth/useAuth";
 import AppText from "../../components/Text";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Button from "../../components/Button";
+import useTheme from "../../hooks/useTheme";
 
 function MyListingsScreen({ navigation }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     data: activeListings,
@@ -83,9 +87,23 @@ function MyListingsScreen({ navigation }) {
     }
     loadArchivedListings();
   };
+  const { colors: themeColors } = useTheme();
+
+   useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 16 }}
+          onPress={() => navigation.navigate(routes.CREATE_LISTING)}
+        >
+          <MaterialCommunityIcons name="plus" size={24} color={themeColors.primary} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, themeColors]);  
 
   return (
-    <>
+    <Screen style={[styles.screen, { backgroundColor: themeColors.background }]} scrollable={false} paddingSize="xs">
       <ActivityIndicator visible={loadingCurrent} />
       <View style={styles.screen}>
         <View style={styles.tabsRow}>
@@ -93,26 +111,26 @@ function MyListingsScreen({ navigation }) {
             style={[styles.tabButton, activeTab === "active" && styles.tabButtonActive]}
             onPress={() => setActiveTab("active")}
           >
-            <AppText style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>Active</AppText>
+            <AppText style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>{t("my_listings.active")}</AppText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "sold" && styles.tabButtonActive]}
             onPress={() => setActiveTab("sold")}
           >
-            <AppText style={[styles.tabText, activeTab === "sold" && styles.tabTextActive]}>Sold</AppText>
+            <AppText style={[styles.tabText, activeTab === "sold" && styles.tabTextActive]}>{t("my_listings.sold")}</AppText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "archived" && styles.tabButtonActive]}
             onPress={() => setActiveTab("archived")}
           >
-            <AppText style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>Archived</AppText>
+            <AppText style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>{t("my_listings.archived")}</AppText>
           </TouchableOpacity>
         </View>
 
         {hasError && (
           <View style={styles.errorContainer}>
-            <AppText>Couldn't retrieve the listings.</AppText>
-            <Button title="Retry" onPress={handleRetry} />
+            <AppText>{t("my_listings.load_error")}</AppText>
+            <Button title={t("common.retry")} onPress={handleRetry} />
           </View>
         )}
 
@@ -123,34 +141,33 @@ function MyListingsScreen({ navigation }) {
               <View style={styles.emptyContainer}>
                 <AppText>
                   {activeTab === "active"
-                    ? "No active listings yet."
+                    ? t("my_listings.no_active")
                     : activeTab === "sold"
-                    ? "No sold listings yet."
-                    : "No archived listings yet."}
+                    ? t("my_listings.no_sold")
+                    : t("my_listings.no_archived")}
                 </AppText>
               </View>
             ) : null
           }
           keyExtractor={(listing) => listing.id.toString()}
           renderItem={({ item }) => (
-            <Product
+            <ProductCard
+              id={item.id}
               title={item.title}
-              price={item.price}
-              imageUri={item.images?.[0]?.url}
-              onPress={() => navigation.navigate(routes.LISTING_DETAILS, item)}
-              thumbnailUrl={item.images?.[0]?.thumbnailUrl}
+              item={item}
+              onPress={() => navigation.navigate(routes.LISTING_DETAILS, { id: item.id })}
+          
             />
           )}
         />
       </View>
-    </>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     padding: 20,
-    backgroundColor: colors.light,
     flex: 1,
   },
   tabsRow: {

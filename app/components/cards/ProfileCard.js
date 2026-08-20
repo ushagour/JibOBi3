@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
-
+import { useTranslation } from 'react-i18next';
 const COLORS = {
   teal: '#008080',
   gold: '#C5A059',
@@ -12,7 +12,7 @@ const COLORS = {
 // --- Profile Card Component ---
 export const ProfileCard = ({ name, quickResponder, avatarUri, onPress, isVerified = false }) => {
   const [imageError, setImageError] = useState(false);
-
+  const { t } = useTranslation();
   const showImage = !!avatarUri && !imageError;
   const initial = useMemo(() => (name ? name.charAt(0).toUpperCase() : "A"), [name]);
 
@@ -23,7 +23,7 @@ export const ProfileCard = ({ name, quickResponder, avatarUri, onPress, isVerifi
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? "button" : undefined}
-      accessibilityLabel={onPress ? "Edit profile" : undefined}
+      accessibilityLabel={onPress ? t("profile_card.edit_profile") : undefined}
     >
       <View style={styles.avatarWrap}>
         {showImage ? (
@@ -55,7 +55,7 @@ export const ProfileCard = ({ name, quickResponder, avatarUri, onPress, isVerifi
           />
         )}
       </View>
-      {onPress ? <Text style={styles.editHint}>Tap to edit profile</Text> : null}
+      {onPress ? <Text style={styles.editHint}>{t("profile_card.tap_edit")}</Text> : null}
 
 { quickResponder && ( 
           <View style={{

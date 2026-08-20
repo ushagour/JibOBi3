@@ -19,6 +19,7 @@ import useTheme from "../../hooks/useTheme";
 import ActivityIndicator from "../../components/ActivityIndicator";
 import colors from "../../config/colors";
 import ErrorStateScreen from "../../components/ErrorStateScreen";
+import { useTranslation } from "react-i18next";
 
 function FavoritesScreen({ navigation }) {
   const { user } = useAuth(); // Get the user from the auth context
@@ -28,6 +29,7 @@ function FavoritesScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadListings();
@@ -109,7 +111,7 @@ function FavoritesScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerSubtitle, { color: themeColors.textSecondary }]}>
-          {favorites.length} {favorites.length === 1 ? "item" : "items"}
+          {favorites.length} {favorites.length === 1 ? t("common.item") : t("common.items")}
         </Text>
       </View>
 
@@ -121,9 +123,9 @@ function FavoritesScreen({ navigation }) {
             size={64}
             color={themeColors.lightGray}
           />
-          <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>No Favorites Yet</Text>
+          <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>{t("common.no_favorites_yet")}</Text>
           <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
-            Start adding items to your favorites to see them here.
+            {t("common.start_adding_favorites")}
           </Text>
         </View>
       ) : (

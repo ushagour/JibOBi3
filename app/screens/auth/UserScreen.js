@@ -14,6 +14,7 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import * as Yup from "yup";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -38,14 +39,15 @@ import UploadScreen from "../outhers/UploadScreen";
 
 const { width } = Dimensions.get('window');
 
-const validationSchema = Yup.object().shape({
-  name: Yup.string().required().label("Name"),
-  email: Yup.string().required().email().label("Email"),
-  phone: Yup.string().label("Phone"),
-  address: Yup.string().label("Address"),
+const validationSchema = (t) => Yup.object().shape({
+  name: Yup.string().required().label(t('user_screen.name')),
+  email: Yup.string().required().email().label(t('user_screen.email')),
+  phone: Yup.string().label(t('user_screen.phone')),
+  address: Yup.string().label(t('user_screen.address')),
 });
 
 function EditProfileScreen({ navigation }) {
+  const { t } = useTranslation();
   const [error, setError] = useState();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,7 +152,7 @@ function EditProfileScreen({ navigation }) {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission required", "Photo library permission is required to choose an image.");
+        Alert.alert(t('user_screen.permission_required'), t('user_screen.photo_permission_message'));
         return;
       }
 
@@ -165,27 +167,27 @@ function EditProfileScreen({ navigation }) {
       }
     } catch (pickerError) {
       console.error("Error picking avatar image:", pickerError);
-      Alert.alert("Error", "Unable to select image right now.");
+      Alert.alert(t('common.error'), t('user_screen.select_image_error'));
     }
   };
 
   const handleAvatarAction = () => {
-    Alert.alert("Profile Photo", "Choose how you want to update your photo", [
+    Alert.alert(t('user_screen.profile_photo'), t('user_screen.update_photo_prompt'), [
       {
-        text: "🖼️ Choose from Gallery",
+        text: t('user_screen.choose_gallery'),
         onPress: () => pickAvatarImage(),
       },
       ...(avatar
         ? [
             {
-              text: "🗑️ Remove Photo",
+              text: t('user_screen.remove_photo'),
               style: "destructive",
               onPress: () => handleDeleteAvatar(),
             },
           ]
         : []),
       {
-        text: "Cancel",
+        text: t('common.cancel'),
         style: "cancel",
       },
     ]);
@@ -249,15 +251,15 @@ function EditProfileScreen({ navigation }) {
       setAvatar(syncedProfile.avatar || null);
 
       showSweetAlert({
-        title: "✨ Success!",
-        message: "Your profile has been updated successfully.",
+        title: t('user_screen.success_title'),
+        message: t('user_screen.profile_updated'),
         type: "success",
       });
     } catch (err) {
       console.error("Error during request:", err);
       showSweetAlert({
-        title: "❌ Error",
-        message: "Network error, please try again.",
+        title: t('user_screen.error_title'),
+        message: t('user_screen.network_error'),
         type: "danger",
       });
     } finally {
@@ -273,15 +275,15 @@ function EditProfileScreen({ navigation }) {
       updateUser((prevUser) => ({ ...prevUser, avatar: null }));
       setAvatar(null);
       showSweetAlert({
-        title: "Success",
-        message: "Avatar deleted successfully.",
+        title: t('common.success'),
+        message: t('user_screen.avatar_deleted'),
         type: "success",
       });
     } catch (error) {
       console.error("Error deleting avatar:", error.message);
       showSweetAlert({
-        title: "Error",
-        message: "Failed to delete avatar.",
+        title: t('common.error'),
+        message: t('user_screen.delete_avatar_failed'),
         type: "danger",
       });
     }
@@ -289,9 +291,10 @@ function EditProfileScreen({ navigation }) {
 
   // Stats cards data
   const statsData = [
-    { label: "Listings", value: user?.listings_count || 0, icon: "format-list-bulleted", color: "#4CAF50" },
-    { label: "Sales", value: user?.sales_count || 0, icon: "cash-multiple", color: "#2196F3" },
-    { label: "Member Since", value: user?.member_since || "2024", icon: "calendar", color: "#9C27B0" },
+    { label: t('user_screen.listings'), value: user?.listings_count || 0, icon: "format-list-bulleted", color: "#4CAF50" },
+    { label: t('user_screen.sales'), value: user?.sales_count || 0, icon: "cash-multiple", color: "#2196F3" },
+    { label: t('user_screen.member_since'), value: user?.member_since || "2024", icon: "calendar", color: "#9C27B0" },
+    // { label: t('user_screen.phone_number'), value: user?.phone || t('common.not_provided'), icon: "phone", color: "#FF9800" },
   ];
 
   return (
@@ -336,7 +339,7 @@ function EditProfileScreen({ navigation }) {
                 >
                   <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
                 </TouchableOpacity>
-                <AppText style={styles.headerTitle}>Edit Profile</AppText>
+                <AppText style={styles.headerTitle}>{t('user_screen.edit_profile')}</AppText>
                 <View style={{ width: 40 }} />
               </Animated.View>
             </LinearGradient>
@@ -373,7 +376,7 @@ function EditProfileScreen({ navigation }) {
               </TouchableOpacity>
               
               <AppText style={styles.userName}>
-                {user?.name || authUser?.name || "User"}
+                {user?.name || authUser?.name || t('common.user')}
               </AppText>
               <View style={styles.verificationBadge}>
                 <MaterialCommunityIcons 
@@ -382,7 +385,7 @@ function EditProfileScreen({ navigation }) {
                   color={user?.is_verified ? "#4CAF50" : "#FFC107"} 
                 />
                 <AppText style={styles.verificationText}>
-                  {user?.is_verified ? "Verified Account" : "Pending Verification"}
+                  {user?.is_verified ? t('user_screen.verified_account') : t('user_screen.pending_verification')}
                 </AppText>
               </View>
             </Animated.View>
@@ -394,7 +397,7 @@ function EditProfileScreen({ navigation }) {
             ]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {statsData.map((stat, index) => (
-                  <View key={index} style={[styles.statCard, { backgroundColor: themeColors?.surface || colors.white }]}>
+                  <View key={`stat-${stat.label || index}`} style={[styles.statCard, { backgroundColor: themeColors?.surface || colors.white }]}>
                     <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
                       <MaterialCommunityIcons name={stat.icon} size={24} color={stat.color} />
                     </View>
@@ -416,19 +419,19 @@ function EditProfileScreen({ navigation }) {
               <View style={[styles.sectionCard, { backgroundColor: themeColors?.surface || colors.white }]}>
                 <View style={styles.sectionHeader}>
                   <MaterialCommunityIcons name="account-edit" size={24} color={themeColors?.primary || colors.primary} />
-                  <AppText style={styles.sectionTitle}>Personal Information</AppText>
+                  <AppText style={styles.sectionTitle}>{t('user_screen.personal_information')}</AppText>
                 </View>
                 
                 <Form
                   initialValues={{
                     name: user?.name || authUser?.name || "",
                     email: user?.email || authUser?.email || "",
-                    phone: user?.phone || "",
-                    address: user?.address || "",
+                    phone: user?.phone || authUser?.phone || "",
+                    address: user?.address || authUser?.address || "",
                   }}
                   key={`profile-${user?.id || authUser?.userId || "user"}`}
                   onSubmit={handleSubmit}
-                  validationSchema={validationSchema}
+                  validationSchema={validationSchema(t)}
                 >
                   <ErrorMessage error={error} visible={!!error} />
 
@@ -436,7 +439,7 @@ function EditProfileScreen({ navigation }) {
                     autoCorrect={false}
                     icon="account"
                     name="name"
-                    placeholder="Full Name"
+                    placeholder={t('user_screen.full_name')}
                   />
 
                   <FormField
@@ -445,7 +448,7 @@ function EditProfileScreen({ navigation }) {
                     icon="email"
                     keyboardType="email-address"
                     name="email"
-                    placeholder="Email Address"
+                    placeholder={t('user_screen.email_address')}
                     textContentType="emailAddress"
                   />
 
@@ -455,7 +458,7 @@ function EditProfileScreen({ navigation }) {
                     icon="phone"
                     keyboardType="phone-pad"
                     name="phone"
-                    placeholder="Phone Number"
+                    placeholder={t('user_screen.phone_number')}
                     textContentType="telephoneNumber"
                   />
 
@@ -464,11 +467,11 @@ function EditProfileScreen({ navigation }) {
                     autoCorrect={true}
                     icon="map-marker"
                     name="address"
-                    placeholder="Address"
+                    placeholder={t('user_screen.address')}
                     textContentType="streetAddress"
                   />
 
-                  <SubmitButton title="Save Changes" />
+                  <SubmitButton title={t('user_screen.save_changes')} />
                 </Form>
               </View>
             </Animated.View>
@@ -480,7 +483,7 @@ function EditProfileScreen({ navigation }) {
             ]}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="security" size={22} color={themeColors?.primary || colors.primary} />
-                <AppText style={styles.sectionTitle}>Account & Security</AppText>
+                <AppText style={styles.sectionTitle}>{t('user_screen.account_security')}</AppText>
               </View>
               
               <View style={[styles.sectionCard, { backgroundColor: themeColors?.surface || colors.white }]}>
@@ -490,7 +493,7 @@ function EditProfileScreen({ navigation }) {
                 >
                   <View style={styles.rowLeft}>
                     <MaterialCommunityIcons name="shield-account" size={22} color={colors.primary} />
-                    <AppText style={styles.rowLabel}>Security Settings</AppText>
+                    <AppText style={styles.rowLabel}>{t('user_screen.security_settings')}</AppText>
                   </View>
                   <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
                 </TouchableOpacity>
@@ -506,44 +509,17 @@ function EditProfileScreen({ navigation }) {
                   >
                     <View style={styles.rowLeft}>
                       <MaterialCommunityIcons name="email-check-outline" size={22} color={colors.primary} />
-                      <AppText style={styles.rowLabel}>Verify Email</AppText>
+                      <AppText style={styles.rowLabel}>{t('user_screen.verify_email')}</AppText>
                     </View>
                     <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
                   </TouchableOpacity>
                 ) : null}
 
-                <TouchableOpacity style={styles.accountRow} onPress={() => navigation.navigate(routes.HELP)}>
-                  <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="eye" size={22} color={colors.primary} />
-                    <AppText style={styles.rowLabel}>Privacy & Support</AppText>
-                  </View>
-                  <MaterialCommunityIcons name="chevron-right" size={22} color={colors.medium} />
-                </TouchableOpacity>
               </View>
             </Animated.View>
 
             {/* Danger Zone - Logout */}
-            <Animated.View style={[
-              styles.dangerSection,
-              { opacity: fadeAnim }
-            ]}>
-              <TouchableOpacity 
-                style={styles.logoutButton}
-                onPress={() => {
-                  Alert.alert(
-                    "Logout",
-                    "Are you sure you want to logout?",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Logout", onPress: () => logOut(), style: "destructive" }
-                    ]
-                  );
-                }}
-              >
-                <MaterialCommunityIcons name="logout" size={22} color={colors.danger} />
-                <AppText style={styles.logoutText}>Logout</AppText>
-              </TouchableOpacity>
-            </Animated.View>
+       
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

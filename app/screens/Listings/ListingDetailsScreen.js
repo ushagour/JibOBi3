@@ -17,6 +17,7 @@ import {
   Dimensions,
   Share,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import colors from "../../config/colors";
@@ -46,6 +47,7 @@ import ActionButtons from "../../components/screens/ListingDetails/ActionButtons
 
 // Main Component
 function ListingDetailsScreen({ route, navigation }) {
+  const { t } = useTranslation();
   const routeParams = route.params;
   const id = routeParams?.listing?.id ?? routeParams?.id ?? routeParams;
   const { user, isOwner } = useAuth();
@@ -70,7 +72,7 @@ function ListingDetailsScreen({ route, navigation }) {
     return normalizedStatus.includes("selled") || normalizedStatus.includes("sold out") || normalizedStatus === "sold";
   };
   
-  const displayStatus = isSoldStatus(listing?.status) ? "Sold Out" : "Available";
+  const displayStatus = isSoldStatus(listing?.status) ? t('listing_details_screen.sold_out') : t('listing_details_screen.available');
   const isCarsCategory = listing?.Category?.name?.toLowerCase() === "cars";
   const isSold = isSoldStatus(listing?.status);
   const listingLatitude = Number(listing?.location?.latitude ?? listing?.latitude);
@@ -182,7 +184,7 @@ function ListingDetailsScreen({ route, navigation }) {
     try {
       const response = await listingsApi.closeListing(listing.id);
       if (!response.ok) {
-        Alert.alert("Failed", "Could not close listing. Please try again.");
+        Alert.alert(t('listing_details_screen.failed'), t('listing_details_screen.close_listing_failed'));
         return;
       }
 
@@ -196,9 +198,9 @@ function ListingDetailsScreen({ route, navigation }) {
           : prev
       );
 
-      Alert.alert("Closed", "Listing moved to archive and hidden from feed.");
+      Alert.alert(t('listing_details_screen.listing_closed'), t('listing_details_screen.listing_closed_success'));
     } catch (error) {
-      Alert.alert("Error", "Failed to close listing. Please try again.");
+      Alert.alert(t('common.error'), t('listing_details_screen.close_listing_error'));
     }
   };
 
@@ -208,7 +210,7 @@ function ListingDetailsScreen({ route, navigation }) {
     try {
       const response = await listingsApi.reopenListing(listing.id);
       if (!response.ok) {
-        Alert.alert("Failed", "Could not reopen listing. Please try again.");
+        Alert.alert(t('listing_details_screen.failed'), t('listing_details_screen.reopen_listing_failed'));
         return;
       }
 
@@ -222,9 +224,9 @@ function ListingDetailsScreen({ route, navigation }) {
           : prev
       );
 
-      Alert.alert("Reopened", "Listing is visible in feed again.");
+      Alert.alert(t('listing_details_screen.listing_reopened'), t('listing_details_screen.listing_reopened_success'));
     } catch (error) {
-      Alert.alert("Error", "Failed to reopen listing. Please try again.");
+      Alert.alert(t('common.error'), t('listing_details_screen.reopen_listing_error'));
     }
   };
 
@@ -255,12 +257,12 @@ function ListingDetailsScreen({ route, navigation }) {
               setIsDeletingReview(true);
               const response = await reviewsApi.deleteReview(reviewId); 
               if (!response.ok) {
-                Alert.alert("Failed", "Could not delete review. Please try again.");
+                Alert.alert(t('listing_details_screen.delete_review_failed'), t('listing_details_screen.delete_review_error_msg'));
                 return;
               } 
               setReviews((prev) => prev.filter((r) => r.id !== reviewId));
             } catch (error) {
-              Alert.alert("Error", "Failed to delete review. Please try again.");
+              Alert.alert(t('common.error'), t('listing_details_screen.delete_review_error_full'));
             } finally {
               setIsDeletingReview(false);
             }
@@ -296,12 +298,12 @@ function ListingDetailsScreen({ route, navigation }) {
   const openWhatsApp = async () => {
     const rawPhone = listing?.owner?.phone;
     if (!rawPhone) {
-      Alert.alert("WhatsApp unavailable", "The seller has not provided a phone number.");
+      Alert.alert(t('listing_details_screen.whatsapp_unavailable'), t('listing_details_screen.whatsapp_no_phone'));
       return;
     }
 
     const phoneNumber = String(rawPhone).replace(/\D/g, "");
-    const message = encodeURIComponent(`Hello ${listing.owner?.name || "seller"}, I am interested in your listing: ${listing.title}`);
+    const message = encodeURIComponent(`Hello ${listing.owner?.name || t('common.user')}, I am interested in your listing: ${listing.title}`);
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
 
     try {
@@ -311,9 +313,9 @@ function ListingDetailsScreen({ route, navigation }) {
         closeContactModal();
         return;
       }
-      Alert.alert("WhatsApp unavailable", "WhatsApp is not installed or the link cannot be opened.");
+      Alert.alert(t('listing_details_screen.whatsapp_error'), t('listing_details_screen.whatsapp_not_installed'));
     } catch (err) {
-      Alert.alert("Error", "Unable to open WhatsApp.");
+      Alert.alert(t('common.error'), t('listing_details_screen.whatsapp_open_error_msg'));
     }
   };
 
@@ -328,17 +330,17 @@ function ListingDetailsScreen({ route, navigation }) {
 
   const handleSendQuickMessage = async () => {
     if (!isAuthenticated) {
-      Alert.alert("Sign in required", "Please sign in to send a message.");
+      Alert.alert(t('listing_details_screen.sign_in_required'), t('listing_details_screen.sign_in_to_message'));
       return;
     }
 
     if (!quickMessage.trim()) {
-      Alert.alert("Empty message", "Please enter a message before sending.");
+      Alert.alert(t('listing_details_screen.empty_message'), t('listing_details_screen.empty_message_text'));
       return;
     }
 
     if (!listing?.owner?.id) {
-      Alert.alert("Error", "Seller information not available.");
+      Alert.alert(t('common.error'), t('listing_details_screen.seller_info_not_available'));
       return;
     }
 
@@ -351,7 +353,7 @@ function ListingDetailsScreen({ route, navigation }) {
       });
 
       if (!response.ok) {
-        Alert.alert("Failed", "Could not send message. Please try again.");
+        Alert.alert(t('listing_details_screen.message_failed'), t('listing_details_screen.message_failed_text'));
         return;
       }
 
@@ -362,7 +364,7 @@ function ListingDetailsScreen({ route, navigation }) {
       setQuickMessage("");
       closeContactModal();
     } catch (error) {
-      Alert.alert("Error", "Failed to send message. Please try again.",error.message);
+      Alert.alert(t('common.error'), t('listing_details_screen.message_error_text'), error.message);
     } finally {
       setSendingMessage(false);
     }
@@ -370,7 +372,7 @@ function ListingDetailsScreen({ route, navigation }) {
 
   const handleOrderNow = () => {
     if (!isAuthenticated) {
-      Alert.alert("Sign in required", "Please sign in to place an order.");
+      Alert.alert(t('listing_details_screen.sign_in_to_order'), t('listing_details_screen.sign_in_to_order_text'));
       return;
     }
 
@@ -536,7 +538,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                       <View style={styles.sectionHeader}>
                         <MaterialIcons name="notes" size={20} color={colors.primary} />
-                        <Text style={styles.sectionTitle}>Description</Text>
+                        <Text style={styles.sectionTitle}>{t('listing_details_screen.description')}</Text>
                       </View>
                       <Text style={styles.description}>{listing.description || "No description provided."}</Text>
                     </View>
@@ -548,19 +550,19 @@ function ListingDetailsScreen({ route, navigation }) {
                       <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
                         <View style={styles.sectionHeader}>
                           <MaterialCommunityIcons name="car-outline" size={20} color={colors.primary} />
-                          <Text style={styles.sectionTitle}>Vehicle Details</Text>
+                          <Text style={styles.sectionTitle}> {t('listing_details_screen.vehicle_details')}</Text>
                         </View>
                         <View style={styles.carDetailsGrid}>
                           <View style={styles.carDetailItem}>
-                            <Text style={styles.carDetailLabel}>Model</Text>
+                            <Text style={styles.carDetailLabel}>{t('listing_details_screen.vehicle_model')}</Text>
                             <Text style={styles.carDetailValue}>{listing.carModel || "N/A"}</Text>
                           </View>
                           <View style={styles.carDetailItem}>
-                            <Text style={styles.carDetailLabel}>Color</Text>
+                            <Text style={styles.carDetailLabel}>{t('listing_details_screen.vehicle_color')}</Text>
                             <Text style={styles.carDetailValue}>{listing.carColor || "N/A"}</Text>
                           </View>
                           <View style={styles.carDetailItem}>
-                            <Text style={styles.carDetailLabel}>Year</Text>
+                            <Text style={styles.carDetailLabel}>{t('listing_details_screen.vehicle_year')}</Text>
                             <Text style={styles.carDetailValue}>{listing.carYear || "N/A"}</Text>
                           </View>
                         </View>
@@ -591,7 +593,7 @@ function ListingDetailsScreen({ route, navigation }) {
   <View style={[styles.sectionCard, { backgroundColor: themeColors.surface }]}>
     <View style={styles.sectionHeader}>
       <MaterialCommunityIcons name="view-grid-outline" size={20} color={colors.primary} />
-      <Text style={styles.sectionTitle}>Similar Listings</Text>
+      <Text style={styles.sectionTitle}>{t('listing_details_screen.similar_listings')}</Text>
     </View>
       {loadingSimilar ? (
         <ActivityIndicator visible />
@@ -612,7 +614,7 @@ function ListingDetailsScreen({ route, navigation }) {
       )}
       keyExtractor={(item) => item.id.toString()}
       ListEmptyComponent={() => (
-        <Text style={styles.noSimilarText}>No similar listings found</Text>
+        <Text style={styles.noSimilarText}>{t('listing_details_screen.no_similar_listings')}</Text>
       )}
     />
   </View>
@@ -643,7 +645,7 @@ function ListingDetailsScreen({ route, navigation }) {
           
           <Animated.View style={[styles.contactModalCard, { backgroundColor: themeColors.surface }]}>
             <LinearGradient colors={[colors.primaryDark, colors.primaryLight]} style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Contact Seller</Text>
+              <Text style={styles.modalTitle}>{t('listing_details_screen.contact_seller')}</Text>
               <TouchableOpacity onPress={closeContactModal} style={styles.modalCloseButton}>
                 <Ionicons name="close" size={24} color="#FFF" />
               </TouchableOpacity>
@@ -655,14 +657,14 @@ function ListingDetailsScreen({ route, navigation }) {
                   <View style={[styles.contactIcon, { backgroundColor: `${colors.info}15` }]}>
                     <MaterialIcons name="call" size={24} color={colors.info} />
                   </View>
-                  <Text style={styles.contactMethodLabel}>Call</Text>
+                  <Text style={styles.contactMethodLabel}>{t('listing_details_screen.call')}</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.contactMethod} onPress={handleEmailSeller}>
                   <View style={[styles.contactIcon, { backgroundColor: `${colors.primary}15` }]}>
                     <MaterialIcons name="email" size={24} color={colors.primary} />
                   </View>
-                  <Text style={styles.contactMethodLabel}>Email</Text>
+                  <Text style={styles.contactMethodLabel}>{t('listing_details_screen.email')}</Text>
                 </TouchableOpacity>
                 
                 {!!listing?.owner?.phone && (
@@ -670,16 +672,16 @@ function ListingDetailsScreen({ route, navigation }) {
                     <View style={[styles.contactIcon, { backgroundColor: `${colors.success}15` }]}>
                       <MaterialCommunityIcons name="whatsapp" size={24} color={colors.success} />
                     </View>
-                    <Text style={styles.contactMethodLabel}>WhatsApp</Text>
+                    <Text style={styles.contactMethodLabel}>{t('listing_details_screen.whatsapp')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
               
               <View style={styles.quickMessageSection}>
-                <Text style={styles.quickMessageLabel}>Send a quick message</Text>
+                <Text style={styles.quickMessageLabel}>{t('listing_details_screen.send_quick_message')}</Text>
                 <TextInput
                   style={[styles.quickMessageInput, { backgroundColor: themeColors.surface, borderColor: colors.border }]}
-                  placeholder="Ask the seller anything about this listing..."
+                  placeholder={t('listing_details_screen.quick_message_placeholder')}
                   placeholderTextColor={colors.textMuted}
                   value={quickMessage}
                   onChangeText={setQuickMessage}
@@ -698,7 +700,7 @@ function ListingDetailsScreen({ route, navigation }) {
                     style={styles.sendButtonGradient}
                   >
                     <Text style={styles.sendButtonText}>
-                      {sendingMessage ? "Sending..." : "Send Message"}
+                      {sendingMessage ? t('listing_details_screen.sending') : t('listing_details_screen.send_message')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>

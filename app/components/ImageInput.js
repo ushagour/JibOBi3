@@ -2,37 +2,39 @@ import React, { useState } from "react";
 import { TouchableOpacity, Image, View, StyleSheet, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 function ImageInput({ imageUri, onChangeImage, onDeleteImage }) {
+  const { t } = useTranslation();
   const handlePress = async () => {
     if (!imageUri) {
       const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!result.granted) {
-        alert("You need to enable permission to access the library.");
+        alert(t('profile_management.photo_permission'));
         return;
       }
 
       pickImage();
     } else {
-      Alert.alert("Delete", "Are you sure you want to delete this image?", [
+      Alert.alert(t('common.delete'), t('image_input.delete_confirm'), [
         { 
-          text: "Yes", 
+          text: t('common.yes'), 
           onPress: async () => {
             try {
               // Call the delete image function if provided
               if (onDeleteImage) {
                 await onDeleteImage();
               }
-              // Clear the local imagex
+              // Clear the local image
               onChangeImage(null);
             } catch (error) {
               console.error("Error deleting avatar:", error);
-              Alert.alert("Error", "Failed to delete avatar");
+              Alert.alert(t('common.error'), t('image_input.delete_avatar_failed'));
             }
           }
         },
-        { text: "No" },
+        { text: t('common.no') },
       ]);
     }
   };

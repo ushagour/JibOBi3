@@ -9,6 +9,7 @@ import  ViewImageScreen  from "../screens/outhers/ViewImageScreen";
 import NotificationsScreen from "../screens/auth/NotificationsScreen";
 import ConversationScreen from "../screens/auth/ConversationScreen";
 import OrderCheckoutScreen from "../screens/orders/OrderCheckoutScreen";
+import OrderDetailScreen from "../screens/orders/OrderDetailScreen";
 
 const Stack = createStackNavigator();
 
@@ -55,6 +56,11 @@ const FeedNavigator = () => (
         headerRight: () => <HeaderRightPopupMenu navigation={navigation} />,
       })}
     />
+     <Stack.Screen
+      name="ImageDetails"
+      component={ViewImageScreen}
+      options={{ title: "Image Details" }}
+    />
     <Stack.Screen
       name="ListingEdit"
       component={ListingEditScreen}
@@ -63,9 +69,9 @@ const FeedNavigator = () => (
       })}
     />
     <Stack.Screen
-      name="ImageDetails"
-      component={ViewImageScreen}
-      options={{ title: "Image Details" }}
+      name="OrderDetailScreen"
+      component={OrderDetailScreen}
+      options={{ title: "Order Detail" }}
     />
     <Stack.Screen
       name="Notifications"

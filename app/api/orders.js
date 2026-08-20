@@ -21,6 +21,9 @@ const createOrder = (orderData) => {
 const updateOrderStatus = (orderId, status) =>
   client.put(`${endpoint}/${orderId}/status`, { status });
 
+const cancelOrder = (orderId) =>
+  client.post(`${endpoint}/${orderId}/cancel`);
+
 const reportOrder = (orderId, reason) =>
   client.post(`${endpoint}/${orderId}/report`, { reason });
 
@@ -35,4 +38,5 @@ export default {
   updateOrderStatus,
   reportOrder,
   deleteOrder,
+  cancelOrder,
 };
