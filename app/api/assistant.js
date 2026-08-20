@@ -8,11 +8,7 @@ const GEMINI_API_BASES = [
 ];
 
 const PREFERRED_GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-latest',
-  'gemini-pro',
+  'gemini-2.5-flash'
 ];
 
 let resolvedTarget = null;
@@ -187,37 +183,76 @@ const isModelMismatchError = (error) => {
 };
 
 export const chat = async (messages, userContext = null) => {
-  const backendResponse = await client.post('/assistant/chat', {
-    messages,
-    userContext,
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw new Error('Invalid messages format: must be a non-empty array');
+  }
+
+  // Normalize messages to standard format
+  const normalizedMessages = messages.map(msg => ({
+    role: msg.role || 'user',
+    content: msg.content || msg.text || '',
+  })).filter(msg => msg.content.trim());
+
+  if (normalizedMessages.length === 0) {
+    throw new Error('No valid messages to send');
+  }
+
+  console.log('🔄 [ASSISTANT] Attempting backend communication:', {
+    messageCount: normalizedMessages.length,
+    hasContext: !!userContext,
   });
 
-  if (backendResponse.ok && backendResponse.data?.data?.reply) {
-    return {
-      data: backendResponse.data.data,
-      success: true,
-      source: 'backend',
-    };
-  }
+  try {
+    const backendResponse = await client.post('/assistant/chat', {
+      messages: normalizedMessages,
+      userContext,
+    });
 
-  const backendStatus = backendResponse.error?.response?.status;
-  if (backendStatus && backendStatus !== 503) {
-    const backendMessage =
+    if (backendResponse.ok && backendResponse.data?.data?.reply) {
+      console.log('✅ [ASSISTANT] Backend success:', {
+        source: backendResponse.data.data.source,
+        replyLength: backendResponse.data.data.reply?.length,
+      });
+
+      return {
+        data: backendResponse.data.data,
+        success: true,
+        source: 'backend',
+      };
+    }
+
+    const backendStatus = backendResponse.error?.response?.status;
+    const backendErrorMsg =
       backendResponse.error?.response?.data?.error ||
       backendResponse.error?.message ||
-      'Failed to generate assistant response';
-    throw new Error(backendMessage);
+      'Backend request failed';
+
+    // Only try fallback for 503 Service Unavailable
+    if (backendStatus === 503) {
+      console.warn('🔄 [ASSISTANT] Backend unavailable (503), trying direct Gemini:', backendErrorMsg);
+    } else if (backendStatus >= 400) {
+      // For other errors (400, 401, 404, etc), throw and don't continue
+      console.error('❌ [ASSISTANT] Backend error:', {
+        status: backendStatus,
+        message: backendErrorMsg,
+      });
+      throw new Error(backendErrorMsg);
+    }
+  } catch (error) {
+    const backendStatus = error?.response?.status;
+    if (backendStatus && backendStatus !== 503) {
+      throw error;
+    }
   }
 
+  // Fallback to direct Gemini if backend is unavailable
   const apiKey = getApiKey();
   if (!apiKey) {
-    const backendMessage =
-      backendResponse.error?.response?.data?.error ||
-      'Assistant is unavailable because the backend AI key is missing and EXPO_PUBLIC_GEMINI_API_KEY is not configured.';
-    throw new Error(backendMessage);
+    throw new Error('Assistant is unavailable: Backend is down and EXPO_PUBLIC_GEMINI_API_KEY is not configured');
   }
 
-  const prompt = buildPrompt(messages, userContext);
+  console.log('🌐 [ASSISTANT] Using direct Gemini fallback');
+  const prompt = buildPrompt(normalizedMessages, userContext);
 
   try {
     let target = await resolveGeminiTarget(apiKey);
@@ -236,6 +271,7 @@ export const chat = async (messages, userContext = null) => {
       }
 
       // Refresh cached model in case model availability changed.
+      console.warn('🔄 [ASSISTANT] Model mismatch, refreshing...');
       resolvedTarget = null;
       target = await resolveGeminiTarget(apiKey);
       data = await sendGeminiRequest({
@@ -251,14 +287,15 @@ export const chat = async (messages, userContext = null) => {
       throw new Error('Gemini response did not contain a reply');
     }
 
+    console.log('✅ [ASSISTANT] Direct Gemini success');
     return {
-      data: { reply },
+      data: { reply, model: target.modelPath },
       success: true,
       source: 'gemini-direct',
     };
   } catch (error) {
-    console.error('Gemini API error:', error?.message || error);
-    throw error;
+    console.error('❌ [ASSISTANT] Direct Gemini error:', error?.message);
+    throw new Error(`Assistant unavailable: ${error?.message || 'Unknown error'}`);
   }
 };
 
